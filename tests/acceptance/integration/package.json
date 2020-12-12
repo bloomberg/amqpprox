@@ -1,0 +1,17 @@
+{
+  "name": "amqpprox-integration",
+  "version": "1.0.0",
+  "description": "amqpprox integration test",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "amqp-connection-manager": "^1.3.4",
+    "amqplib": "^0.4.2",
+    "cross-spawn": "^5.1.0"
+  }
+}

@@ -1,0 +1,7 @@
+[requires]
+boost/1.71.0
+openssl/1.1.1d
+gtest/1.8.1
+
+[generators]
+cmake

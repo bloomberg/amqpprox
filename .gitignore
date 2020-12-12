@@ -1,0 +1,6 @@
+build
+cmake.bld
+tests/acceptance/integration/node_modules
+tags
+logs
+.clangd

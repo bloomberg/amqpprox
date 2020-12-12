@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo "Build dir: $1"
+echo "Source dir: $2"
+cd $1 && conan install --build missing $2/buildfiles/conan/
