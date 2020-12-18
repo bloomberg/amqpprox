@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo "Build dir: $1"
 echo "Source dir: $2"
