@@ -1,5 +1,7 @@
 message(status "** Using conan build")
+
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+
 if(NOT "${CMAKE_CXX_STANDARD}")
   set(CMAKE_CXX_STANDARD 17)
 endif()
@@ -18,3 +20,4 @@ if (NOT "${COVERAGE}" STREQUAL "")
 endif()
 
 conan_basic_setup()
+conan_set_libcxx()

@@ -2,4 +2,17 @@
 
 echo "Build dir: $1"
 echo "Source dir: $2"
-cd $1 && conan install --build missing -s compiler.libcxx=libstdc++11 $2/buildfiles/conan/
+
+if [ "$(uname)" == 'Linux' ]; then
+    CONANOPTS="--build missing -s compiler.libcxx=libstdc++11"
+elif [ "$(uname)" == 'Darwin' ]; then
+    CONANOPTS="--build missing -s compiler.libcxx=libc++"
+else
+    CONANOPTS="--build missing"
+fi
+
+CONANOPTSOUT=${OVERRIDE_CONANOPTS:-$CONANOPTS}
+
+echo "Conan Install Options: $CONANOPTSOUT"
+
+cd $1 && conan install $CONANOPTSOUT $2/buildfiles/conan/
