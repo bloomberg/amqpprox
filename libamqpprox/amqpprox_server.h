@@ -53,6 +53,7 @@ class Server {
     // HELD NOT OWNED
     std::mutex                      d_mutex;
     std::shared_ptr<HostnameMapper> d_hostnameMapper;
+    std::string d_localHostname;
 
   public:
     Server(ConnectionSelector *selector,

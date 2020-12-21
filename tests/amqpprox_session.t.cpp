@@ -79,6 +79,8 @@ using HandshakeComplete = TestSocketState::HandshakeComplete;
 using WriteComplete     = TestSocketState::WriteComplete;
 using ConnectComplete   = TestSocketState::ConnectComplete;
 
+const char LOCAL_HOSTNAME[] = "amqpprox-host";
+
 struct SelectorMock : public ConnectionSelector {
     virtual ~SelectorMock() {}
 
@@ -145,7 +147,7 @@ class SessionTest : public ::testing::Test {
     methods::CloseOk closeOk();
     methods::Close   close();
 
-    void runStandardConnect(TestSocketState::State* clientBase);
+    void runStandardConnect(TestSocketState::State *clientBase);
 };
 
 template <typename TYPE>
@@ -153,9 +155,8 @@ std::vector<TYPE> filterVariant(const std::vector<Item> &items);
 
 Data coalesce(std::initializer_list<Data> input);
 
-void SessionTest::runStandardConnect(TestSocketState::State* clientBase)
+void SessionTest::runStandardConnect(TestSocketState::State *clientBase)
 {
-
     auto protocolHeader = std::vector<uint8_t>(
         Constants::protocolHeader(),
         Constants::protocolHeader() + Constants::protocolHeaderLength());
@@ -217,7 +218,8 @@ void SessionTest::runStandardConnect(TestSocketState::State* clientBase)
         ASSERT_EQ(data.size(), 1);
 
         auto startOk = clientStartOk();
-        ConnectorUtil::injectClientLocation(&startOk, "host1", 2345);
+        ConnectorUtil::injectProxyClientIdent(
+            &startOk, "host1", 2345, LOCAL_HOSTNAME, 32000);
 
         EXPECT_EQ(data[0], Data(encode(startOk)));
     });
@@ -300,7 +302,6 @@ void SessionTest::runStandardConnect(TestSocketState::State* clientBase)
     // After closing sockets any outstanding handlers will get aborted
     d_serverState.pushItem(15, Data(boost::asio::error::operation_aborted));
     d_clientState.pushItem(16, Data(boost::asio::error::operation_aborted));
-
 }
 
 TEST_F(SessionTest, Connection_Then_Ping_Then_Disconnect)
@@ -342,7 +343,8 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Disconnect)
                                              &d_selector,
                                              &d_eventSource,
                                              &d_pool,
-                                             d_mapper);
+                                             d_mapper,
+                                             LOCAL_HOSTNAME);
 
     session->start();
 
@@ -398,7 +400,8 @@ TEST_F(SessionTest, New_Client_Handshake_Failure)
                                              &d_selector,
                                              &d_eventSource,
                                              &d_pool,
-                                             d_mapper);
+                                             d_mapper,
+                                             LOCAL_HOSTNAME);
 
     session->start();
 
@@ -457,7 +460,8 @@ TEST_F(SessionTest, Connection_To_Proxy_Protocol)
                                              &d_selector,
                                              &d_eventSource,
                                              &d_pool,
-                                             d_mapper);
+                                             d_mapper,
+                                             LOCAL_HOSTNAME);
 
     session->start();
 
@@ -467,9 +471,9 @@ TEST_F(SessionTest, Connection_To_Proxy_Protocol)
 
         ASSERT_EQ(data.size(), 1);
         auto generatedPPHeader = session->getProxyProtocolHeader(&backendPP);
-        std::vector<uint8_t> generatedPPHeaderVec(generatedPPHeader.data(),
-                             generatedPPHeader.data() +
-                                 generatedPPHeader.length());
+        std::vector<uint8_t> generatedPPHeaderVec(
+            generatedPPHeader.data(),
+            generatedPPHeader.data() + generatedPPHeader.length());
         ASSERT_EQ(data[0], Data(generatedPPHeaderVec));
     });
 

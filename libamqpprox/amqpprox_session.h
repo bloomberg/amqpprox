@@ -30,6 +30,7 @@
 
 #include <chrono>
 #include <iosfwd>
+#include <string_view>
 #include <vector>
 
 namespace Bloomberg {
@@ -82,7 +83,8 @@ class Session : public std::enable_shared_from_this<Session> {
             ConnectionSelector *                   connectionSelector,
             EventSource *                          eventSource,
             BufferPool *                           bufferPool,
-            const std::shared_ptr<HostnameMapper> &hostnameMapper);
+            const std::shared_ptr<HostnameMapper> &hostnameMapper,
+            std::string_view                       localHostname);
 
     ~Session();
 
@@ -145,7 +147,7 @@ class Session : public std::enable_shared_from_this<Session> {
     void readData(FlowType direction);
     ///< Read more data into the session
 
-    void handleWriteData(FlowType direction,
+    void handleWriteData(FlowType                  direction,
                          MaybeSecureSocketAdaptor &writeSocket,
                          Buffer                    data);
     ///< Put the supplied data onto the outgoing socket, then re-read

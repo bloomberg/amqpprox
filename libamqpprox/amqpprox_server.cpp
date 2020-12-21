@@ -46,6 +46,7 @@ Server::Server(ConnectionSelector *selector,
 , d_bufferPool_p(bufferPool)
 , d_mutex()
 , d_hostnameMapper()
+, d_localHostname(boost::asio::ip::host_name())
 {
     d_ingressTlsContext.set_options(
         boost::asio::ssl::context::default_workarounds);
@@ -183,7 +184,8 @@ void Server::doAccept(int port, bool secure)
                                               d_connectionSelector_p,
                                               d_eventSource_p,
                                               d_bufferPool_p,
-                                              d_hostnameMapper);
+                                              d_hostnameMapper,
+                                              d_localHostname);
 
                 {
                     std::lock_guard<std::mutex> lg(d_mutex);

@@ -32,6 +32,7 @@
 #include <amqpprox_methods_tuneok.h>
 
 #include <functional>
+#include <string_view>
 
 namespace Bloomberg {
 namespace amqpprox {
@@ -80,6 +81,7 @@ class Connector {
     std::function<void()> d_connectionReadyHandler;
     bool                  d_sendToIngressSide;
     bool                  d_reconnection;
+    std::string           d_localHostname;
 
     template <typename T>
     void sendResponse(const T &response, bool sendToIngressSide);
@@ -89,9 +91,10 @@ class Connector {
                                   bool     sendToIngressSide);
 
   public:
-    Connector(SessionState *sessionState,
-              EventSource * eventSource,
-              BufferPool *  bufferPool);
+    Connector(SessionState *   sessionState,
+              EventSource *    eventSource,
+              BufferPool *     bufferPool,
+              std::string_view localHostname);
 
     inline State state() const;
     void         receive(const Buffer &buffer);
