@@ -19,6 +19,7 @@
 #include <amqpprox_constants.h>
 
 #include <sstream>
+#include <string_view>
 
 namespace Bloomberg {
 namespace amqpprox {
@@ -76,14 +77,21 @@ FieldTable ConnectorUtil::generateServerProperties()
     return ft;
 }
 
-void ConnectorUtil::injectClientLocation(methods::StartOk * startOk,
-                                         const std::string &hostname,
-                                         int                port)
+void ConnectorUtil::injectProxyClientIdent(methods::StartOk * startOk,
+                                           const std::string &clientHostname,
+                                           int                clientRemotePort,
+                                           std::string_view   localHostname,
+                                           int outboundLocalPort)
 {
     std::stringstream remoteClient;
-    remoteClient << hostname << ":" << port;
+    remoteClient << clientHostname << ":" << clientRemotePort;
     startOk->properties().pushField("amqpprox_client",
                                     FieldValue('S', remoteClient.str()));
+
+    std::stringstream proxyInfo;
+    proxyInfo << localHostname << ":" << outboundLocalPort;
+    startOk->properties().pushField("amqpprox_host",
+                                    FieldValue('S', proxyInfo.str()));
 }
 
 }

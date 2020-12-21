@@ -37,6 +37,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
+#include <string_view>
 
 namespace Bloomberg {
 namespace amqpprox {
@@ -67,7 +68,8 @@ Session::Session(boost::asio::io_service &              ioservice,
                  ConnectionSelector *                   connectionSelector,
                  EventSource *                          eventSource,
                  BufferPool *                           bufferPool,
-                 const std::shared_ptr<HostnameMapper> &hostnameMapper)
+                 const std::shared_ptr<HostnameMapper> &hostnameMapper,
+                 std::string_view                       localHostname)
 : d_ioService(ioservice)
 , d_resolver(ioservice)
 , d_serverSocket(std::move(serverSocket))
@@ -79,7 +81,7 @@ Session::Session(boost::asio::io_service &              ioservice,
 , d_serverWaterMark(0)
 , d_clientWaterMark(0)
 , d_sessionState(hostnameMapper)
-, d_connector(&d_sessionState, eventSource, bufferPool)
+, d_connector(&d_sessionState, eventSource, bufferPool, localHostname)
 , d_connectionSelector_p(connectionSelector)
 , d_eventSource_p(eventSource)
 , d_bufferPool_p(bufferPool)
@@ -266,28 +268,29 @@ void Session::attemptResolvedConnection(
                      << "connection for: " << d_sessionState;
 
             auto self(shared_from_this());
-            auto handshake_cb =
-                [this, self, connectionManager](const error_code &ec) {
-                    BOOST_LOG_SCOPED_THREAD_ATTR(
-                        "Vhost",
-                        boost::log::attributes::constant<std::string>(
-                            d_sessionState.getVirtualHost()));
-                    BOOST_LOG_SCOPED_THREAD_ATTR(
-                        "ConnID",
-                        boost::log::attributes::constant<uint64_t>(
-                            d_sessionState.id()));
+            auto handshake_cb = [this, self, connectionManager](
+                                    const error_code &ec) {
+                BOOST_LOG_SCOPED_THREAD_ATTR(
+                    "Vhost",
+                    boost::log::attributes::constant<std::string>(
+                        d_sessionState.getVirtualHost()));
+                BOOST_LOG_SCOPED_THREAD_ATTR(
+                    "ConnID",
+                    boost::log::attributes::constant<uint64_t>(
+                        d_sessionState.id()));
 
-                    if (ec) {
-                        handleSessionError("ssl", FlowType::INGRESS, ec, 0);
-                        return;
-                    }
+                if (ec) {
+                    handleSessionError("ssl", FlowType::INGRESS, ec, 0);
+                    return;
+                }
 
-                    LOG_TRACE << "Post-handshake sending protocol header for:"
-                              << d_sessionState;
+                LOG_TRACE << "Post-handshake sending protocol header for:"
+                          << d_sessionState;
 
-                    d_connector.synthesizeProtocolHeader();
-                    handleWriteData(FlowType::EGRESS, d_clientSocket, d_connector.outBuffer());
-                };
+                d_connector.synthesizeProtocolHeader();
+                handleWriteData(
+                    FlowType::EGRESS, d_clientSocket, d_connector.outBuffer());
+            };
 
             if (!currentBackend->proxyProtocolEnabled()) {
                 d_clientSocket.async_handshake(

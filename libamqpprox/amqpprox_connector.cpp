@@ -28,6 +28,7 @@
 #include <amqpprox_sessionstate.h>
 
 #include <iostream>
+#include <string_view>
 
 namespace Bloomberg {
 namespace amqpprox {
@@ -39,9 +40,10 @@ const Buffer legacyProtocolHeader(Constants::legacyProtocolHeader(),
                                   Constants::legacyProtocolHeaderLength());
 }
 
-Connector::Connector(SessionState *sessionState,
-                     EventSource * eventSource,
-                     BufferPool *  bufferPool)
+Connector::Connector(SessionState *   sessionState,
+                     EventSource *    eventSource,
+                     BufferPool *     bufferPool,
+                     std::string_view localHostname)
 : d_state(State::AWAITING_PROTOCOL_HEADER)
 , d_synthesizedStart(ConnectorUtil::synthesizedStart())
 , d_synthesizedTune(ConnectorUtil::synthesizedTune())
@@ -52,6 +54,7 @@ Connector::Connector(SessionState *sessionState,
 , d_buffer()
 , d_sendToIngressSide(false)
 , d_reconnection(false)
+, d_localHostname(localHostname)
 {
 }
 
@@ -108,12 +111,6 @@ void Connector::receive(const Method &method, FlowType direction)
 
         LOG_TRACE << "Received: " << d_startOk;
 
-        auto clientEndpoint = d_sessionState_p->getIngress().second;
-        ConnectorUtil::injectClientLocation(
-            &d_startOk,
-            d_sessionState_p->hostname(clientEndpoint),
-            clientEndpoint.port());
-
         sendResponse(d_synthesizedTune, true);
         d_state = State::TUNE_SENT;
     }
@@ -159,6 +156,16 @@ void Connector::receive(const Method &method, FlowType direction)
         }
 
         LOG_TRACE << "Server Start: " << d_receivedStart;
+
+        auto clientEndpoint      = d_sessionState_p->getIngress().second;
+        auto serverLocalEndpoint = d_sessionState_p->getEgress().first;
+
+        ConnectorUtil::injectProxyClientIdent(
+            &d_startOk,
+            d_sessionState_p->hostname(clientEndpoint),
+            clientEndpoint.port(),
+            d_localHostname,
+            serverLocalEndpoint.port());
 
         sendResponse(d_startOk, false);
         d_state = State::STARTOK_SENT;

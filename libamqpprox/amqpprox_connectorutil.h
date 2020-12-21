@@ -22,24 +22,25 @@
 #include <amqpprox_methods_startok.h>
 #include <amqpprox_methods_tune.h>
 
+#include <string_view>
+
 namespace Bloomberg {
 namespace amqpprox {
 
 /**
  * \brief Utilities for the Connector class to generate AMQ protocol items
  *
- * This component provides static functions that can be shared between the primary
- * user, the Connector class and any test components.
+ * This component provides static functions that can be shared between the
+ * primary user, the Connector class and any test components.
  */
 class ConnectorUtil {
-
     /**
      * \brief Generate the server property bag.
      *
      * This will have a similar set of capabilities as the RabbitMQ broker, but
      * contain the proxy's information.
      */
-    static FieldTable     generateServerProperties();
+    static FieldTable generateServerProperties();
 
   public:
     /**
@@ -50,7 +51,7 @@ class ConnectorUtil {
     /**
      * \brief Construct the tune method the proxy will send
      */
-    static methods::Tune  synthesizedTune();
+    static methods::Tune synthesizedTune();
 
     /**
      * \brief Mutate the StartOk from the client to include proxy information.
@@ -58,9 +59,11 @@ class ConnectorUtil {
      * \param hostname the IP/hostname of the client of the proxy
      * \param port the TCP port of the client of the proxy
      */
-    static void           injectClientLocation(methods::StartOk * startOk,
-                                               const std::string &hostname,
-                                               int                port);
+    static void injectProxyClientIdent(methods::StartOk * startOk,
+                                       const std::string &clientHostname,
+                                       int                clientRemotePort,
+                                       std::string_view   localHostname,
+                                       int                outboundLocalPort);
 };
 
 }
