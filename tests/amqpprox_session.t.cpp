@@ -219,7 +219,7 @@ void SessionTest::runStandardConnect(TestSocketState::State *clientBase)
 
         auto startOk = clientStartOk();
         ConnectorUtil::injectProxyClientIdent(
-            &startOk, "host1", 2345, LOCAL_HOSTNAME, 32000);
+            &startOk, "host1", 2345, LOCAL_HOSTNAME, 1234, 32000);
 
         EXPECT_EQ(data[0], Data(encode(startOk)));
     });
