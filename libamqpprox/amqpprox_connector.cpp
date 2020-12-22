@@ -157,15 +157,17 @@ void Connector::receive(const Method &method, FlowType direction)
 
         LOG_TRACE << "Server Start: " << d_receivedStart;
 
-        auto clientEndpoint      = d_sessionState_p->getIngress().second;
-        auto serverLocalEndpoint = d_sessionState_p->getEgress().first;
+        auto clientEndpoint    = d_sessionState_p->getIngress().second;
+        auto inboundListenPort = d_sessionState_p->getIngress().first.port();
+        auto outboundLocalPort = d_sessionState_p->getEgress().first.port();
 
         ConnectorUtil::injectProxyClientIdent(
             &d_startOk,
             d_sessionState_p->hostname(clientEndpoint),
             clientEndpoint.port(),
             d_localHostname,
-            serverLocalEndpoint.port());
+            inboundListenPort,
+            outboundLocalPort);
 
         sendResponse(d_startOk, false);
         d_state = State::STARTOK_SENT;

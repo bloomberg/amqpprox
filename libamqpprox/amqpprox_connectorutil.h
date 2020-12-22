@@ -63,6 +63,7 @@ class ConnectorUtil {
                                        const std::string &clientHostname,
                                        int                clientRemotePort,
                                        std::string_view   localHostname,
+                                       int                inboundListenPort,
                                        int                outboundLocalPort);
 };
 

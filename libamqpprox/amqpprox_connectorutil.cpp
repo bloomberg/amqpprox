@@ -81,6 +81,7 @@ void ConnectorUtil::injectProxyClientIdent(methods::StartOk * startOk,
                                            const std::string &clientHostname,
                                            int                clientRemotePort,
                                            std::string_view   localHostname,
+                                           int inboundListenPort,
                                            int outboundLocalPort)
 {
     std::stringstream remoteClient;
@@ -88,8 +89,10 @@ void ConnectorUtil::injectProxyClientIdent(methods::StartOk * startOk,
     startOk->properties().pushField("amqpprox_client",
                                     FieldValue('S', remoteClient.str()));
 
+    // E.g. (:5672) hostname:37812
     std::stringstream proxyInfo;
-    proxyInfo << localHostname << ":" << outboundLocalPort;
+    proxyInfo << "(:" << inboundListenPort << ") " << localHostname << ":"
+              << outboundLocalPort;
     startOk->properties().pushField("amqpprox_host",
                                     FieldValue('S', proxyInfo.str()));
 }
