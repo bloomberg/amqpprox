@@ -40,7 +40,8 @@ std::string BackendControlCommand::commandVerb() const
 
 std::string BackendControlCommand::helpText() const
 {
-    return "(ADD name datacenter host port [SEND-PROXY] [TLS] | DELETE name | "
+    return "(ADD name datacenter host port [SEND-PROXY] [TLS] | ADD_DNS name "
+           "datacenter address port [SEND-PROXY] [TLS] | DELETE name | "
            "PRINT) - Change backend servers";
 }
 
@@ -57,7 +58,7 @@ void BackendControlCommand::handleCommand(const std::string & /* command */,
     iss >> subcommand;
     boost::to_upper(subcommand);
 
-    if (subcommand == "ADD") {
+    if (subcommand == "ADD" || subcommand == "ADD_DNS") {
         std::string name;
         std::string datacenter;
         std::string host;
@@ -89,7 +90,15 @@ void BackendControlCommand::handleCommand(const std::string & /* command */,
                                arg2 == Constants::sendProxy();
             bool isSecure = arg1 == Constants::tlsCommand() ||
                             arg2 == Constants::tlsCommand();
-            Backend b(name, datacenter, host, ip, port, isSendProxy, isSecure);
+            bool    isDns = subcommand == "ADD_DNS";
+            Backend b(name,
+                      datacenter,
+                      host,
+                      ip,
+                      port,
+                      isSendProxy,
+                      isSecure,
+                      isDns);
 
             int rc = d_store_p->insert(b);
             if (rc) {

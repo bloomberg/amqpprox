@@ -52,7 +52,6 @@ std::string FarmControlCommand::commandVerb() const
 std::string FarmControlCommand::helpText() const
 {
     return "("
-           "ADD_DNS name dnsname port | "
            "ADD_MANUAL name selector backend* | "
            "PARTITION name policy | "
            "DELETE name | "
@@ -73,22 +72,7 @@ void FarmControlCommand::handleCommand(const std::string & /* command */,
     iss >> subcommand;
     boost::to_upper(subcommand);
 
-    if (subcommand == "ADD_DNS") {
-        std::string    name;
-        std::string    dnsName;
-        unsigned short port;
-        iss >> name;
-        iss >> dnsName;
-        iss >> port;
-        if (name.empty() || dnsName.empty() || !port) {
-            output << "Name, DNS address and port must be specified";
-        }
-        else {
-            std::unique_ptr<Farm> farmPtr(new Farm(name, dnsName, port));
-            d_store_p->addFarm(std::move(farmPtr));
-        }
-    }
-    else if (subcommand == "ADD_MANUAL") {
+    if (subcommand == "ADD_MANUAL") {
         std::string              name;
         std::string              backendSelector;
         std::vector<std::string> backends;

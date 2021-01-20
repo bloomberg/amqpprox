@@ -38,8 +38,6 @@ class Farm {
     std::vector<PartitionPolicy *> d_partitionPolicies;
     std::shared_ptr<BackendSet>    d_backendSet;
 
-    std::string        d_dnsName;
-    int                d_dnsPort;
     mutable std::mutex d_mutex;
 
     // PRIVATE MANIPULATORS
@@ -58,12 +56,10 @@ class Farm {
          const std::vector<std::string> &members,
          BackendStore *                  backendStore,
          BackendSelector *               backendSelector);
-    Farm(const std::string &name, const std::string &dnsName, int dnsPort);
 
     // MANIPULATORS
     void addMember(const std::string &backend);
     void removeMember(const std::string &backend);
-    void setDns(const std::string &name, int port);
 
     void setBackendSelector(BackendSelector *selector);
     ///< Set the selector used for this `Farm` to the specified `selector`.
@@ -77,8 +73,6 @@ class Farm {
 
     // ACCESSORS
     const std::string &name() const;
-    const std::string &dnsName() const;
-    int                dnsPort() const;
     void               members(std::vector<std::string> *members) const;
     std::shared_ptr<BackendSet> backendSet() const;
     BackendSelector *           backendSelector() const;
