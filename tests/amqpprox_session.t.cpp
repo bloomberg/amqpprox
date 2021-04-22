@@ -43,6 +43,7 @@
 #include <amqpprox_connectionselector.h>
 #include <amqpprox_connectorutil.h>
 #include <amqpprox_constants.h>
+#include <amqpprox_dnsresolver.h>
 #include <amqpprox_eventsource.h>
 #include <amqpprox_hostnamemapper.h>
 #include <amqpprox_methods_close.h>
@@ -113,6 +114,7 @@ class SessionTest : public ::testing::Test {
     Backend                             d_backend2;
     Backend                             d_backend3;
     std::shared_ptr<HostnameMapperMock> d_mapper;
+    DNSResolver                         d_dnsResolver;
     SelectorMock                        d_selector;
     RobinBackendSelector                d_robinSelector;
     std::shared_ptr<ConnectionManager>  d_cm;
@@ -343,6 +345,7 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Disconnect)
                                              &d_selector,
                                              &d_eventSource,
                                              &d_pool,
+                                             &d_dnsResolver,
                                              d_mapper,
                                              LOCAL_HOSTNAME);
 
@@ -400,6 +403,7 @@ TEST_F(SessionTest, New_Client_Handshake_Failure)
                                              &d_selector,
                                              &d_eventSource,
                                              &d_pool,
+                                             &d_dnsResolver,
                                              d_mapper,
                                              LOCAL_HOSTNAME);
 
@@ -460,6 +464,7 @@ TEST_F(SessionTest, Connection_To_Proxy_Protocol)
                                              &d_selector,
                                              &d_eventSource,
                                              &d_pool,
+                                             &d_dnsResolver,
                                              d_mapper,
                                              LOCAL_HOSTNAME);
 
@@ -542,6 +547,7 @@ SessionTest::SessionTest()
 , d_backend2("backend2", "dc2", "localhost", "127.0.0.1", 5673)
 , d_backend3("backend3", "dc3", "localhost", "127.0.0.1", 5674)
 , d_mapper(new HostnameMapperMock)
+, d_dnsResolver(d_ioService)
 , d_selector()
 , d_robinSelector()
 , d_cm()

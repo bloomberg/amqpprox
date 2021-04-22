@@ -21,6 +21,7 @@
 #include <amqpprox_connectionmanager.h>
 #include <amqpprox_connectionselector.h>
 #include <amqpprox_constants.h>
+#include <amqpprox_dnsresolver.h>
 #include <amqpprox_eventsource.h>
 #include <amqpprox_flowtype.h>
 #include <amqpprox_frame.h>
@@ -68,6 +69,7 @@ Session::Session(boost::asio::io_service &              ioservice,
                  ConnectionSelector *                   connectionSelector,
                  EventSource *                          eventSource,
                  BufferPool *                           bufferPool,
+                 DNSResolver *                          dnsResolver,
                  const std::shared_ptr<HostnameMapper> &hostnameMapper,
                  std::string_view                       localHostname)
 : d_ioService(ioservice)
@@ -85,6 +87,7 @@ Session::Session(boost::asio::io_service &              ioservice,
 , d_connectionSelector_p(connectionSelector)
 , d_eventSource_p(eventSource)
 , d_bufferPool_p(bufferPool)
+, d_dnsResolver_p(dnsResolver)
 , d_ingressWaitingSince()
 , d_egressWaitingSince()
 , d_egressRetryCounter(0)

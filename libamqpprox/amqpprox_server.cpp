@@ -41,6 +41,7 @@ Server::Server(ConnectionSelector *selector,
 , d_sessions()
 , d_deletingSessions()
 , d_listeningSockets()
+, d_dnsResolver(d_ioService)
 , d_connectionSelector_p(selector)
 , d_eventSource_p(eventSource)
 , d_bufferPool_p(bufferPool)
@@ -184,6 +185,7 @@ void Server::doAccept(int port, bool secure)
                                               d_connectionSelector_p,
                                               d_eventSource_p,
                                               d_bufferPool_p,
+                                              &d_dnsResolver,
                                               d_hostnameMapper,
                                               d_localHostname);
 

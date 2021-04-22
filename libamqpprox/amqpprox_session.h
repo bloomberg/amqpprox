@@ -39,6 +39,7 @@ namespace amqpprox {
 class ConnectionManager;
 class ConnectionSelector;
 class EventSource;
+class DNSResolver;
 
 /* \brief Binds the incoming and outgoing sockets into a channel through the
  * proxy.
@@ -67,6 +68,7 @@ class Session : public std::enable_shared_from_this<Session> {
     ConnectionSelector *           d_connectionSelector_p;  // HELD NOT OWNED
     EventSource *                  d_eventSource_p;         // HELD NOT OWNED
     BufferPool *                   d_bufferPool_p;          // HELD NOT OWNED
+    DNSResolver *                  d_dnsResolver_p;
     TimePoint                      d_ingressWaitingSince;
     TimePoint                      d_egressWaitingSince;
     uint32_t                       d_egressRetryCounter;
@@ -83,6 +85,7 @@ class Session : public std::enable_shared_from_this<Session> {
             ConnectionSelector *                   connectionSelector,
             EventSource *                          eventSource,
             BufferPool *                           bufferPool,
+            DNSResolver *                          dnsResolver,
             const std::shared_ptr<HostnameMapper> &hostnameMapper,
             std::string_view                       localHostname);
 
