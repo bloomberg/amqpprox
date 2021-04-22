@@ -18,8 +18,21 @@
 
 #include <boost/asio.hpp>
 
+#include <functional>
+#include <unordered_map>
+
+#include <stdint.h>
+
 namespace Bloomberg {
 namespace amqpprox {
+
+struct PairHash {
+    size_t operator()(const std::pair<std::string, std::string> &obj)
+    {
+        return std::hash<std::string>{}(std::get<0>(obj)) ^
+               std::hash<std::string>{}(std::get<1>(obj));
+    }
+};
 
 /**
  * \brief Encapsulates asynchronous DNS resolution
@@ -34,11 +47,20 @@ namespace amqpprox {
  */
 class DNSResolver {
     using TcpEndpoint = boost::asio::ip::tcp::endpoint;
+    using CacheType   = std::unordered_map<std::pair<std::string, std::string>,
+                                         std::vector<TcpEndpoint>,
+                                         PairHash>;
 
-    boost::asio::io_service &d_ioService;
+    boost::asio::io_service & d_ioService;
+    boost::asio::steady_timer d_timer;
+    std::atomic<uint32_t>     d_cacheTimeout;
+    std::atomic<bool>         d_cacheTimerRunning;
+    std::mutex                d_cacheLock;
+    CacheType                 d_cache;
 
   public:
     explicit DNSResolver(boost::asio::io_service &ioService);
+    ~DNSResolver();
 
     template <typename ResolveCallback>
     void resolve(std::string_view       query_host,
@@ -53,9 +75,12 @@ class DNSResolver {
 
     void clearCachedResolution(std::string_view query_host,
                                std::string_view query_service);
-  private:
 
-    void cleanupCache();
+    void startCleanupTimer();
+    void stopCleanupTimer();
+
+  private:
+    void cleanupCache(const boost::system::error_code &ec);
 };
 
 }

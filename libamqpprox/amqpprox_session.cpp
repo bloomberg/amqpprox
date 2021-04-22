@@ -167,6 +167,8 @@ void Session::attemptConnection(
         return;
     }
 
+    // TODO add multi-resolve logic in here
+
     boost::asio::ip::tcp::resolver::query q(backend->host(),
                                             std::to_string(backend->port()));
 
