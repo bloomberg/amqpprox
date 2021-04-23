@@ -53,29 +53,30 @@ class Session : public std::enable_shared_from_this<Session> {
     using TimePoint =
         std::chrono::time_point<std::chrono::high_resolution_clock>;
 
-    boost::asio::io_service &      d_ioService;
-    boost::asio::ip::tcp::resolver d_resolver;
-    MaybeSecureSocketAdaptor       d_serverSocket;
-    MaybeSecureSocketAdaptor       d_clientSocket;
-    BufferHandle                   d_serverDataHandle;
-    BufferHandle                   d_serverWriteDataHandle;
-    BufferHandle                   d_clientDataHandle;
-    BufferHandle                   d_clientWriteDataHandle;
-    std::size_t                    d_serverWaterMark;
-    std::size_t                    d_clientWaterMark;
-    SessionState                   d_sessionState;
-    Connector                      d_connector;
-    ConnectionSelector *           d_connectionSelector_p;  // HELD NOT OWNED
-    EventSource *                  d_eventSource_p;         // HELD NOT OWNED
-    BufferPool *                   d_bufferPool_p;          // HELD NOT OWNED
-    DNSResolver *                  d_dnsResolver_p;
-    TimePoint                      d_ingressWaitingSince;
-    TimePoint                      d_egressWaitingSince;
-    uint32_t                       d_egressRetryCounter;
-    bool                           d_ingressCurrentlyReading;
-    TimePoint                      d_ingressStartedAt;
-    bool                           d_egressCurrentlyReading;
-    TimePoint                      d_egressStartedAt;
+    boost::asio::io_service &d_ioService;
+    MaybeSecureSocketAdaptor d_serverSocket;
+    MaybeSecureSocketAdaptor d_clientSocket;
+    BufferHandle             d_serverDataHandle;
+    BufferHandle             d_serverWriteDataHandle;
+    BufferHandle             d_clientDataHandle;
+    BufferHandle             d_clientWriteDataHandle;
+    std::size_t              d_serverWaterMark;
+    std::size_t              d_clientWaterMark;
+    SessionState             d_sessionState;
+    Connector                d_connector;
+    ConnectionSelector *     d_connectionSelector_p;  // HELD NOT OWNED
+    EventSource *            d_eventSource_p;         // HELD NOT OWNED
+    BufferPool *             d_bufferPool_p;          // HELD NOT OWNED
+    DNSResolver *            d_dnsResolver_p;
+    TimePoint                d_ingressWaitingSince;
+    TimePoint                d_egressWaitingSince;
+    uint32_t                 d_egressRetryCounter;
+    bool                     d_ingressCurrentlyReading;
+    TimePoint                d_ingressStartedAt;
+    bool                     d_egressCurrentlyReading;
+    TimePoint                d_egressStartedAt;
+    std::vector<boost::asio::ip::tcp::endpoint> d_resolvedEndpoints;
+    uint32_t                                    d_resolvedEndpointsIndex;
 
   public:
     // CREATORS
@@ -132,10 +133,14 @@ class Session : public std::enable_shared_from_this<Session> {
     ///< `connectionManager`.
 
     void attemptResolvedConnection(
-        boost::asio::ip::tcp::resolver::iterator  endpoint,
         const std::shared_ptr<ConnectionManager> &connectionManager);
-    ///< Second stage of attempting a connection with the pre-resolved
-    ///< endpoint.
+    ///< Second stage of attempting a connection with a list of resolved
+    ///< endpoints.
+
+    void attemptEndpointConnection(
+        boost::asio::ip::tcp::endpoint            endpoint,
+        const std::shared_ptr<ConnectionManager> &connectionManager);
+    ///< Third stage of attempting a connection with a fully resolved IP+port
 
     void establishConnection();
     ///< Start establishing a connection for this incoming session

@@ -28,6 +28,7 @@ namespace amqpprox {
 
 DNSResolver::DNSResolver(boost::asio::io_service &ioService)
 : d_ioService(ioService)
+, d_resolver(d_ioService)
 , d_timer(d_ioService)
 , d_cacheTimeout(1000)
 , d_cacheTimerRunning(false)
@@ -36,6 +37,7 @@ DNSResolver::DNSResolver(boost::asio::io_service &ioService)
 
 DNSResolver::~DNSResolver()
 {
+    d_resolver.cancel();
     stopCleanupTimer();
 }
 
@@ -71,7 +73,7 @@ void DNSResolver::cleanupCache(const boost::system::error_code &ec)
     }
     if (d_cacheTimerRunning) {
         {
-            CacheType empty;
+            CacheType       empty;
             std::lock_guard lg(d_cacheLock);
             d_cache.swap(empty);
         }

@@ -51,12 +51,13 @@ class DNSResolver {
                                          std::vector<TcpEndpoint>,
                                          PairHash>;
 
-    boost::asio::io_service & d_ioService;
-    boost::asio::steady_timer d_timer;
-    std::atomic<uint32_t>     d_cacheTimeout;
-    std::atomic<bool>         d_cacheTimerRunning;
-    std::mutex                d_cacheLock;
-    CacheType                 d_cache;
+    boost::asio::io_service &      d_ioService;
+    boost::asio::ip::tcp::resolver d_resolver;
+    boost::asio::steady_timer      d_timer;
+    std::atomic<uint32_t>          d_cacheTimeout;
+    std::atomic<bool>              d_cacheTimerRunning;
+    std::mutex                     d_cacheLock;
+    CacheType                      d_cache;
 
   public:
     explicit DNSResolver(boost::asio::io_service &ioService);
@@ -82,6 +83,31 @@ class DNSResolver {
   private:
     void cleanupCache(const boost::system::error_code &ec);
 };
+
+template <typename ResolveCallback>
+void DNSResolver::resolve(std::string_view       query_host,
+                          std::string_view       query_service,
+                          const ResolveCallback &callback)
+{
+    using endpointIt = boost::asio::ip::tcp::resolver::iterator;
+    std::string host = std::string(query_host);
+    std::string service = std::string(query_service);
+    boost::asio::ip::tcp::resolver::query query(host, service);
+
+    // TODO use the cache here?
+
+    auto resolveCb = [this, callback](const boost::system::error_code &ec,
+                                           endpointIt        endpoint) {
+        std::vector<TcpEndpoint>  endpoints;
+        endpointIt end;
+        while (endpoint != end) {
+            endpoints.push_back(*endpoint);
+            ++endpoint;
+        }
+        callback(ec, endpoints);
+    };
+    d_resolver.async_resolve(query, resolveCb);
+}
 
 }
 }
