@@ -21,6 +21,7 @@
 #include <boost/system/error_code.hpp>
 
 #include <chrono>
+#include <cstring>
 #include <mutex>
 
 namespace Bloomberg {
@@ -44,6 +45,21 @@ DNSResolver::~DNSResolver()
 void DNSResolver::setCacheTimeout(int timeoutMs)
 {
     d_cacheTimeout = timeoutMs;
+}
+
+void DNSResolver::setCachedResolution(const std::string &        query_host,
+                                      const std::string &        query_service,
+                                      std::vector<TcpEndpoint> &&resolution)
+{
+    std::lock_guard lg(d_cacheLock);
+    d_cache[std::make_pair(query_host, query_service)] = resolution;
+}
+
+void DNSResolver::clearCachedResolution(const std::string &query_host,
+                                        const std::string &query_service)
+{
+    std::lock_guard lg(d_cacheLock);
+    d_cache.erase(std::make_pair(query_host, query_service));
 }
 
 void DNSResolver::startCleanupTimer()

@@ -27,7 +27,7 @@ namespace Bloomberg {
 namespace amqpprox {
 
 struct PairHash {
-    size_t operator()(const std::pair<std::string, std::string> &obj)
+    size_t operator()(const std::pair<std::string, std::string> &obj) const
     {
         return std::hash<std::string>{}(std::get<0>(obj)) ^
                std::hash<std::string>{}(std::get<1>(obj));
@@ -70,12 +70,12 @@ class DNSResolver {
 
     void setCacheTimeout(int timeoutMs);
 
-    void setCachedResolution(std::string_view           query_host,
-                             std::string_view           query_service,
+    void setCachedResolution(const std::string &        query_host,
+                             const std::string &        query_service,
                              std::vector<TcpEndpoint> &&resolution);
 
-    void clearCachedResolution(std::string_view query_host,
-                               std::string_view query_service);
+    void clearCachedResolution(const std::string &query_host,
+                               const std::string &query_service);
 
     void startCleanupTimer();
     void stopCleanupTimer();
@@ -90,22 +90,33 @@ void DNSResolver::resolve(std::string_view       query_host,
                           const ResolveCallback &callback)
 {
     using endpointIt = boost::asio::ip::tcp::resolver::iterator;
-    std::string host = std::string(query_host);
-    std::string service = std::string(query_service);
+    std::string                           host    = std::string(query_host);
+    std::string                           service = std::string(query_service);
     boost::asio::ip::tcp::resolver::query query(host, service);
 
-    // TODO use the cache here?
-
-    auto resolveCb = [this, callback](const boost::system::error_code &ec,
-                                           endpointIt        endpoint) {
-        std::vector<TcpEndpoint>  endpoints;
-        endpointIt end;
-        while (endpoint != end) {
-            endpoints.push_back(*endpoint);
-            ++endpoint;
+    {
+        std::lock_guard lg(d_cacheLock);
+        auto            it = d_cache.find(std::make_pair(host, service));
+        if (it != d_cache.end()) {
+            boost::system::error_code ec;
+            callback(ec, it->second);
+            return;
         }
-        callback(ec, endpoints);
-    };
+    }
+
+    auto resolveCb =
+        [this, host, service, callback](const boost::system::error_code &ec,
+                                        endpointIt endpoint) {
+            std::vector<TcpEndpoint> endpoints;
+            endpointIt               end;
+            while (endpoint != end) {
+                endpoints.push_back(*endpoint);
+                ++endpoint;
+            }
+            callback(ec, endpoints);
+            setCachedResolution(host, service, std::move(endpoints));
+        };
+
     d_resolver.async_resolve(query, resolveCb);
 }
 
