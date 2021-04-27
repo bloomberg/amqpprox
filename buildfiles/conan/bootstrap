@@ -4,7 +4,12 @@ echo "Build dir: $1"
 echo "Source dir: $2"
 
 if [ "$(uname)" == 'Linux' ]; then
-    CONANOPTS="--build missing -s compiler.libcxx=libstdc++11"
+    gcc_build_opts=`gcc -v`
+    if [[ $gcc_build_opts == *"--with-default-libstdcxx-abi=gcc4-compatible"* ]]; then
+        CONANOPTS="--build missing -s compiler.libcxx=libstdc++"
+    else
+        CONANOPTS="--build missing -s compiler.libcxx=libstdc++11"
+    fi
 elif [ "$(uname)" == 'Darwin' ]; then
     CONANOPTS="--build missing -s compiler.libcxx=libc++"
 else
