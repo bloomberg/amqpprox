@@ -1,6 +1,6 @@
 [requires]
-boost/1.74.0
-openssl/1.1.1i
+boost/1.76.0
+openssl/1.1.1k
 gtest/1.10.0
 
 [generators]
