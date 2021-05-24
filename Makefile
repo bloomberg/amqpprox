@@ -1,12 +1,13 @@
 UNAME_OVERRIDE ?= `uname`
+BUILD_PARALLELISM ?= `nproc`
 BUILDDIR ?= build/$(UNAME_OVERRIDE)
 
 test:
-	cd $(BUILDDIR) && make -j2
+	cd $(BUILDDIR) && make -j$(BUILD_PARALLELISM)
 	cd $(BUILDDIR) && make test CTEST_OUTPUT_ON_FAILURE=1
 
 build:
-	cd $(BUILDDIR) && make -j2
+	cd $(BUILDDIR) && make -j$(BUILD_PARALLELISM)
 
 setup: BUILD_FLAVOUR ?= conan
 setup:

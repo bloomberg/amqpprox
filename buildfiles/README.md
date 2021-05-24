@@ -38,6 +38,8 @@ For native builds:
     default it will be `build/$(UNAME_OVERRIDE)`.
 - `EXTRA_CMAKE_ARGS`: More arguments to be passed to the cmake invocation, for
     ie changing build type.
+- `BUILD_PARALLELISM`: The number of jobs to use for builds, defaults to the
+    number of cores.
 
 For docker builds:
 
