@@ -115,23 +115,27 @@ TLS (INGRESS | EGRESS) (KEY_FILE file | CERT_CHAIN_FILE file | RSA_KEY_FILE file
 VHOST PAUSE vhost | UNPAUSE vhost | PRINT | BACKEND_DISCONNECT vhost | FORCE_DISCONNECT vhost
 ```
 
-Configure `amqpprox` to map one vhost `vhost-example` to a RabbitMQ broker `rabbit1` running on `localhost` configured on port 5672 without TLS/Proxy Protocol.
+Configure `amqpprox` how to talk to an AMQP 0.9.1 backend called `rabbit1`, labelled as datacenter `london-az1`, running on `localhost:5672` without TLS/Proxy Protocol.
 ```
 $ amqpprox_ctl /tmp/amqpprox BACKEND ADD rabbit1 london-az1 localhost 5672
 $ amqpprox_ctl /tmp/amqpprox BACKEND PRINT
 rabbit1 (london-az1): localhost 127.0.0.1:5672
+```
+
+Configure `amqpprox` to map inbound connections for `vhost-example` to backend `rabbit1`
+```
 $ amqpprox_ctl /tmp/amqpprox MAP BACKEND vhost-example rabbit1
 $ amqpprox_ctl /tmp/amqpprox MAP PRINT
 "vhost-example" => Backend:rabbit1
 ```
 
-`amqpprox` now understands one vhost mapping. Once happy, use `LISTEN` to start listening for connections on port 5673:
+`amqpprox` now understands one vhost mapping. Use `LISTEN` to start listening for connections on port 5673:
 
 ```
 $ amqpprox_ctl /tmp/amqpprox LISTEN START 5673
 ```
 
-An amqp client can now connect to `vhost-example` via `amqpprox` on port 5673.
+An AMQP 0.9.1 client can now connect to `vhost-example` on port 5673 and `amqpprox` will forward to `rabbit1` on port 5672.
 
 
 ## Building
