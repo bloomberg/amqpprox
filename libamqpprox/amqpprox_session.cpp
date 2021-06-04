@@ -171,8 +171,6 @@ void Session::attemptConnection(
         return;
     }
 
-    // TODO add multi-resolve logic in here
-
     using endpointType = boost::asio::ip::tcp::endpoint;
     auto self(shared_from_this());
     auto callback = [this, self, connectionManager](
@@ -186,19 +184,27 @@ void Session::attemptConnection(
             "ConnID",
             boost::log::attributes::constant<uint64_t>(d_sessionState.id()));
 
+        auto currentBackend =
+            connectionManager->getConnection(d_egressRetryCounter);
+
         // With Boost ASIO it sometimes on Linux returns a good error code,
         // but no items in the list. This catches this case as well as the
         // regular error return.
         if (!ec && !endpoints.empty()) {
-            d_resolvedEndpoints      = endpoints;
+            if (currentBackend && currentBackend->dnsBasedEntry()) {
+                d_resolvedEndpoints = endpoints;
+            }
+            else {
+                d_resolvedEndpoints.resize(0);
+                d_resolvedEndpoints.push_back(endpoints[0]);
+            }
+
             d_resolvedEndpointsIndex = 0;
             attemptResolvedConnection(connectionManager);
         }
         else {
             // Get the backend we tried for its name before incrementing
             // the retry counter
-            auto currentBackend =
-                connectionManager->getConnection(d_egressRetryCounter);
 
             std::string currentBackendName = "No-backend";
             if (currentBackend) {
@@ -214,8 +220,16 @@ void Session::attemptConnection(
         }
     };
 
-    d_dnsResolver_p->resolve(
-        backend->host(), std::to_string(backend->port()), callback);
+    if (backend->dnsBasedEntry()) {
+        d_dnsResolver_p->resolve(
+            backend->host(), std::to_string(backend->port()), callback);
+    }
+    else {
+        // If this isn't a DNS based backend we still use the resolver, but
+        // with the pre-cached at creation time IP address
+        d_dnsResolver_p->resolve(
+            backend->ip(), std::to_string(backend->port()), callback);
+    }
 }
 
 void Session::attemptResolvedConnection(
@@ -223,14 +237,19 @@ void Session::attemptResolvedConnection(
 {
     if (d_resolvedEndpoints.empty() ||
         d_resolvedEndpointsIndex >= d_resolvedEndpoints.size()) {
+        // If we've run out of endpoints or the returned set was empty we must
+        // try the next backend
         d_resolvedEndpoints.resize(0);
         d_resolvedEndpointsIndex = 0;
         d_egressRetryCounter++;
+        LOG_TRACE << "Run out of items on backend, moving onto next backend";
         attemptConnection(connectionManager);
     }
     else {
-        auto index = d_resolvedEndpointsIndex++;
+        auto index    = d_resolvedEndpointsIndex++;
         auto endpoint = d_resolvedEndpoints[index];
+        LOG_TRACE << "Try index " << index << " of backend resolutions ("
+                  << endpoint << ")";
         attemptEndpointConnection(endpoint, connectionManager);
     }
 }

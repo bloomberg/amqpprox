@@ -27,6 +27,8 @@
 namespace Bloomberg {
 namespace amqpprox {
 
+DNSResolver::OverrideFunction DNSResolver::s_override;
+
 DNSResolver::DNSResolver(boost::asio::io_service &ioService)
 : d_ioService(ioService)
 , d_resolver(d_ioService)
@@ -97,6 +99,11 @@ void DNSResolver::cleanupCache(const boost::system::error_code &ec)
         d_timer.async_wait(
             [this](const boost::system::error_code &ec) { cleanupCache(ec); });
     }
+}
+
+void DNSResolver::setOverrideFunction(OverrideFunction func)
+{
+    s_override = func;
 }
 
 }

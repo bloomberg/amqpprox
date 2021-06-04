@@ -74,23 +74,27 @@ void BackendControlCommand::handleCommand(const std::string & /* command */,
         boost::to_upper(arg2);
 
         if (!name.empty() && !datacenter.empty() && !host.empty() && port) {
-            auto &ioService = controlHandle->ioService();
-            boost::asio::ip::tcp::resolver        resolver(ioService);
-            boost::asio::ip::tcp::resolver::query q(host, "");
-            boost::system::error_code             ec;
-            auto                                  it = resolver.resolve(q, ec);
-            if (ec) {
-                output << "Failed to resolve '" << host
-                       << "', error code: " << ec;
-                return;
+            bool        isDns = subcommand == "ADD_DNS";
+            std::string ip;
+            if (!isDns) {
+                auto &ioService = controlHandle->ioService();
+                boost::asio::ip::tcp::resolver        resolver(ioService);
+                boost::asio::ip::tcp::resolver::query q(host, "");
+                boost::system::error_code             ec;
+                auto it = resolver.resolve(q, ec);
+                if (ec) {
+                    output << "Failed to resolve '" << host
+                           << "', error code: " << ec;
+                    return;
+                }
+
+                ip = it->endpoint().address().to_string();
             }
 
-            std::string ip          = it->endpoint().address().to_string();
-            bool        isSendProxy = arg1 == Constants::sendProxy() ||
+            bool isSendProxy = arg1 == Constants::sendProxy() ||
                                arg2 == Constants::sendProxy();
             bool isSecure = arg1 == Constants::tlsCommand() ||
                             arg2 == Constants::tlsCommand();
-            bool    isDns = subcommand == "ADD_DNS";
             Backend b(name,
                       datacenter,
                       host,

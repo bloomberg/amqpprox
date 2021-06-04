@@ -50,6 +50,10 @@ class DNSResolver {
     using CacheType   = std::unordered_map<std::pair<std::string, std::string>,
                                          std::vector<TcpEndpoint>,
                                          PairHash>;
+    using OverrideFunction =
+        std::function<boost::system::error_code(std::vector<TcpEndpoint> *,
+                                                const std::string &,
+                                                const std::string &)>;
 
     boost::asio::io_service &      d_ioService;
     boost::asio::ip::tcp::resolver d_resolver;
@@ -58,6 +62,8 @@ class DNSResolver {
     std::atomic<bool>              d_cacheTimerRunning;
     std::mutex                     d_cacheLock;
     CacheType                      d_cache;
+
+    static OverrideFunction s_override;
 
   public:
     explicit DNSResolver(boost::asio::io_service &ioService);
@@ -80,6 +86,14 @@ class DNSResolver {
     void startCleanupTimer();
     void stopCleanupTimer();
 
+    /**
+     * \brief Set a function to override the functionality of this class
+     *
+     * This is intended for testing purposes only and is NOT threadsafe. It
+     * must be called before any of these classes are utilised.
+     */
+    static void setOverrideFunction(OverrideFunction func);
+
   private:
     void cleanupCache(const boost::system::error_code &ec);
 };
@@ -94,9 +108,16 @@ void DNSResolver::resolve(std::string_view       query_host,
     std::string                           service = std::string(query_service);
     boost::asio::ip::tcp::resolver::query query(host, service);
 
+    if (s_override) {
+        std::vector<TcpEndpoint> vec;
+        auto                     ec = s_override(&vec, host, service);
+        callback(ec, vec);
+    }
+
     {
         std::lock_guard lg(d_cacheLock);
-        auto            it = d_cache.find(std::make_pair(host, service));
+
+        auto it = d_cache.find(std::make_pair(host, service));
         if (it != d_cache.end()) {
             boost::system::error_code ec;
             callback(ec, it->second);
