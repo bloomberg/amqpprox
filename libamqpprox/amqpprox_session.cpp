@@ -206,14 +206,15 @@ void Session::attemptConnection(
             // Get the backend we tried for its name before incrementing
             // the retry counter
 
-            std::string currentBackendName = "No-backend";
             if (currentBackend) {
-                currentBackendName = currentBackend->name();
+                LOG_ERROR << "Failed to resolve " << currentBackend->host()
+                          << ":" << currentBackend->port()
+                          << " error_code: " << ec << " for "
+                          << currentBackend->name();
             }
-
-            LOG_ERROR << "Failed to resolve " << currentBackend->host() << ":"
-                      << currentBackend->port() << " error_code: " << ec
-                      << " for " << currentBackendName;
+            else {
+                LOG_ERROR << "Failed to resolve non-existing backend";
+            }
 
             d_egressRetryCounter++;
             attemptConnection(connectionManager);

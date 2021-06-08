@@ -652,7 +652,7 @@ TEST_F(SessionTest, Connect_Multiple_Dns)
     using IpAddress   = boost::asio::ip::address;
 
     // Set up the only backend to resolve to two different addresses. This will
-    // then be told to fail the first and go onto the second
+    // then be told to fail the first at connect and go onto the second
     std::vector<TcpEndpoint> resolveResult;
     resolveResult.push_back(TcpEndpoint(IpAddress::from_string("::1"), 5672));
     resolveResult.push_back(
@@ -764,6 +764,142 @@ TEST_F(SessionTest, Connect_Multiple_Dns)
     driveTo(17);
 }
 
+TEST_F(SessionTest, Failover_Dns_Failure)
+{
+    using TcpEndpoint = boost::asio::ip::tcp::endpoint;
+    using IpAddress   = boost::asio::ip::address;
+
+    // Set up the only backend to resolve to two different addresses. This will
+    // then be told to fail the first at connect and go onto the second
+    std::vector<TcpEndpoint> resolveResult;
+    resolveResult.push_back(TcpEndpoint(IpAddress::from_string("::1"), 5672));
+    resolveResult.push_back(
+        TcpEndpoint(IpAddress::from_string("127.0.0.1"), 5672));
+
+    boost::system::error_code goodErrorCode;
+    MockDnsResolver           mockDns;
+    EXPECT_CALL(mockDns, resolve(_, "backend1", "5672"))
+        .Times(1)
+        .WillOnce(DoAll(SetArgPointee<0>(resolveResult),
+                        Return(boost::asio::error::access_denied)));
+    EXPECT_CALL(mockDns, resolve(_, "backend2", "5672"))
+        .Times(1)
+        .WillOnce(
+            DoAll(SetArgPointee<0>(resolveResult), Return(boost::system::error_code())));
+    EXPECT_CALL(mockDns, resolve(_, "backend3", "5672"))
+        .Times(1)
+        .WillOnce(
+            DoAll(SetArgPointee<0>(resolveResult), Return(goodErrorCode)));
+
+
+    DNSResolver::setOverrideFunction(std::bind(&MockDnsResolver::resolve,
+                                               &mockDns,
+                                               std::placeholders::_1,
+                                               std::placeholders::_2,
+                                               std::placeholders::_3));
+
+    Backend backend1(
+        "backend1", "dc1", "backend1", "127.0.0.1", 5672, false, false, true);
+    Backend backend2(
+        "backend2", "dc1", "backend2", "127.0.1.1", 5672, false, false, true);
+    Backend backend3(
+        "backend3", "dc1", "backend3", "127.0.1.1", 5672, false, false, true);
+    std::vector<BackendSet::Partition> partitions;
+    partitions.push_back(BackendSet::Partition{&backend1, &backend2, &backend3});
+
+    d_cm = std::make_shared<ConnectionManager>(
+        std::make_shared<BackendSet>(partitions), &d_robinSelector);
+
+    EXPECT_CALL(d_selector, acquireConnection(_, _))
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+
+    EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
+        .WillRepeatedly(Return(std::string("host1")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 1234)))
+        .WillRepeatedly(Return(std::string("host0")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 32000)))
+        .WillRepeatedly(Return(std::string("host0")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("3.4.5.6", 5672)))
+        .WillRepeatedly(Return(std::string("host2")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("0.0.0.0", 0)))
+        .WillRepeatedly(Return(std::string("<invalid>")));
+
+    TestSocketState::State base;
+    base.d_local  = makeEndpoint("1.2.3.4", 1234);
+    base.d_remote = makeEndpoint("2.3.4.5", 2345);
+    base.d_secure = false;
+
+    TestSocketState::State clientBase;
+    clientBase.d_local  = makeEndpoint("1.2.3.4", 32000);
+    clientBase.d_remote = makeEndpoint("3.4.5.6", 5672);
+    clientBase.d_secure = false;
+
+    // Initialise the state
+    d_serverState.pushItem(0, base);
+    driveTo(0);
+
+    // runStandardConnect(&clientBase);
+    testSetupServerHandshake(1);
+    testSetupClientSendsProtocolHeader(2);
+    testSetupClientStartOk(3);
+    testSetupClientOpen(4);
+
+    d_clientState.pushItem(
+        5, ConnectComplete(boost::asio::error::connection_refused));
+    d_clientState.expect(5, [](const auto &items) {
+        auto data = filterVariant<Data>(items);
+        ASSERT_EQ(data.size(), 0);
+    });
+
+    d_clientState.pushItem(
+        6, ConnectComplete(boost::asio::error::connection_refused));
+    d_clientState.expect(6, [](const auto &items) {
+        auto data = filterVariant<Data>(items);
+        ASSERT_EQ(data.size(), 0);
+    });
+
+    int step = 7;
+    testSetupProxyConnect(step++, &clientBase);
+    testSetupProxySendsProtocolHeader(step++);
+    testSetupProxySendsStartOk(step++, "host1", 2345);
+    testSetupProxyOpen(step++);
+    testSetupProxyPassOpenOkThrough(step++);
+    testSetupBrokerSendsHeartbeat(step++);
+    testSetupClientSendsHeartbeat(step++);
+    testSetupProxySendsCloseToClient(step++);
+    testSetupClientSendsCloseOk(step++);
+    testSetupBrokerRespondsCloseOk(step++);
+    testSetupHandlersCleanedUp(step++);
+
+    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioService,
+                                             std::move(serverSocket),
+                                             std::move(clientSocket),
+                                             &d_selector,
+                                             &d_eventSource,
+                                             &d_pool,
+                                             &d_dnsResolver,
+                                             d_mapper);
+
+    session->start();
+
+    // Graceful disconnect after the heartbeats
+    d_serverState.pushItem(14,
+                           Func([&session] { session->disconnect(false); }));
+
+    // Lastly, check it's elligible to be deleted
+    d_serverState.pushItem(
+        18, Func([&session] {
+            EXPECT_TRUE(session->finished());
+            EXPECT_EQ(session->state().getDisconnectType(),
+                      SessionState::DisconnectType::DISCONNECTED_CLEANLY);
+        }));
+
+    // Run the tests through to completion
+    driveTo(18);
+}
 ///////////////////////////////////////////////////////////////////////////////
 //
 //     Test Apparatus

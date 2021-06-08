@@ -16,6 +16,8 @@
 #ifndef BLOOMBERG_AMQPPROX_DNSRESOLVER
 #define BLOOMBERG_AMQPPROX_DNSRESOLVER
 
+#include <amqpprox_logging.h>
+
 #include <boost/asio.hpp>
 
 #include <functional>
@@ -111,7 +113,10 @@ void DNSResolver::resolve(std::string_view       query_host,
     if (s_override) {
         std::vector<TcpEndpoint> vec;
         auto                     ec = s_override(&vec, host, service);
+        LOG_TRACE << "Returning " << vec.size()
+                  << " overrriden values with ec = " << ec;
         callback(ec, vec);
+        return;
     }
 
     {
