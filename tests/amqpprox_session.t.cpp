@@ -161,7 +161,7 @@ class SessionTest : public ::testing::Test {
     void testSetupProxySendsStartOk(int                idx,
                                     const std::string &injectedClientHost,
                                     int                injectedClientPort,
-                                    const std::string &injectedProxyHost,
+                                    std::string_view   injectedProxyHost,
                                     int injectedProxyInboundPort,
                                     int injectedProxyOutbountPort);
     void testSetupProxyOpen(int idx);
@@ -250,7 +250,7 @@ void SessionTest::testSetupProxySendsStartOk(
     int                idx,
     const std::string &injectedClientHost,
     int                injectedClientPort,
-    const std::string &injectedProxyHost,
+    std::string_view   injectedProxyHost,
     int                injectedProxyInboundPort,
     int                injectedProxyOutboundPort)
 {
@@ -744,7 +744,8 @@ TEST_F(SessionTest, Connect_Multiple_Dns)
                                              &d_eventSource,
                                              &d_pool,
                                              &d_dnsResolver,
-                                             d_mapper);
+                                             d_mapper,
+                                             LOCAL_HOSTNAME);
 
     session->start();
 
@@ -784,13 +785,12 @@ TEST_F(SessionTest, Failover_Dns_Failure)
                         Return(boost::asio::error::access_denied)));
     EXPECT_CALL(mockDns, resolve(_, "backend2", "5672"))
         .Times(1)
-        .WillOnce(
-            DoAll(SetArgPointee<0>(resolveResult), Return(boost::system::error_code())));
+        .WillOnce(DoAll(SetArgPointee<0>(resolveResult),
+                        Return(boost::system::error_code())));
     EXPECT_CALL(mockDns, resolve(_, "backend3", "5672"))
         .Times(1)
         .WillOnce(
             DoAll(SetArgPointee<0>(resolveResult), Return(goodErrorCode)));
-
 
     DNSResolver::setOverrideFunction(std::bind(&MockDnsResolver::resolve,
                                                &mockDns,
@@ -805,7 +805,8 @@ TEST_F(SessionTest, Failover_Dns_Failure)
     Backend backend3(
         "backend3", "dc1", "backend3", "127.0.1.1", 5672, false, false, true);
     std::vector<BackendSet::Partition> partitions;
-    partitions.push_back(BackendSet::Partition{&backend1, &backend2, &backend3});
+    partitions.push_back(
+        BackendSet::Partition{&backend1, &backend2, &backend3});
 
     d_cm = std::make_shared<ConnectionManager>(
         std::make_shared<BackendSet>(partitions), &d_robinSelector);
@@ -862,7 +863,7 @@ TEST_F(SessionTest, Failover_Dns_Failure)
     int step = 7;
     testSetupProxyConnect(step++, &clientBase);
     testSetupProxySendsProtocolHeader(step++);
-    testSetupProxySendsStartOk(step++, "host1", 2345);
+    testSetupProxySendsStartOk(step++, "host1", 2345, LOCAL_HOSTNAME, 1234, 32000);
     testSetupProxyOpen(step++);
     testSetupProxyPassOpenOkThrough(step++);
     testSetupBrokerSendsHeartbeat(step++);
@@ -881,7 +882,8 @@ TEST_F(SessionTest, Failover_Dns_Failure)
                                              &d_eventSource,
                                              &d_pool,
                                              &d_dnsResolver,
-                                             d_mapper);
+                                             d_mapper,
+                                             LOCAL_HOSTNAME);
 
     session->start();
 
