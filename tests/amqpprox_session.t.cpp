@@ -763,6 +763,8 @@ TEST_F(SessionTest, Connect_Multiple_Dns)
 
     // Run the tests through to completion
     driveTo(17);
+
+    DNSResolver::setOverrideFunction(DNSResolver::OverrideFunction());
 }
 
 TEST_F(SessionTest, Failover_Dns_Failure)
@@ -901,6 +903,8 @@ TEST_F(SessionTest, Failover_Dns_Failure)
 
     // Run the tests through to completion
     driveTo(18);
+
+    DNSResolver::setOverrideFunction(DNSResolver::OverrideFunction());
 }
 ///////////////////////////////////////////////////////////////////////////////
 //

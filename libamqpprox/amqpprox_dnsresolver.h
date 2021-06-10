@@ -19,7 +19,9 @@
 #include <amqpprox_logging.h>
 
 #include <boost/asio.hpp>
+#include <boost/container_hash/hash.hpp>
 
+#include <cstddef>
 #include <functional>
 #include <unordered_map>
 
@@ -31,8 +33,9 @@ namespace amqpprox {
 struct PairHash {
     size_t operator()(const std::pair<std::string, std::string> &obj) const
     {
-        return std::hash<std::string>{}(std::get<0>(obj)) ^
-               std::hash<std::string>{}(std::get<1>(obj));
+        std::size_t result = 0;
+        boost::hash_combine(result, obj);
+        return result;
     }
 };
 
@@ -52,11 +55,14 @@ class DNSResolver {
     using CacheType   = std::unordered_map<std::pair<std::string, std::string>,
                                          std::vector<TcpEndpoint>,
                                          PairHash>;
+
+  public:
     using OverrideFunction =
         std::function<boost::system::error_code(std::vector<TcpEndpoint> *,
                                                 const std::string &,
                                                 const std::string &)>;
 
+  private:
     boost::asio::io_service &      d_ioService;
     boost::asio::ip::tcp::resolver d_resolver;
     boost::asio::steady_timer      d_timer;
@@ -68,9 +74,25 @@ class DNSResolver {
     static OverrideFunction s_override;
 
   public:
+    /**
+     * \brief Construct a resolver using io_service
+     *
+     * This resolver will then use the passed io_service as its event loop.
+     */
     explicit DNSResolver(boost::asio::io_service &ioService);
+
     ~DNSResolver();
 
+    /**
+     * \brief Resolve a host string and port and invoke a functor on completion
+     *
+     * This is template parameterised on the `ResolveCallback` type in order to
+     * match the interface of the boost resolver.
+     *
+     * Errors are reported through the callback's return code, and in the
+     * success case the callback's endpoint vector will be updated to include a
+     * possible list of entries.
+     */
     template <typename ResolveCallback>
     void resolve(std::string_view       query_host,
                  std::string_view       query_service,
@@ -110,24 +132,30 @@ void DNSResolver::resolve(std::string_view       query_host,
     std::string                           service = std::string(query_service);
     boost::asio::ip::tcp::resolver::query query(host, service);
 
-    if (s_override) {
-        std::vector<TcpEndpoint> vec;
-        auto                     ec = s_override(&vec, host, service);
-        LOG_TRACE << "Returning " << vec.size()
-                  << " overrriden values with ec = " << ec;
-        callback(ec, vec);
-        return;
-    }
-
     {
         std::lock_guard lg(d_cacheLock);
 
         auto it = d_cache.find(std::make_pair(host, service));
         if (it != d_cache.end()) {
             boost::system::error_code ec;
-            callback(ec, it->second);
+            auto                      result = it->second;
+            auto cb = [callback, ec, result] { callback(ec, result); };
+            d_ioService.dispatch(cb);
             return;
         }
+    }
+
+    if (s_override) {
+        std::vector<TcpEndpoint> vec;
+        auto                     ec = s_override(&vec, host, service);
+        LOG_TRACE << "Returning " << vec.size()
+                  << " overriden values with ec = " << ec;
+        auto cb = [callback, ec, vec] {
+            callback(ec, vec);
+        };
+        d_ioService.dispatch(cb);
+        setCachedResolution(host, service, std::move(vec));
+        return;
     }
 
     auto resolveCb =
