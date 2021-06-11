@@ -150,11 +150,13 @@ void DNSResolver::resolve(std::string_view       query_host,
         auto                     ec = s_override(&vec, host, service);
         LOG_TRACE << "Returning " << vec.size()
                   << " overriden values with ec = " << ec;
-        auto cb = [callback, ec, vec] {
-            callback(ec, vec);
-        };
+        auto cb = [callback, ec, vec] { callback(ec, vec); };
         d_ioService.dispatch(cb);
-        setCachedResolution(host, service, std::move(vec));
+
+        if (!ec) {
+            setCachedResolution(host, service, std::move(vec));
+        }
+
         return;
     }
 
@@ -167,8 +169,12 @@ void DNSResolver::resolve(std::string_view       query_host,
                 endpoints.push_back(*endpoint);
                 ++endpoint;
             }
+
             callback(ec, endpoints);
-            setCachedResolution(host, service, std::move(endpoints));
+
+            if (!ec) {
+                setCachedResolution(host, service, std::move(endpoints));
+            }
         };
 
     d_resolver.async_resolve(query, resolveCb);

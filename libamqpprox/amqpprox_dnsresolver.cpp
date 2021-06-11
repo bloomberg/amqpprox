@@ -91,8 +91,8 @@ void DNSResolver::cleanupCache(const boost::system::error_code &ec)
     }
     if (d_cacheTimerRunning) {
         {
-            CacheType       empty;
             std::lock_guard lg(d_cacheLock);
+            CacheType       empty(d_cache.size() / 2);
             d_cache.swap(empty);
         }
         d_timer.expires_after(std::chrono::milliseconds(d_cacheTimeout));
