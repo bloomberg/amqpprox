@@ -67,9 +67,76 @@ be achieved by a layer 4 proxying alone.
 - [ ] Be able to capture or trace selectively
 - [ ] Be able to replay an interaction
 
-## Quick Start
- //TODO
- [ ] how to use
+## `amqpprox` & `amqpprox_ctl` Quick Start
+
+`amqpprox` is the core proxy executable. It always starts up with no mapped vhosts/broker backends/listening ports/other configuration. `amqpprox_ctl` is used to provide config.
+
+### Start `amqpprox`
+```
+$ amqpprox --help
+amqpprox AMQP v0.9.1 proxy:
+This is a proxy program for AMQP, designed to sit in front of a RabbitMQ
+cluster. Most options for configuring the proxy and introspecting its
+state are available through the amqpprox_ctl program, begin by sending
+HELP to it. This program supports the following options to allow running
+multiple instances on a machine:
+  --help                               This help information
+  --logDirectory arg (=logs)           Set logging directory
+  --controlSocket arg (=/tmp/amqpprox) Set control UNIX domain socket location
+  --cleanupIntervalMs arg (=1000)
+$ amqpprox
+Starting amqpprox, logging to: 'logs' control using: '/tmp/amqpprox'
+```
+
+### `amqpprox_ctl` Example Usage
+
+```sh
+$ amqpprox_ctl --help
+Usage: amqpprox_ctl <control_socket> ARGS
+```
+
+`amqpprox` responds to HELP
+
+```
+$ amqpprox_ctl /tmp/amqpprox HELP
+BACKEND (ADD name datacenter host port [SEND-PROXY] [TLS] | DELETE name | PRINT) - Change backend servers
+CONN Print the connected sessions
+DATACENTER SET name | PRINT
+EXIT Exit the program gracefully.
+FARM (ADD_DNS name dnsname port | ADD_MANUAL name selector backend* | PARTITION name policy | DELETE name | PRINT) - Change farms
+HELP Print this help text.
+LISTEN START port | START_SECURE port | STOP [port]
+LOG CONSOLE verbosity | FILE verbosity
+MAP (BACKEND vhost backend | FARM vhost name | UNMAP vhost | DEFAULT farmName | REMOVE_DEFAULT | PRINT) - Change mappings of resources to servers
+MAPHOSTNAME DNS - Set up mapping of IPs to hostnames
+SESSION  id# (PAUSE|DISCONNECT_GRACEFUL|FORCE_DISCONNECT) - Control a particular session
+STAT (STOP SEND | SEND <host> <port> | (LISTEN (json|human) (overall|vhost=foo|backend=bar|source=baz|all|process|bufferpool)) - Output statistics
+TLS (INGRESS | EGRESS) (KEY_FILE file | CERT_CHAIN_FILE file | RSA_KEY_FILE file | TMP_DH_FILE file | CA_CERT_FILE file | VERIFY_MODE mode*)
+VHOST PAUSE vhost | UNPAUSE vhost | PRINT | BACKEND_DISCONNECT vhost | FORCE_DISCONNECT vhost
+```
+
+Configure `amqpprox` how to talk to an AMQP 0.9.1 backend called `rabbit1`, labelled as datacenter `london-az1`, running on `localhost:5672` without TLS/Proxy Protocol.
+```
+$ amqpprox_ctl /tmp/amqpprox BACKEND ADD rabbit1 london-az1 localhost 5672
+$ amqpprox_ctl /tmp/amqpprox BACKEND PRINT
+rabbit1 (london-az1): localhost 127.0.0.1:5672
+```
+
+Configure `amqpprox` to map inbound connections for `vhost-example` to backend `rabbit1`
+```
+$ amqpprox_ctl /tmp/amqpprox MAP BACKEND vhost-example rabbit1
+$ amqpprox_ctl /tmp/amqpprox MAP PRINT
+"vhost-example" => Backend:rabbit1
+```
+
+`amqpprox` now understands one vhost mapping. Use `LISTEN` to start listening for connections on port 5673:
+
+```
+$ amqpprox_ctl /tmp/amqpprox LISTEN START 5673
+```
+
+An AMQP 0.9.1 client can now connect to `vhost-example` on port 5673 and `amqpprox` will forward to `rabbit1` on port 5672.
+
 
 ## Building
 
