@@ -49,6 +49,8 @@ struct PairHash {
  * 2. Protect downstream resolves from connection spikes
  * 3. Enable testing of other components, as the cache can prevent the DNS
  *    resolution.
+ *
+ * The cache will only cache successful lookups.
  */
 class DNSResolver {
     using TcpEndpoint = boost::asio::ip::tcp::endpoint;
@@ -98,23 +100,53 @@ class DNSResolver {
                  std::string_view       query_service,
                  const ResolveCallback &callback);
 
+    /**
+     * \brief Set the cache timeout in milliseconds
+     *
+     * This will set the cache timeout to the `timeoutMs`, this doesn't take
+     * effect until the next cache cleanup.
+     */
     void setCacheTimeout(int timeoutMs);
 
+    /**
+     * \brief Insert a resolution into the cache
+     *
+     * \param query_host The host to be the key to the cache
+     * \param query_service The service/port to be the key to the cache
+     * \param resolution A vector of endpoints to receive as the cached result
+     */
     void setCachedResolution(const std::string &        query_host,
                              const std::string &        query_service,
                              std::vector<TcpEndpoint> &&resolution);
-
+    /**
+     * \brief Clear a resolution from the cache
+     *
+     * \param query_host The host to be the key to the cache
+     * \param query_service The service/port to be the key to the cache
+     */
     void clearCachedResolution(const std::string &query_host,
                                const std::string &query_service);
 
+    /**
+     * \brief Start the cleanup timer running.
+     *
+     * Initially the cleanup timer is not running, this sets it running with
+     * the timeout parameter supplied via a call to `setCacheTimeout`.
+     */
     void startCleanupTimer();
+
+    /**
+     * \brief Stop the cleanup timer running
+     *
+     * This will cancel the outstanding cleanups if not already in progress.
+     */
     void stopCleanupTimer();
 
     /**
      * \brief Set a function to override the functionality of this class
      *
-     * This is intended for testing purposes only and is NOT threadsafe. It
-     * must be called before any of these classes are utilised.
+     * IMPORTANT: This is intended for testing purposes only and is NOT
+     * threadsafe. It must be called before any of these classes are utilised.
      */
     static void setOverrideFunction(OverrideFunction func);
 
