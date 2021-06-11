@@ -52,7 +52,7 @@ std::string FarmControlCommand::commandVerb() const
 std::string FarmControlCommand::helpText() const
 {
     return "("
-           "ADD_MANUAL name selector backend* | "
+           "ADD_MANUAL|ADD name selector backend* | "
            "PARTITION name policy | "
            "DELETE name | "
            "PRINT"
@@ -72,7 +72,7 @@ void FarmControlCommand::handleCommand(const std::string & /* command */,
     iss >> subcommand;
     boost::to_upper(subcommand);
 
-    if (subcommand == "ADD_MANUAL") {
+    if (subcommand == "ADD_MANUAL" || subcommand == "ADD") {
         std::string              name;
         std::string              backendSelector;
         std::vector<std::string> backends;
