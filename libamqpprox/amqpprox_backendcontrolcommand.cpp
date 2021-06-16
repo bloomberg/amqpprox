@@ -58,7 +58,8 @@ void BackendControlCommand::handleCommand(const std::string & /* command */,
     iss >> subcommand;
     boost::to_upper(subcommand);
 
-    if (subcommand == "ADD" || subcommand == "ADD_DNS") {
+    bool isDns = subcommand == "ADD_DNS";
+    if (subcommand == "ADD" || isDns) {
         std::string name;
         std::string datacenter;
         std::string host;
@@ -74,7 +75,6 @@ void BackendControlCommand::handleCommand(const std::string & /* command */,
         boost::to_upper(arg2);
 
         if (!name.empty() && !datacenter.empty() && !host.empty() && port) {
-            bool        isDns = subcommand == "ADD_DNS";
             std::string ip;
             if (!isDns) {
                 auto &ioService = controlHandle->ioService();
