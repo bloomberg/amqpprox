@@ -769,11 +769,19 @@ TEST_F(SessionTest, Connect_Multiple_Dns)
 
 TEST_F(SessionTest, Failover_Dns_Failure)
 {
+    // Set up failover testing via three backends:
+    //
+    //  - Backend 1 will fail at the resolution step, and will failover to next
+    //    backend
+    //  - Backend 2 will succeed at resolution step, giving two different
+    //    endpoints to try. Both backends will be failed at the async_connect
+    //    step. This tests failing over through all the DNS steps and onto the
+    //    next Backend
+    //  - Backend 3 will succeed
+
     using TcpEndpoint = boost::asio::ip::tcp::endpoint;
     using IpAddress   = boost::asio::ip::address;
 
-    // Set up the only backend to resolve to two different addresses. This will
-    // then be told to fail the first at connect and go onto the second
     std::vector<TcpEndpoint> resolveResult;
     resolveResult.push_back(TcpEndpoint(IpAddress::from_string("::1"), 5672));
     resolveResult.push_back(
@@ -788,7 +796,7 @@ TEST_F(SessionTest, Failover_Dns_Failure)
     EXPECT_CALL(mockDns, resolve(_, "backend2", "5672"))
         .Times(1)
         .WillOnce(DoAll(SetArgPointee<0>(resolveResult),
-                        Return(boost::system::error_code())));
+                        Return(goodErrorCode)));
     EXPECT_CALL(mockDns, resolve(_, "backend3", "5672"))
         .Times(1)
         .WillOnce(
