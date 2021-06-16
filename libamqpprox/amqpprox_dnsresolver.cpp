@@ -70,8 +70,11 @@ void DNSResolver::startCleanupTimer()
     d_cacheTimerRunning = true;
     if (!previous) {
         d_timer.expires_after(std::chrono::milliseconds(d_cacheTimeout));
-        d_timer.async_wait(
-            [this](const boost::system::error_code &ec) { cleanupCache(ec); });
+        d_timer.async_wait([this](const boost::system::error_code &ec) {
+            if (ec != boost::asio::error::operation_aborted) {
+                cleanupCache(ec);
+            }
+        });
     }
 }
 
@@ -84,9 +87,7 @@ void DNSResolver::stopCleanupTimer()
 void DNSResolver::cleanupCache(const boost::system::error_code &ec)
 {
     if (ec) {
-        if (ec != boost::asio::error::operation_aborted) {
-            LOG_ERROR << "DNSResolver cache clean up failed with: " << ec;
-        }
+        LOG_ERROR << "DNSResolver cache clean up failed with: " << ec;
         return;
     }
     if (d_cacheTimerRunning) {
@@ -96,8 +97,11 @@ void DNSResolver::cleanupCache(const boost::system::error_code &ec)
             d_cache.swap(empty);
         }
         d_timer.expires_after(std::chrono::milliseconds(d_cacheTimeout));
-        d_timer.async_wait(
-            [this](const boost::system::error_code &ec) { cleanupCache(ec); });
+        d_timer.async_wait([this](const boost::system::error_code &ec) {
+            if (ec != boost::asio::error::operation_aborted) {
+                cleanupCache(ec);
+            }
+        });
     }
 }
 

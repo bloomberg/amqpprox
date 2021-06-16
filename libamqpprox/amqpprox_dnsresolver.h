@@ -21,11 +21,11 @@
 #include <boost/asio.hpp>
 #include <boost/container_hash/hash.hpp>
 
+#include <cstdint>
 #include <cstddef>
 #include <functional>
 #include <unordered_map>
 
-#include <stdint.h>
 
 namespace Bloomberg {
 namespace amqpprox {
@@ -33,9 +33,7 @@ namespace amqpprox {
 struct PairHash {
     size_t operator()(const std::pair<std::string, std::string> &obj) const
     {
-        std::size_t result = 0;
-        boost::hash_combine(result, obj);
-        return result;
+        return boost::hash_value(obj);
     }
 };
 
@@ -170,9 +168,9 @@ void DNSResolver::resolve(std::string_view       query_host,
         auto it = d_cache.find(std::make_pair(host, service));
         if (it != d_cache.end()) {
             boost::system::error_code ec;
-            auto                      result = it->second;
+            std::vector<TcpEndpoint> result = it->second;
             auto cb = [callback, ec, result] { callback(ec, result); };
-            d_ioService.dispatch(cb);
+            d_ioService.post(cb);
             return;
         }
     }
@@ -183,7 +181,7 @@ void DNSResolver::resolve(std::string_view       query_host,
         LOG_TRACE << "Returning " << vec.size()
                   << " overriden values with ec = " << ec;
         auto cb = [callback, ec, vec] { callback(ec, vec); };
-        d_ioService.dispatch(cb);
+        d_ioService.post(cb);
 
         if (!ec) {
             setCachedResolution(host, service, std::move(vec));
