@@ -52,7 +52,7 @@ std::string FarmControlCommand::commandVerb() const
 std::string FarmControlCommand::helpText() const
 {
     return "("
-           "ADD_MANUAL|ADD name selector backend* | "
+           "ADD name selector backend* | "
            "PARTITION name policy | "
            "DELETE name | "
            "PRINT"
