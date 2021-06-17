@@ -18,6 +18,7 @@
 
 #include <amqpprox_buffer.h>
 #include <amqpprox_connector.h>
+#include <amqpprox_constants.h>
 #include <amqpprox_frame.h>
 #include <amqpprox_logging.h>
 #include <amqpprox_method.h>
@@ -51,6 +52,15 @@ void PacketProcessor::process(FlowType direction, const Buffer &readBuffer)
     const void *nextFrame = readBuffer.originalPtr();
 
     if (d_connector.state() == Connector::State::AWAITING_PROTOCOL_HEADER) {
+        if (remaining < Constants::protocolHeaderLength()) {
+            LOG_DEBUG << "Haven't quite read enough for full protocol header: "
+                      << remaining;
+
+            d_remainingBuffer =
+                Buffer(readBuffer.originalPtr(), remaining);
+            return;
+        }
+
         d_connector.receive(readBuffer.currentData());
 
         if (d_connector.sendToIngressSide()) {
