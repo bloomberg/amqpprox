@@ -43,6 +43,7 @@
 #include <amqpprox_connectionselector.h>
 #include <amqpprox_connectorutil.h>
 #include <amqpprox_constants.h>
+#include <amqpprox_dnsresolver.h>
 #include <amqpprox_eventsource.h>
 #include <amqpprox_hostnamemapper.h>
 #include <amqpprox_methods_close.h>
@@ -113,6 +114,7 @@ class SessionTest : public ::testing::Test {
     Backend                             d_backend2;
     Backend                             d_backend3;
     std::shared_ptr<HostnameMapperMock> d_mapper;
+    DNSResolver                         d_dnsResolver;
     SelectorMock                        d_selector;
     RobinBackendSelector                d_robinSelector;
     std::shared_ptr<ConnectionManager>  d_cm;
@@ -123,6 +125,7 @@ class SessionTest : public ::testing::Test {
     SocketInterceptTestAdaptor          d_serverSocketAdaptor;
     SocketIntercept                     d_client;
     SocketIntercept                     d_server;
+    std::vector<uint8_t>                d_protocolHeader;
     int                                 d_step;
 
     SessionTest();
@@ -148,6 +151,27 @@ class SessionTest : public ::testing::Test {
     methods::Close   close();
 
     void runStandardConnect(TestSocketState::State *clientBase);
+
+    void testSetupServerHandshake(int idx);
+    void testSetupClientSendsProtocolHeader(int idx);
+    void testSetupClientStartOk(int idx);
+    void testSetupClientOpen(int idx);
+    void testSetupProxyConnect(int idx, TestSocketState::State *clientBase);
+    void testSetupProxySendsProtocolHeader(int idx);
+    void testSetupProxySendsStartOk(int                idx,
+                                    const std::string &injectedClientHost,
+                                    int                injectedClientPort,
+                                    std::string_view   injectedProxyHost,
+                                    int injectedProxyInboundPort,
+                                    int injectedProxyOutbountPort);
+    void testSetupProxyOpen(int idx);
+    void testSetupProxyPassOpenOkThrough(int idx);
+    void testSetupBrokerSendsHeartbeat(int idx);
+    void testSetupClientSendsHeartbeat(int idx);
+    void testSetupProxySendsCloseToClient(int idx);
+    void testSetupClientSendsCloseOk(int idx);
+    void testSetupBrokerRespondsCloseOk(int idx);
+    void testSetupHandlersCleanedUp(int idx);
 };
 
 template <typename TYPE>
@@ -155,123 +179,173 @@ std::vector<TYPE> filterVariant(const std::vector<Item> &items);
 
 Data coalesce(std::initializer_list<Data> input);
 
-void SessionTest::runStandardConnect(TestSocketState::State *clientBase)
+void SessionTest::testSetupServerHandshake(int idx)
 {
-    auto protocolHeader = std::vector<uint8_t>(
-        Constants::protocolHeader(),
-        Constants::protocolHeader() + Constants::protocolHeaderLength());
-
     // Perform the 'TLS' handshake (no-op for tests), will just invoke the
     // completion handler
-    d_serverState.pushItem(1, HandshakeComplete());
+    d_serverState.pushItem(idx, HandshakeComplete());
+}
 
+void SessionTest::testSetupClientSendsProtocolHeader(int idx)
+{
     // Read a protocol header from the client and reply with Start method
     // Client  ----AMQP Header--->  Proxy                         Broker
     // Client  <-----Start--------  Proxy                         Broker
-    d_serverState.pushItem(2, Data(protocolHeader));
-    d_serverState.expect(2, [this](const auto &items) {
+    d_serverState.pushItem(idx, Data(d_protocolHeader));
+    d_serverState.expect(idx, [this](const auto &items) {
         auto data = filterVariant<Data>(items);
         ASSERT_EQ(data.size(), 1);
         EXPECT_EQ(data[0], Data(encode(ConnectorUtil::synthesizedStart())));
     });
+}
 
-    //
+void SessionTest::testSetupClientStartOk(int idx)
+{
     // Client  ------StartOk----->  Proxy                         Broker
     // Client  <-----Tune---------  Proxy                         Broker
-    d_serverState.pushItem(3, Data(encode(clientStartOk())));
-    d_serverState.expect(3, [this](const auto &items) {
+    d_serverState.pushItem(idx, Data(encode(clientStartOk())));
+    d_serverState.expect(idx, [this](const auto &items) {
         auto data = filterVariant<Data>(items);
         ASSERT_EQ(data.size(), 1);
         EXPECT_EQ(data[0], Data(encode(ConnectorUtil::synthesizedTune())));
     });
+}
 
+void SessionTest::testSetupClientOpen(int idx)
+{
     // Client  ------TuneOk------>  Proxy                         Broker
     // Client  ------Open-------->  Proxy                         Broker
-    d_serverState.pushItem(4, Data(encode(clientTuneOk())));
-    d_serverState.pushItem(4, Data(encode(clientOpen())));
-    d_clientState.expect(4, [this](const auto &items) {
+    d_serverState.pushItem(idx, Data(encode(clientTuneOk())));
+    d_serverState.pushItem(idx, Data(encode(clientOpen())));
+    d_clientState.expect(idx, [this](const auto &items) {
         EXPECT_THAT(items, Contains(VariantWith<Call>(Call("async_connect"))));
     });
+}
 
+void SessionTest::testSetupProxyConnect(int                     idx,
+                                        TestSocketState::State *clientBase)
+{
     // Client                       Proxy  <----TCP CONNECT---->  Broker
-    d_clientState.pushItem(5, *clientBase);
-    d_clientState.pushItem(5, ConnectComplete());
-    d_clientState.expect(5, [](const auto &items) {
+    d_clientState.pushItem(idx, *clientBase);
+    d_clientState.pushItem(idx, ConnectComplete());
+    d_clientState.expect(idx, [](const auto &items) {
         auto data = filterVariant<Data>(items);
         ASSERT_EQ(data.size(), 0);
     });
+}
 
+void SessionTest::testSetupProxySendsProtocolHeader(int idx)
+{
     // Client                       Proxy  <-----HANDSHAKE----->  Broker
     // Client                       Proxy  -----AMQP Header---->  Broker
-    d_clientState.pushItem(6, HandshakeComplete());
-    d_clientState.expect(6, [this, protocolHeader](const auto &items) {
+    d_clientState.pushItem(idx, HandshakeComplete());
+    d_clientState.expect(idx, [this](const auto &items) {
         auto data = filterVariant<Data>(items);
         ASSERT_EQ(data.size(), 1);
-        EXPECT_EQ(data[0], Data(protocolHeader));
+        EXPECT_EQ(data[0], Data(d_protocolHeader));
     });
+}
 
+void SessionTest::testSetupProxySendsStartOk(
+    int                idx,
+    const std::string &injectedClientHost,
+    int                injectedClientPort,
+    std::string_view   injectedProxyHost,
+    int                injectedProxyInboundPort,
+    int                injectedProxyOutboundPort)
+{
     // Client                       Proxy  <-------Start--------  Broker
     // Client                       Proxy  --------StartOk----->  Broker
-    d_clientState.pushItem(7, Data(encode(serverStart())));
-    d_clientState.expect(7, [this](const auto &items) {
-        auto data = filterVariant<Data>(items);
-        ASSERT_EQ(data.size(), 1);
+    d_clientState.pushItem(idx, Data(encode(serverStart())));
+    d_clientState.expect(idx,
+                         [this,
+                          injectedClientHost,
+                          injectedClientPort,
+                          injectedProxyHost,
+                          injectedProxyInboundPort,
+                          injectedProxyOutboundPort](const auto &items) {
+                             auto data = filterVariant<Data>(items);
+                             ASSERT_EQ(data.size(), 1);
 
-        auto startOk = clientStartOk();
-        ConnectorUtil::injectProxyClientIdent(
-            &startOk, "host1", 2345, LOCAL_HOSTNAME, 1234, 32000);
+                             auto startOk = clientStartOk();
+                             ConnectorUtil::injectProxyClientIdent(
+                                 &startOk,
+                                 injectedClientHost,
+                                 injectedClientPort,
+                                 injectedProxyHost,
+                                 injectedProxyInboundPort,
+                                 injectedProxyOutboundPort);
 
-        EXPECT_EQ(data[0], Data(encode(startOk)));
-    });
+                             EXPECT_EQ(data[0], Data(encode(startOk)));
+                         });
+}
 
+void SessionTest::testSetupProxyOpen(int idx)
+{
     // Client                       Proxy  <-------Tune--------  Broker
     // Client                       Proxy  --------TuneOk----->  Broker
     // Client                       Proxy  --------Open------->  Broker
-    d_clientState.pushItem(8, Data(encode(serverTune())));
-    d_clientState.expect(8, [this](const auto &items) {
+    d_clientState.pushItem(idx, Data(encode(serverTune())));
+    d_clientState.expect(idx, [this](const auto &items) {
         auto data = filterVariant<Data>(items);
         ASSERT_EQ(data.size(), 1);
         EXPECT_EQ(data[0],
                   coalesce({encode(clientTuneOk()), encode(clientOpen())}));
     });
+}
 
+void SessionTest::testSetupProxyPassOpenOkThrough(int idx)
+{
     // Client  <-----OpenOk-------  Proxy  <-------OpenOk------  Broker
-    d_clientState.pushItem(9, Data(encode(serverOpenOk())));
-    d_serverState.expect(9, [this](const auto &items) {
+    d_clientState.pushItem(idx, Data(encode(serverOpenOk())));
+    d_serverState.expect(idx, [this](const auto &items) {
         auto data = filterVariant<Data>(items);
         ASSERT_EQ(data.size(), 1);
         EXPECT_EQ(data[0], Data(encode(serverOpenOk())));
     });
+}
 
+void SessionTest::testSetupBrokerSendsHeartbeat(int idx)
+{
     // Client  <-----Heartbeat----  Proxy  <-------Heartbeat---  Broker
-    d_clientState.pushItem(10, Data(encodeHeartbeat()));
-    d_serverState.expect(10, [this](const auto &items) {
+    d_clientState.pushItem(idx, Data(encodeHeartbeat()));
+    d_serverState.expect(idx, [this](const auto &items) {
         auto data = filterVariant<Data>(items);
         ASSERT_EQ(data.size(), 1);
         EXPECT_EQ(data[0], Data(encodeHeartbeat()));
     });
+}
 
+void SessionTest::testSetupClientSendsHeartbeat(int idx)
+{
     // Client  ------Heartbeat--->  Proxy  --------Heartbeat-->  Broker
-    d_serverState.pushItem(11, Data(encodeHeartbeat()));
-    d_clientState.expect(11, [this](const auto &items) {
+    d_serverState.pushItem(idx, Data(encodeHeartbeat()));
+    d_clientState.expect(idx, [this](const auto &items) {
         auto data = filterVariant<Data>(items);
         ASSERT_EQ(data.size(), 1);
         EXPECT_EQ(data[0], Data(encodeHeartbeat()));
     });
+}
 
+void SessionTest::testSetupProxySendsCloseToClient(int idx)
+{
     // session->disconnect(false) called (Set up later after session object is
     // created).
+    //
     // Client  <-----Close--------  Proxy                        Broker
-    d_serverState.expect(12, [this](const auto &items) {
+    d_serverState.expect(idx, [this](const auto &items) {
         auto data = filterVariant<Data>(items);
         ASSERT_EQ(data.size(), 1);
         EXPECT_EQ(data[0], Data(encode(close())));
     });
+}
 
+void SessionTest::testSetupClientSendsCloseOk(int idx)
+{
     // Client  ------CloseOk----->  Proxy                        Broker
     // Client                       Proxy  --------Close------>  Broker
-    d_serverState.pushItem(13, Data(encode(closeOk())));
-    d_clientState.expect(13, [this](const auto &items) {
+    d_serverState.pushItem(idx, Data(encode(closeOk())));
+    d_clientState.expect(idx, [this](const auto &items) {
         auto data = filterVariant<Data>(items);
         ASSERT_EQ(data.size(), 1);
         std::cerr << "Expected: " << close() << std::endl;
@@ -284,24 +358,92 @@ void SessionTest::runStandardConnect(TestSocketState::State *clientBase)
         }
         EXPECT_EQ(data[0], Data(encode(close())));
     });
+}
+
+void SessionTest::testSetupBrokerRespondsCloseOk(int idx)
+{
+    // Client                       Proxy  <-------CloseOk-----  Broker
+    // Proxy snaps all TCP connections at this point.
+    // NB: In reality the client/broker may beat us by snapping their end
+    // before we get to close ourselves.
+    d_clientState.pushItem(idx, Data(encode(closeOk())));
+    d_clientState.expect(idx, [this](const auto &items) {
+        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
+    });
+    d_serverState.expect(idx, [this](const auto &items) {
+        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
+    });
+}
+
+void SessionTest::testSetupHandlersCleanedUp(int idx)
+{
+    d_serverState.pushItem(idx, Data(boost::asio::error::operation_aborted));
+    d_clientState.pushItem(idx, Data(boost::asio::error::operation_aborted));
+}
+
+void SessionTest::runStandardConnect(TestSocketState::State *clientBase)
+{
+    // Perform the 'TLS' handshake (no-op for tests), will just invoke the
+    // completion handler
+    testSetupServerHandshake(1);
+
+    // Read a protocol header from the client and reply with Start method
+    // Client  ----AMQP Header--->  Proxy                         Broker
+    // Client  <-----Start--------  Proxy                         Broker
+    testSetupClientSendsProtocolHeader(2);
+
+    // Client  ------StartOk----->  Proxy                         Broker
+    // Client  <-----Tune---------  Proxy                         Broker
+    testSetupClientStartOk(3);
+
+    // Client  ------TuneOk------>  Proxy                         Broker
+    // Client  ------Open-------->  Proxy                         Broker
+    testSetupClientOpen(4);
+
+    // Client                       Proxy  <----TCP CONNECT---->  Broker
+    testSetupProxyConnect(5, clientBase);
+
+    // Client                       Proxy  <-----HANDSHAKE----->  Broker
+    // Client                       Proxy  -----AMQP Header---->  Broker
+    testSetupProxySendsProtocolHeader(6);
+
+    // Client                       Proxy  <-------Start--------  Broker
+    // Client                       Proxy  --------StartOk----->  Broker
+    testSetupProxySendsStartOk(7, "host1", 2345, LOCAL_HOSTNAME, 1234, 32000);
+
+    // Client                       Proxy  <-------Tune--------  Broker
+    // Client                       Proxy  --------TuneOk----->  Broker
+    // Client                       Proxy  --------Open------->  Broker
+    testSetupProxyOpen(8);
+
+    // Client  <-----OpenOk-------  Proxy  <-------OpenOk------  Broker
+    testSetupProxyPassOpenOkThrough(9);
+
+    // Client  <-----Heartbeat----  Proxy  <-------Heartbeat---  Broker
+    testSetupBrokerSendsHeartbeat(10);
+
+    // Client  ------Heartbeat--->  Proxy  --------Heartbeat-->  Broker
+    testSetupClientSendsHeartbeat(11);
+
+    // session->disconnect(false) called (Set up later after session object is
+    // created).
+    // Client  <-----Close--------  Proxy                        Broker
+    testSetupProxySendsCloseToClient(12);
+
+    // Client  ------CloseOk----->  Proxy                        Broker
+    // Client                       Proxy  --------Close------>  Broker
+    testSetupClientSendsCloseOk(13);
 
     // Client                       Proxy  <-------CloseOk-----  Broker
     // Proxy snaps all TCP connections at this point.
     // NB: In reality the client/broker may beat us by snapping their end
     // before we get to close ourselves.
-    d_clientState.pushItem(14, Data(encode(closeOk())));
-    d_clientState.expect(14, [this](const auto &items) {
-        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
-        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
-    });
-    d_serverState.expect(14, [this](const auto &items) {
-        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
-        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
-    });
+    testSetupBrokerRespondsCloseOk(14);
 
     // After closing sockets any outstanding handlers will get aborted
-    d_serverState.pushItem(15, Data(boost::asio::error::operation_aborted));
-    d_clientState.pushItem(16, Data(boost::asio::error::operation_aborted));
+    testSetupHandlersCleanedUp(15);
 }
 
 TEST_F(SessionTest, Connection_Then_Ping_Then_Disconnect)
@@ -343,6 +485,7 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Disconnect)
                                              &d_selector,
                                              &d_eventSource,
                                              &d_pool,
+                                             &d_dnsResolver,
                                              d_mapper,
                                              LOCAL_HOSTNAME);
 
@@ -400,6 +543,7 @@ TEST_F(SessionTest, New_Client_Handshake_Failure)
                                              &d_selector,
                                              &d_eventSource,
                                              &d_pool,
+                                             &d_dnsResolver,
                                              d_mapper,
                                              LOCAL_HOSTNAME);
 
@@ -460,6 +604,7 @@ TEST_F(SessionTest, Connection_To_Proxy_Protocol)
                                              &d_selector,
                                              &d_eventSource,
                                              &d_pool,
+                                             &d_dnsResolver,
                                              d_mapper,
                                              LOCAL_HOSTNAME);
 
@@ -491,6 +636,282 @@ TEST_F(SessionTest, Connection_To_Proxy_Protocol)
 
     // Run the tests through to completion
     driveTo(17);
+}
+
+struct MockDnsResolver {
+    MOCK_METHOD3(resolve,
+                 boost::system::error_code(
+                     std::vector<boost::asio::ip::tcp::endpoint> *,
+                     const std::string &,
+                     const std::string &));
+};
+
+TEST_F(SessionTest, Connect_Multiple_Dns)
+{
+    using TcpEndpoint = boost::asio::ip::tcp::endpoint;
+    using IpAddress   = boost::asio::ip::address;
+
+    // Set up the only backend to resolve to two different addresses. This will
+    // then be told to fail the first at connect and go onto the second
+    std::vector<TcpEndpoint> resolveResult;
+    resolveResult.push_back(TcpEndpoint(IpAddress::from_string("::1"), 5672));
+    resolveResult.push_back(
+        TcpEndpoint(IpAddress::from_string("127.0.0.1"), 5672));
+
+    boost::system::error_code goodErrorCode;
+    MockDnsResolver           mockDns;
+    EXPECT_CALL(mockDns, resolve(_, "localhost", "5672"))
+        .Times(1)
+        .WillOnce(
+            DoAll(SetArgPointee<0>(resolveResult), Return(goodErrorCode)));
+
+    DNSResolver::OverrideFunctionGuard dnsguard(
+        std::bind(&MockDnsResolver::resolve,
+                  &mockDns,
+                  std::placeholders::_1,
+                  std::placeholders::_2,
+                  std::placeholders::_3));
+
+    Backend singularBackend(
+        "backend1", "dc1", "localhost", "127.0.0.1", 5672, false, false, true);
+    std::vector<BackendSet::Partition> partitions;
+    partitions.push_back(BackendSet::Partition{&singularBackend});
+
+    d_cm = std::make_shared<ConnectionManager>(
+        std::make_shared<BackendSet>(partitions), &d_robinSelector);
+
+    EXPECT_CALL(d_selector, acquireConnection(_, _))
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+
+    EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
+        .WillRepeatedly(Return(std::string("host1")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 1234)))
+        .WillRepeatedly(Return(std::string("host0")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 32000)))
+        .WillRepeatedly(Return(std::string("host0")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("3.4.5.6", 5672)))
+        .WillRepeatedly(Return(std::string("host2")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("0.0.0.0", 0)))
+        .WillRepeatedly(Return(std::string("<invalid>")));
+
+    TestSocketState::State base;
+    base.d_local  = makeEndpoint("1.2.3.4", 1234);
+    base.d_remote = makeEndpoint("2.3.4.5", 2345);
+    base.d_secure = false;
+
+    TestSocketState::State clientBase;
+    clientBase.d_local  = makeEndpoint("1.2.3.4", 32000);
+    clientBase.d_remote = makeEndpoint("3.4.5.6", 5672);
+    clientBase.d_secure = false;
+
+    // Initialise the state
+    d_serverState.pushItem(0, base);
+    driveTo(0);
+
+    // runStandardConnect(&clientBase);
+    testSetupServerHandshake(1);
+    testSetupClientSendsProtocolHeader(2);
+    testSetupClientStartOk(3);
+    testSetupClientOpen(4);
+
+    d_clientState.pushItem(
+        5, ConnectComplete(boost::asio::error::connection_refused));
+    d_clientState.expect(5, [](const auto &items) {
+        auto data = filterVariant<Data>(items);
+        ASSERT_EQ(data.size(), 0);
+    });
+
+    int step = 6;
+    testSetupProxyConnect(step++, &clientBase);
+    testSetupProxySendsProtocolHeader(step++);
+    testSetupProxySendsStartOk(
+        step++, "host1", 2345, LOCAL_HOSTNAME, 1234, 32000);
+    testSetupProxyOpen(step++);
+    testSetupProxyPassOpenOkThrough(step++);
+    testSetupBrokerSendsHeartbeat(step++);
+    testSetupClientSendsHeartbeat(step++);
+    testSetupProxySendsCloseToClient(step++);
+    testSetupClientSendsCloseOk(step++);
+    testSetupBrokerRespondsCloseOk(step++);
+    testSetupHandlersCleanedUp(step++);
+
+    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioService,
+                                             std::move(serverSocket),
+                                             std::move(clientSocket),
+                                             &d_selector,
+                                             &d_eventSource,
+                                             &d_pool,
+                                             &d_dnsResolver,
+                                             d_mapper,
+                                             LOCAL_HOSTNAME);
+
+    session->start();
+
+    // Graceful disconnect after the heartbeats
+    d_serverState.pushItem(13,
+                           Func([&session] { session->disconnect(false); }));
+
+    // Lastly, check it's elligible to be deleted
+    d_serverState.pushItem(
+        17, Func([&session] {
+            EXPECT_TRUE(session->finished());
+            EXPECT_EQ(session->state().getDisconnectType(),
+                      SessionState::DisconnectType::DISCONNECTED_CLEANLY);
+        }));
+
+    // Run the tests through to completion
+    driveTo(17);
+}
+
+TEST_F(SessionTest, Failover_Dns_Failure)
+{
+    // Set up failover testing via three backends:
+    //
+    //  - Backend 1 will fail at the resolution step, and will failover to next
+    //    backend
+    //  - Backend 2 will succeed at resolution step, giving two different
+    //    endpoints to try. Both backends will be failed at the async_connect
+    //    step. This tests failing over through all the DNS steps and onto the
+    //    next Backend
+    //  - Backend 3 will succeed
+
+    using TcpEndpoint = boost::asio::ip::tcp::endpoint;
+    using IpAddress   = boost::asio::ip::address;
+
+    std::vector<TcpEndpoint> resolveResult;
+    resolveResult.push_back(TcpEndpoint(IpAddress::from_string("::1"), 5672));
+    resolveResult.push_back(
+        TcpEndpoint(IpAddress::from_string("127.0.0.1"), 5672));
+
+    boost::system::error_code goodErrorCode;
+    MockDnsResolver           mockDns;
+    EXPECT_CALL(mockDns, resolve(_, "backend1", "5672"))
+        .Times(1)
+        .WillOnce(DoAll(SetArgPointee<0>(resolveResult),
+                        Return(boost::asio::error::access_denied)));
+    EXPECT_CALL(mockDns, resolve(_, "backend2", "5672"))
+        .Times(1)
+        .WillOnce(
+            DoAll(SetArgPointee<0>(resolveResult), Return(goodErrorCode)));
+    EXPECT_CALL(mockDns, resolve(_, "backend3", "5672"))
+        .Times(1)
+        .WillOnce(
+            DoAll(SetArgPointee<0>(resolveResult), Return(goodErrorCode)));
+
+    DNSResolver::OverrideFunctionGuard dnsguard(
+        std::bind(&MockDnsResolver::resolve,
+                  &mockDns,
+                  std::placeholders::_1,
+                  std::placeholders::_2,
+                  std::placeholders::_3));
+
+    Backend backend1(
+        "backend1", "dc1", "backend1", "127.0.0.1", 5672, false, false, true);
+    Backend backend2(
+        "backend2", "dc1", "backend2", "127.0.1.1", 5672, false, false, true);
+    Backend backend3(
+        "backend3", "dc1", "backend3", "127.0.1.1", 5672, false, false, true);
+    std::vector<BackendSet::Partition> partitions;
+    partitions.push_back(
+        BackendSet::Partition{&backend1, &backend2, &backend3});
+
+    d_cm = std::make_shared<ConnectionManager>(
+        std::make_shared<BackendSet>(partitions), &d_robinSelector);
+
+    EXPECT_CALL(d_selector, acquireConnection(_, _))
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+
+    EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
+        .WillRepeatedly(Return(std::string("host1")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 1234)))
+        .WillRepeatedly(Return(std::string("host0")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 32000)))
+        .WillRepeatedly(Return(std::string("host0")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("3.4.5.6", 5672)))
+        .WillRepeatedly(Return(std::string("host2")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("0.0.0.0", 0)))
+        .WillRepeatedly(Return(std::string("<invalid>")));
+
+    TestSocketState::State base;
+    base.d_local  = makeEndpoint("1.2.3.4", 1234);
+    base.d_remote = makeEndpoint("2.3.4.5", 2345);
+    base.d_secure = false;
+
+    TestSocketState::State clientBase;
+    clientBase.d_local  = makeEndpoint("1.2.3.4", 32000);
+    clientBase.d_remote = makeEndpoint("3.4.5.6", 5672);
+    clientBase.d_secure = false;
+
+    // Initialise the state
+    d_serverState.pushItem(0, base);
+    driveTo(0);
+
+    // runStandardConnect(&clientBase);
+    testSetupServerHandshake(1);
+    testSetupClientSendsProtocolHeader(2);
+    testSetupClientStartOk(3);
+    testSetupClientOpen(4);
+
+    d_clientState.pushItem(
+        5, ConnectComplete(boost::asio::error::connection_refused));
+    d_clientState.expect(5, [](const auto &items) {
+        auto data = filterVariant<Data>(items);
+        ASSERT_EQ(data.size(), 0);
+    });
+
+    d_clientState.pushItem(
+        6, ConnectComplete(boost::asio::error::connection_refused));
+    d_clientState.expect(6, [](const auto &items) {
+        auto data = filterVariant<Data>(items);
+        ASSERT_EQ(data.size(), 0);
+    });
+
+    int step = 7;
+    testSetupProxyConnect(step++, &clientBase);
+    testSetupProxySendsProtocolHeader(step++);
+    testSetupProxySendsStartOk(
+        step++, "host1", 2345, LOCAL_HOSTNAME, 1234, 32000);
+    testSetupProxyOpen(step++);
+    testSetupProxyPassOpenOkThrough(step++);
+    testSetupBrokerSendsHeartbeat(step++);
+    testSetupClientSendsHeartbeat(step++);
+    testSetupProxySendsCloseToClient(step++);
+    testSetupClientSendsCloseOk(step++);
+    testSetupBrokerRespondsCloseOk(step++);
+    testSetupHandlersCleanedUp(step++);
+
+    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioService,
+                                             std::move(serverSocket),
+                                             std::move(clientSocket),
+                                             &d_selector,
+                                             &d_eventSource,
+                                             &d_pool,
+                                             &d_dnsResolver,
+                                             d_mapper,
+                                             LOCAL_HOSTNAME);
+
+    session->start();
+
+    // Graceful disconnect after the heartbeats
+    d_serverState.pushItem(14,
+                           Func([&session] { session->disconnect(false); }));
+
+    // Lastly, check it's elligible to be deleted
+    d_serverState.pushItem(
+        18, Func([&session] {
+            EXPECT_TRUE(session->finished());
+            EXPECT_EQ(session->state().getDisconnectType(),
+                      SessionState::DisconnectType::DISCONNECTED_CLEANLY);
+        }));
+
+    // Run the tests through to completion
+    driveTo(18);
 }
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -542,6 +963,7 @@ SessionTest::SessionTest()
 , d_backend2("backend2", "dc2", "localhost", "127.0.0.1", 5673)
 , d_backend3("backend3", "dc3", "localhost", "127.0.0.1", 5674)
 , d_mapper(new HostnameMapperMock)
+, d_dnsResolver(d_ioService)
 , d_selector()
 , d_robinSelector()
 , d_cm()
@@ -552,6 +974,9 @@ SessionTest::SessionTest()
 , d_serverSocketAdaptor(d_serverState)
 , d_client(d_clientSocketAdaptor)
 , d_server(d_serverSocketAdaptor)
+, d_protocolHeader(Constants::protocolHeader(),
+                   Constants::protocolHeader() +
+                       Constants::protocolHeaderLength())
 , d_step(0)
 {
     std::vector<BackendSet::Partition> partitions;

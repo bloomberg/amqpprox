@@ -27,7 +27,8 @@ Backend::Backend(const std::string &name,
                  const std::string &ip,
                  int                port,
                  bool               proxyEnabled,
-                 bool               tlsEnabled)
+                 bool               tlsEnabled,
+                 bool               dnsBasedEntry)
 : d_name(name)
 , d_datacenterTag(datacenterTag)
 , d_host(host)
@@ -35,6 +36,7 @@ Backend::Backend(const std::string &name,
 , d_port(port)
 , d_proxyProtocolEnabled(proxyEnabled)
 , d_tlsEnabled(tlsEnabled)
+, d_dnsBasedEntry(dnsBasedEntry)
 {
 }
 
@@ -46,6 +48,7 @@ Backend::Backend()
 , d_port(0)
 , d_proxyProtocolEnabled(false)
 , d_tlsEnabled(false)
+, d_dnsBasedEntry(false)
 {
 }
 

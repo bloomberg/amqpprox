@@ -17,6 +17,7 @@ add_executable(amqpprox_tests
     amqpprox_bufferpool.t.cpp
     amqpprox_buffersource.t.cpp
     amqpprox_connectionstats.t.cpp
+    amqpprox_dnsresolver.t.cpp
     amqpprox_eventsourcesignal.t.cpp
     amqpprox_farmstore.t.cpp
     amqpprox_frame.t.cpp

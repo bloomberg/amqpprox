@@ -30,6 +30,7 @@ class Backend {
     int         d_port;
     bool        d_proxyProtocolEnabled;
     bool        d_tlsEnabled;
+    bool        d_dnsBasedEntry;
 
   public:
     Backend(const std::string &name,
@@ -38,7 +39,8 @@ class Backend {
             const std::string &ip,
             int                port,
             bool               proxyProtocolEnabled = false,
-            bool               tlsEnabled           = false);
+            bool               tlsEnabled           = false,
+            bool               dnsBasedEntry        = false);
 
     Backend();
 
@@ -49,6 +51,7 @@ class Backend {
     inline const std::string &name() const;
     inline bool               proxyProtocolEnabled() const;
     inline bool               tlsEnabled() const;
+    inline bool               dnsBasedEntry() const;  
 };
 
 inline const std::string &Backend::host() const
@@ -84,6 +87,11 @@ inline bool Backend::proxyProtocolEnabled() const
 inline bool Backend::tlsEnabled() const
 {
     return d_tlsEnabled;
+}
+
+inline bool Backend::dnsBasedEntry() const
+{
+    return d_dnsBasedEntry;
 }
 
 std::ostream &operator<<(std::ostream &os, const Backend &backend);

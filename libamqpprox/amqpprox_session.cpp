@@ -21,6 +21,7 @@
 #include <amqpprox_connectionmanager.h>
 #include <amqpprox_connectionselector.h>
 #include <amqpprox_constants.h>
+#include <amqpprox_dnsresolver.h>
 #include <amqpprox_eventsource.h>
 #include <amqpprox_flowtype.h>
 #include <amqpprox_frame.h>
@@ -68,10 +69,10 @@ Session::Session(boost::asio::io_service &              ioservice,
                  ConnectionSelector *                   connectionSelector,
                  EventSource *                          eventSource,
                  BufferPool *                           bufferPool,
+                 DNSResolver *                          dnsResolver,
                  const std::shared_ptr<HostnameMapper> &hostnameMapper,
                  std::string_view                       localHostname)
 : d_ioService(ioservice)
-, d_resolver(ioservice)
 , d_serverSocket(std::move(serverSocket))
 , d_clientSocket(std::move(clientSocket))
 , d_serverDataHandle()
@@ -85,13 +86,16 @@ Session::Session(boost::asio::io_service &              ioservice,
 , d_connectionSelector_p(connectionSelector)
 , d_eventSource_p(eventSource)
 , d_bufferPool_p(bufferPool)
+, d_dnsResolver_p(dnsResolver)
 , d_ingressWaitingSince()
 , d_egressWaitingSince()
 , d_egressRetryCounter(0)
-, d_ingressStartedAt()
-, d_egressStartedAt()
 , d_ingressCurrentlyReading(false)
+, d_ingressStartedAt()
 , d_egressCurrentlyReading(false)
+, d_egressStartedAt()
+, d_resolvedEndpoints()
+, d_resolvedEndpointsIndex(0)
 {
     boost::system::error_code ec;
     d_serverSocket.setDefaultOptions(ec);
@@ -167,59 +171,97 @@ void Session::attemptConnection(
         return;
     }
 
-    boost::asio::ip::tcp::resolver::query q(backend->host(),
-                                            std::to_string(backend->port()));
-
-    using endpointIt = boost::asio::ip::tcp::resolver::iterator;
+    using endpointType = boost::asio::ip::tcp::endpoint;
     auto self(shared_from_this());
-    d_resolver.async_resolve(
-        q,
-        [this, self, connectionManager, q](const error_code &ec,
-                                           endpointIt        endpoint) {
-            BOOST_LOG_SCOPED_THREAD_ATTR(
-                "Vhost",
-                boost::log::attributes::constant<std::string>(
-                    d_sessionState.getVirtualHost()));
-            BOOST_LOG_SCOPED_THREAD_ATTR(
-                "ConnID",
-                boost::log::attributes::constant<uint64_t>(
-                    d_sessionState.id()));
+    auto callback = [this, self, connectionManager](
+                        const error_code &        ec,
+                        std::vector<endpointType> endpoints) {
+        BOOST_LOG_SCOPED_THREAD_ATTR(
+            "Vhost",
+            boost::log::attributes::constant<std::string>(
+                d_sessionState.getVirtualHost()));
+        BOOST_LOG_SCOPED_THREAD_ATTR(
+            "ConnID",
+            boost::log::attributes::constant<uint64_t>(d_sessionState.id()));
 
-            // With Boost ASIO it sometimes on Linux returns a good error code,
-            // but no items in the list. This catches this case as well as the
-            // regular error return.
-            endpointIt endpointTerminator;
-            if (!ec && endpoint != endpointTerminator) {
-                attemptResolvedConnection(endpoint, connectionManager);
+        auto currentBackend =
+            connectionManager->getConnection(d_egressRetryCounter);
+
+        // With Boost ASIO it sometimes on Linux returns a good error code,
+        // but no items in the list. This catches this case as well as the
+        // regular error return.
+        if (!ec && !endpoints.empty()) {
+            if (currentBackend && currentBackend->dnsBasedEntry()) {
+                d_resolvedEndpoints = endpoints;
             }
             else {
-                // Get the backend we tried for its name before incrementing
-                // the retry counter
-                auto currentBackend =
-                    connectionManager->getConnection(d_egressRetryCounter);
-
-                std::string currentBackendName = "No-backend";
-                if (currentBackend) {
-                    currentBackendName = currentBackend->name();
-                }
-
-                LOG_ERROR << "Failed to resolve " << q.host_name() << ":"
-                          << q.service_name() << " error_code: " << ec
-                          << " for " << currentBackendName;
-
-                d_egressRetryCounter++;
-                attemptConnection(connectionManager);
+                d_resolvedEndpoints.resize(0);
+                d_resolvedEndpoints.push_back(endpoints[0]);
             }
-        });
+
+            d_resolvedEndpointsIndex = 0;
+            attemptResolvedConnection(connectionManager);
+        }
+        else {
+            // Get the backend we tried for its name before incrementing
+            // the retry counter
+
+            if (currentBackend) {
+                LOG_ERROR << "Failed to resolve " << currentBackend->host()
+                          << ":" << currentBackend->port()
+                          << " error_code: " << ec << " for "
+                          << currentBackend->name();
+            }
+            else {
+                LOG_ERROR << "Failed to resolve non-existing backend";
+            }
+
+            d_egressRetryCounter++;
+            attemptConnection(connectionManager);
+        }
+    };
+
+    if (backend->dnsBasedEntry()) {
+        d_dnsResolver_p->resolve(
+            backend->host(), std::to_string(backend->port()), callback);
+    }
+    else {
+        // If this isn't a DNS based backend we still use the resolver, but
+        // with the pre-cached at creation time IP address
+        d_dnsResolver_p->resolve(
+            backend->ip(), std::to_string(backend->port()), callback);
+    }
 }
 
 void Session::attemptResolvedConnection(
-    boost::asio::ip::tcp::resolver::iterator  endpoint,
+    const std::shared_ptr<ConnectionManager> &connectionManager)
+{
+    if (d_resolvedEndpoints.empty() ||
+        d_resolvedEndpointsIndex >= d_resolvedEndpoints.size()) {
+        // If we've run out of endpoints or the returned set was empty we must
+        // try the next backend
+        d_resolvedEndpoints.resize(0);
+        d_resolvedEndpointsIndex = 0;
+        d_egressRetryCounter++;
+        LOG_TRACE << "Run out of items on backend, moving onto next backend";
+        attemptConnection(connectionManager);
+    }
+    else {
+        auto index    = d_resolvedEndpointsIndex++;
+        auto endpoint = d_resolvedEndpoints[index];
+        LOG_TRACE << "Try index " << index << " of backend resolutions ("
+                  << endpoint << ")";
+        attemptEndpointConnection(endpoint, connectionManager);
+    }
+}
+
+void Session::attemptEndpointConnection(
+    boost::asio::ip::tcp::endpoint            endpoint,
     const std::shared_ptr<ConnectionManager> &connectionManager)
 {
     auto self(shared_from_this());
     d_clientSocket.async_connect(
-        *endpoint, [this, self, connectionManager](error_code ec) {
+        endpoint, [this, self, connectionManager](error_code ec) {
             BOOST_LOG_SCOPED_THREAD_ATTR(
                 "Vhost",
                 boost::log::attributes::constant<std::string>(
@@ -711,8 +753,7 @@ void Session::handleConnectionError(
              << d_sessionState.hostname(d_sessionState.getEgress().second)
              << ":" << d_sessionState.getIngress().second.port();
 
-    ++d_egressRetryCounter;
-    attemptConnection(connectionManager);
+    attemptResolvedConnection(connectionManager);
 }
 
 void Session::performDisconnectBoth()

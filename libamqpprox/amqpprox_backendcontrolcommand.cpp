@@ -40,7 +40,8 @@ std::string BackendControlCommand::commandVerb() const
 
 std::string BackendControlCommand::helpText() const
 {
-    return "(ADD name datacenter host port [SEND-PROXY] [TLS] | DELETE name | "
+    return "(ADD name datacenter host port [SEND-PROXY] [TLS] | ADD_DNS name "
+           "datacenter address port [SEND-PROXY] [TLS] | DELETE name | "
            "PRINT) - Change backend servers";
 }
 
@@ -57,7 +58,8 @@ void BackendControlCommand::handleCommand(const std::string & /* command */,
     iss >> subcommand;
     boost::to_upper(subcommand);
 
-    if (subcommand == "ADD") {
+    bool isDns = subcommand == "ADD_DNS";
+    if (subcommand == "ADD" || isDns) {
         std::string name;
         std::string datacenter;
         std::string host;
@@ -73,23 +75,34 @@ void BackendControlCommand::handleCommand(const std::string & /* command */,
         boost::to_upper(arg2);
 
         if (!name.empty() && !datacenter.empty() && !host.empty() && port) {
-            auto &ioService = controlHandle->ioService();
-            boost::asio::ip::tcp::resolver        resolver(ioService);
-            boost::asio::ip::tcp::resolver::query q(host, "");
-            boost::system::error_code             ec;
-            auto                                  it = resolver.resolve(q, ec);
-            if (ec) {
-                output << "Failed to resolve '" << host
-                       << "', error code: " << ec;
-                return;
+            std::string ip;
+            if (!isDns) {
+                auto &ioService = controlHandle->ioService();
+                boost::asio::ip::tcp::resolver        resolver(ioService);
+                boost::asio::ip::tcp::resolver::query q(host, "");
+                boost::system::error_code             ec;
+                auto it = resolver.resolve(q, ec);
+                if (ec) {
+                    output << "Failed to resolve '" << host
+                           << "', error code: " << ec;
+                    return;
+                }
+
+                ip = it->endpoint().address().to_string();
             }
 
-            std::string ip          = it->endpoint().address().to_string();
-            bool        isSendProxy = arg1 == Constants::sendProxy() ||
+            bool isSendProxy = arg1 == Constants::sendProxy() ||
                                arg2 == Constants::sendProxy();
             bool isSecure = arg1 == Constants::tlsCommand() ||
                             arg2 == Constants::tlsCommand();
-            Backend b(name, datacenter, host, ip, port, isSendProxy, isSecure);
+            Backend b(name,
+                      datacenter,
+                      host,
+                      ip,
+                      port,
+                      isSendProxy,
+                      isSecure,
+                      isDns);
 
             int rc = d_store_p->insert(b);
             if (rc) {

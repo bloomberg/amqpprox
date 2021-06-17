@@ -15,10 +15,13 @@
 */
 #include <amqpprox_farmstore.h>
 
+#include <amqpprox_backendstore.h>
+
 #include <gtest/gtest.h>
 
 #include <iostream>
 
+using Bloomberg::amqpprox::BackendStore;
 using Bloomberg::amqpprox::Farm;
 using Bloomberg::amqpprox::FarmStore;
 
@@ -31,21 +34,25 @@ TEST(FarmStore, Breathing)
 
 TEST(FarmStore, AddingFarm)
 {
-    FarmStore farmStore;
+    FarmStore    farmStore;
+    BackendStore backendStore;
 
-    std::unique_ptr<Farm> farm(new Farm("testfarm", "testdns", 100));
+    std::unique_ptr<Farm> farm(
+        new Farm("testfarm", {"testbackend1"}, &backendStore, nullptr));
     farmStore.addFarm(std::move(farm));
 
     std::ostringstream oss;
     farmStore.print(oss);
-    EXPECT_EQ(oss.str(), "testfarm [testdns:100]: \n");
+    EXPECT_EQ(oss.str(), "testfarm: testbackend1 \n");
 }
 
 TEST(FarmStore, RemovingFarm)
 {
-    FarmStore farmStore;
+    FarmStore    farmStore;
+    BackendStore backendStore;
 
-    std::unique_ptr<Farm> farm(new Farm("testfarm", "testdns", 100));
+    std::unique_ptr<Farm> farm(
+        new Farm("testfarm", {"testbackend1"}, &backendStore, nullptr));
     farmStore.addFarm(std::move(farm));
 
     farmStore.removeFarmByName("testfarm");
@@ -57,15 +64,16 @@ TEST(FarmStore, RemovingFarm)
 
 TEST(FarmStore, GettingExistingFarm)
 {
-    FarmStore farmStore;
+    FarmStore    farmStore;
+    BackendStore backendStore;
 
-    std::unique_ptr<Farm> farm(new Farm("testfarm", "testdns", 100));
+    std::unique_ptr<Farm> farm(
+        new Farm("testfarm", {"testbackend1"}, &backendStore, nullptr));
     farmStore.addFarm(std::move(farm));
 
     Farm &retrievedFarm = farmStore.getFarmByName("testfarm");
 
     EXPECT_EQ("testfarm", retrievedFarm.name());
-    EXPECT_EQ("testdns", retrievedFarm.dnsName());
 }
 
 TEST(FarmStore, GettingMissingFarm)
@@ -78,19 +86,22 @@ TEST(FarmStore, GettingMissingFarm)
 
 TEST(FarmStore, AddTwice)
 {
-    FarmStore farmStore;
+    FarmStore    farmStore;
+    BackendStore backendStore;
 
-    std::unique_ptr<Farm> farm(new Farm("testfarm", "testdns", 100));
+    std::unique_ptr<Farm> farm(
+        new Farm("testfarm", {"testbackend1"}, &backendStore, nullptr));
     farmStore.addFarm(std::move(farm));
 
     std::ostringstream oss;
     farmStore.print(oss);
-    EXPECT_EQ(oss.str(), "testfarm [testdns:100]: \n");
+    EXPECT_EQ(oss.str(), "testfarm: testbackend1 \n");
 
-    std::unique_ptr<Farm> farm2(new Farm("testfarm", "testdns2", 101));
+    std::unique_ptr<Farm> farm2(
+        new Farm("testfarm", {"testbackend2"}, &backendStore, nullptr));
     farmStore.addFarm(std::move(farm2));
 
     std::ostringstream oss2;
     farmStore.print(oss2);
-    EXPECT_EQ(oss2.str(), "testfarm [testdns2:101]: \n");
+    EXPECT_EQ(oss2.str(), "testfarm: testbackend2 \n");
 }

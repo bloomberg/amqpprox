@@ -24,6 +24,7 @@ add_library(libamqpprox STATIC
     amqpprox_datacenter.cpp
     amqpprox_datacentercontrolcommand.cpp
     amqpprox_dnshostnamemapper.cpp
+    amqpprox_dnsresolver.cpp
     amqpprox_eventsource.cpp
     amqpprox_eventsourcesignal.cpp
     amqpprox_exitcontrolcommand.cpp

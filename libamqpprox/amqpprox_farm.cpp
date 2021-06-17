@@ -36,8 +36,6 @@ Farm::Farm(const std::string &             name,
 , d_backendSelector_p(backendSelector)
 , d_partitionPolicies()
 , d_backendSet()
-, d_dnsName()
-, d_dnsPort(0)
 , d_mutex()
 {
     std::copy(members.cbegin(),
@@ -45,19 +43,6 @@ Farm::Farm(const std::string &             name,
               std::inserter(d_backendMembers, d_backendMembers.end()));
 
     repartition();
-}
-
-Farm::Farm(const std::string &name, const std::string &dnsName, int dnsPort)
-: d_name(name)
-, d_backendMembers()
-, d_backendStore_p()
-, d_backendSelector_p()
-, d_partitionPolicies()
-, d_backendSet()
-, d_dnsName(dnsName)
-, d_dnsPort(dnsPort)
-, d_mutex()
-{
 }
 
 // MANIPULATORS
@@ -73,13 +58,6 @@ void Farm::removeMember(const std::string &backend)
     std::lock_guard<std::mutex> lg(d_mutex);
     d_backendMembers.erase(backend);
     doRepartitionWhileLocked(lg);
-}
-
-void Farm::setDns(const std::string &name, int port)
-{
-    std::lock_guard<std::mutex> lg(d_mutex);
-    d_dnsName = name;
-    d_dnsPort = port;
 }
 
 void Farm::setBackendSelector(BackendSelector *selector)
@@ -128,18 +106,6 @@ const std::string &Farm::name() const
     return d_name;
 }
 
-const std::string &Farm::dnsName() const
-{
-    std::lock_guard<std::mutex> lg(d_mutex);
-    return d_dnsName;
-}
-
-int Farm::dnsPort() const
-{
-    std::lock_guard<std::mutex> lg(d_mutex);
-    return d_dnsPort;
-}
-
 void Farm::members(std::vector<std::string> *members) const
 {
     std::lock_guard<std::mutex> lg(d_mutex);
@@ -163,12 +129,7 @@ BackendSelector *Farm::backendSelector() const
 std::ostream &operator<<(std::ostream &os, const Farm &farm)
 {
     os << farm.name();
-    if (farm.dnsName().empty()) {
-        os << " [Manual]: ";
-    }
-    else {
-        os << " [" << farm.dnsName() << ":" << farm.dnsPort() << "]: ";
-    }
+    os << ": ";
 
     std::vector<std::string> members;
     farm.members(&members);

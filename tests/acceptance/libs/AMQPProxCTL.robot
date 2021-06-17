@@ -54,7 +54,7 @@ AMQPProxCTL FARM add_dns
 
 AMQPProxCTL FARM add_manual
     [Arguments]    ${name}  ${selector}  ${backend}
-    ${result}=  AMQPProxCTL send command  FARM  ADD_MANUAL
+    ${result}=  AMQPProxCTL send command  FARM  ADD
     ...                                   ${name}
     ...                                   ${selector}
     ...                                   ${backend}
