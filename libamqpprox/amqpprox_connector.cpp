@@ -67,7 +67,8 @@ void Connector::receive(const Buffer &buffer)
             d_state = State::START_SENT;
         }
         else {
-            LOG_WARN << "Incorrect header passed";
+            LOG_WARN << "Incorrect header passed. " << buffer.size()
+                     << "bytes";
             d_buffer            = protocolHeader;
             d_sendToIngressSide = true;
             d_state             = State::ERROR;
