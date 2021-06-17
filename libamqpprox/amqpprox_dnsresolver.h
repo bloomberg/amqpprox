@@ -148,6 +148,18 @@ class DNSResolver {
      */
     static void setOverrideFunction(OverrideFunction func);
 
+    /**
+     * \brief Helper to ensure override function is removed after a scope
+     */
+    struct OverrideFunctionGuard {
+        OverrideFunctionGuard(OverrideFunction func) {
+            DNSResolver::setOverrideFunction(func);
+        }
+        ~OverrideFunctionGuard() {
+            DNSResolver::setOverrideFunction(OverrideFunction());
+        }
+    };
+
   private:
     void cleanupCache(const boost::system::error_code &ec);
 };

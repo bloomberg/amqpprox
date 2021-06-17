@@ -665,11 +665,12 @@ TEST_F(SessionTest, Connect_Multiple_Dns)
         .WillOnce(
             DoAll(SetArgPointee<0>(resolveResult), Return(goodErrorCode)));
 
-    DNSResolver::setOverrideFunction(std::bind(&MockDnsResolver::resolve,
-                                               &mockDns,
-                                               std::placeholders::_1,
-                                               std::placeholders::_2,
-                                               std::placeholders::_3));
+    DNSResolver::OverrideFunctionGuard dnsguard(
+        std::bind(&MockDnsResolver::resolve,
+                  &mockDns,
+                  std::placeholders::_1,
+                  std::placeholders::_2,
+                  std::placeholders::_3));
 
     Backend singularBackend(
         "backend1", "dc1", "localhost", "127.0.0.1", 5672, false, false, true);
@@ -763,8 +764,6 @@ TEST_F(SessionTest, Connect_Multiple_Dns)
 
     // Run the tests through to completion
     driveTo(17);
-
-    DNSResolver::setOverrideFunction(DNSResolver::OverrideFunction());
 }
 
 TEST_F(SessionTest, Failover_Dns_Failure)
@@ -795,18 +794,19 @@ TEST_F(SessionTest, Failover_Dns_Failure)
                         Return(boost::asio::error::access_denied)));
     EXPECT_CALL(mockDns, resolve(_, "backend2", "5672"))
         .Times(1)
-        .WillOnce(DoAll(SetArgPointee<0>(resolveResult),
-                        Return(goodErrorCode)));
+        .WillOnce(
+            DoAll(SetArgPointee<0>(resolveResult), Return(goodErrorCode)));
     EXPECT_CALL(mockDns, resolve(_, "backend3", "5672"))
         .Times(1)
         .WillOnce(
             DoAll(SetArgPointee<0>(resolveResult), Return(goodErrorCode)));
 
-    DNSResolver::setOverrideFunction(std::bind(&MockDnsResolver::resolve,
-                                               &mockDns,
-                                               std::placeholders::_1,
-                                               std::placeholders::_2,
-                                               std::placeholders::_3));
+    DNSResolver::OverrideFunctionGuard dnsguard(
+        std::bind(&MockDnsResolver::resolve,
+                  &mockDns,
+                  std::placeholders::_1,
+                  std::placeholders::_2,
+                  std::placeholders::_3));
 
     Backend backend1(
         "backend1", "dc1", "backend1", "127.0.0.1", 5672, false, false, true);
@@ -873,7 +873,8 @@ TEST_F(SessionTest, Failover_Dns_Failure)
     int step = 7;
     testSetupProxyConnect(step++, &clientBase);
     testSetupProxySendsProtocolHeader(step++);
-    testSetupProxySendsStartOk(step++, "host1", 2345, LOCAL_HOSTNAME, 1234, 32000);
+    testSetupProxySendsStartOk(
+        step++, "host1", 2345, LOCAL_HOSTNAME, 1234, 32000);
     testSetupProxyOpen(step++);
     testSetupProxyPassOpenOkThrough(step++);
     testSetupBrokerSendsHeartbeat(step++);
@@ -911,8 +912,6 @@ TEST_F(SessionTest, Failover_Dns_Failure)
 
     // Run the tests through to completion
     driveTo(18);
-
-    DNSResolver::setOverrideFunction(DNSResolver::OverrideFunction());
 }
 ///////////////////////////////////////////////////////////////////////////////
 //
