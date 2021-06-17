@@ -36,7 +36,8 @@ add_executable(amqpprox_tests
     amqpprox_statcollector.t.cpp
     amqpprox_statsnapshot.t.cpp
     amqpprox_types.t.cpp
-    amqpprox_vhoststate.t.cpp)
+    amqpprox_vhoststate.t.cpp
+    amqpprox_defaultauthintercept.t.cpp)
 
 target_link_libraries(amqpprox_tests LINK_PUBLIC
     libamqpprox

@@ -33,6 +33,7 @@ const std::vector<std::string> ConnectionStats::s_sessionMetrics = {
 const std::vector<std::string> ConnectionStats::s_statsTypes = {
     "pausedConnectionCount",
     "activeConnectionCount",
+    "authDeniedConnectionCount",
     "removedConnectionGraceful",
     "removedConnectionBrokerSnapped",
     "removedConnectionClientSnapped",

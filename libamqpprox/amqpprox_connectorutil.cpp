@@ -56,7 +56,7 @@ FieldTable ConnectorUtil::generateServerProperties()
                          "consumer_cancel_notify",
                          "connection.blocked",
                          "consumer_priorities",
-                         "authentication_failure_close",
+                         Constants::authenticationFailureClose(),
                          "per_consumer_qos",
                          "direct_reply_to"};
 
@@ -64,7 +64,8 @@ FieldTable ConnectorUtil::generateServerProperties()
         capabilitiesTable->pushField(cap, FieldValue('t', true));
     }
 
-    ft.pushField("capabilities", FieldValue('F', capabilitiesTable));
+    ft.pushField(Constants::capabilities(),
+                 FieldValue('F', capabilitiesTable));
     ft.pushField("cluster_name",
                  FieldValue('S', std::string(Constants::clusterName())));
     ft.pushField("copyright",

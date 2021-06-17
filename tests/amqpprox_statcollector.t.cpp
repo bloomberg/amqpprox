@@ -81,6 +81,7 @@ TEST(StatCollector, Simple_Single_Session)
     ConnectionStats expectedStats(
         {{"pausedConnectionCount", 0},
          {"activeConnectionCount", 1},
+         {"authDeniedConnectionCount", 0},
          {"removedConnectionGraceful", 0},
          {"removedConnectionBrokerSnapped", 0},
          {"removedConnectionClientSnapped", 0},
@@ -126,6 +127,7 @@ TEST(StatCollector, Multiple_Session)
     state3.incrementIngressTotals(3000, 4000);
     state3.addIngressLatency(2);
     state3.setPaused(true);
+    state3.setAuthDeniedConnection(true);
 
     StatCollector sc;
     sc.collect(state1);
@@ -135,6 +137,7 @@ TEST(StatCollector, Multiple_Session)
     ConnectionStats expectedStats(
         {{"pausedConnectionCount", 1},
          {"activeConnectionCount", 3},
+         {"authDeniedConnectionCount", 1},
          {"removedConnectionGraceful", 0},
          {"removedConnectionBrokerSnapped", 0},
          {"removedConnectionClientSnapped", 0},
@@ -152,6 +155,7 @@ TEST(StatCollector, Multiple_Session)
     ConnectionStats expectedFooStats(
         {{"pausedConnectionCount", 0},
          {"activeConnectionCount", 2},
+         {"authDeniedConnectionCount", 0},
          {"removedConnectionGraceful", 0},
          {"removedConnectionBrokerSnapped", 0},
          {"removedConnectionClientSnapped", 0},
@@ -166,6 +170,7 @@ TEST(StatCollector, Multiple_Session)
     ConnectionStats expectedBarStats(
         {{"pausedConnectionCount", 1},
          {"activeConnectionCount", 1},
+         {"authDeniedConnectionCount", 1},
          {"removedConnectionGraceful", 0},
          {"removedConnectionBrokerSnapped", 0},
          {"removedConnectionClientSnapped", 0},
@@ -219,6 +224,7 @@ TEST(StatCollector, Returns_To_Zero)
     ConnectionStats expectedStats(
         {{"pausedConnectionCount", 0},
          {"activeConnectionCount", 1},
+         {"authDeniedConnectionCount", 0},
          {"removedConnectionGraceful", 0},
          {"removedConnectionBrokerSnapped", 0},
          {"removedConnectionClientSnapped", 0},
@@ -261,6 +267,7 @@ TEST(StatCollector, Handles_New_Counter_Values)
     ConnectionStats expectedStats(
         {{"pausedConnectionCount", 0},
          {"activeConnectionCount", 1},
+         {"authDeniedConnectionCount", 0},
          {"removedConnectionGraceful", 0},
          {"removedConnectionBrokerSnapped", 0},
          {"removedConnectionClientSnapped", 0},

@@ -59,6 +59,7 @@ class SessionState {
     std::atomic<uint64_t>           d_ingressLatencyTotal;
     std::atomic<uint64_t>           d_egressLatencyTotal;
     std::atomic<bool>               d_paused;
+    std::atomic<bool>               d_authDeniedConnection;
     std::string                     d_virtualHost;
     DisconnectType                  d_disconnectedStatus;
     uint64_t                        d_id;
@@ -106,6 +107,13 @@ class SessionState {
      * \param paused flag to specify paused or unpaused virtual host
      */
     void setPaused(bool paused);
+
+    /**
+     * \brief Set the denied connection flag, because of auth failure
+     * \param authDenied flag to specify denied connection because of auth
+     * failure
+     */
+    void setAuthDeniedConnection(bool authDenied);
 
     /**
      * \brief Set session as disconnected, along with which type of disconnect
@@ -176,6 +184,12 @@ class SessionState {
     inline bool getPaused() const;
 
     /**
+     * \return the state of the connection, whether it is denied because of
+     * auth failure
+     */
+    inline bool getAuthDeniedConnection() const;
+
+    /**
      * \return session identifier
      */
     inline uint64_t id() const;
@@ -221,6 +235,11 @@ inline const std::string &SessionState::getVirtualHost() const
 inline bool SessionState::getPaused() const
 {
     return d_paused;
+}
+
+inline bool SessionState::getAuthDeniedConnection() const
+{
+    return d_authDeniedConnection;
 }
 
 inline uint64_t SessionState::id() const

@@ -44,6 +44,7 @@ SessionState::SessionState(
 , d_egressLatencyTotal(0)
 , d_egressLatencyCount(0)
 , d_paused(false)
+, d_authDeniedConnection(false)
 , d_virtualHost()
 , d_disconnectedStatus(DisconnectType::NOT_DISCONNECTED)
 , d_id(s_nextId++)  // This isn't a race because this is only on one thread
@@ -103,6 +104,11 @@ void SessionState::setHostnameMapper(
 void SessionState::setPaused(bool paused)
 {
     d_paused = paused;
+}
+
+void SessionState::setAuthDeniedConnection(bool authDenied)
+{
+    d_authDeniedConnection = authDenied;
 }
 
 void SessionState::setDisconnected(SessionState::DisconnectType disconnect)
@@ -196,6 +202,7 @@ std::ostream &operator<<(std::ostream &os, const SessionState &state)
                ? ""
                : "D")
        << (state.getPaused() ? "P " : " ")
+       << (state.getAuthDeniedConnection() ? "DENY " : " ")
        << state.hostname(state.getIngress().second) << ":"
        << state.getIngress().second.port() << "->"
        << state.hostname(state.getIngress().first) << " --> "

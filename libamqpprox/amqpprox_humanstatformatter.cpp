@@ -53,6 +53,8 @@ void HumanStatFormatter::format(std::ostream &os, const ConnectionStats &stats)
 {
     os << "Paused: " << stats.statsValue("pausedConnectionCount") << " "
        << "Active: " << stats.statsValue("activeConnectionCount") << " "
+       << "Auth denied: " << stats.statsValue("authDeniedConnectionCount")
+       << " "
        << "Removed(Clean): " << stats.statsValue("removedConnectionGraceful")
        << " "
        << "Removed(Broker): "

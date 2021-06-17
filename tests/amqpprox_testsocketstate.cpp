@@ -63,8 +63,8 @@ bool TestSocketState::drive()
     bool  didWork = false;
 
     for (; step.d_produceIndex < sz; ++step.d_produceIndex) {
-        auto item           = &step.d_produce[step.d_produceIndex];
-        didWork = true;
+        auto item = &step.d_produce[step.d_produceIndex];
+        didWork   = true;
 
         if (auto state = std::get_if<State>(item)) {
             d_currentState = *state;

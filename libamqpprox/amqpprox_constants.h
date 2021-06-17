@@ -90,6 +90,13 @@ class Constants {
     static constexpr const char *cr() { return "\r\n"; }
 
     static constexpr uint8_t frameEnd() { return 0xCE; }
+
+    static constexpr const char *capabilities() { return "capabilities"; }
+
+    static constexpr const char *authenticationFailureClose()
+    {
+        return "authentication_failure_close";
+    }
 };
 
 }
