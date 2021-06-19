@@ -77,7 +77,6 @@ Although most configuration is injected by the amqpprox_ctl program, the logging
 )helptext";
 }
 
-// TODO update this HELP_TEXT
 
 int main(int argc, char *argv[])
 {
