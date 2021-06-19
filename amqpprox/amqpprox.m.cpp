@@ -66,25 +66,31 @@
 #include <thread>
 
 namespace {
-const char HELP_TEXT[] =
-    "amqpprox AMQP v0.9.1 proxy:\n"
-    "This is a proxy program for AMQP, designed to sit in front of a "
-    "RabbitMQ\n"
-    "cluster. Most options for configuring the proxy and introspecting its\n"
-    "state are available through the amqpprox_ctl program, begin by sending\n"
-    "HELP to it. This program supports the following options to allow "
-    "running\n"
-    "multiple instances on a machine";
+const char *HELP_TEXT = R"helptext(
+amqpprox AMQP v0.9.1 proxy:
+
+This is a proxy program for AMQP v0.9.1, designed to sit in front of a RabbitMQ cluster. Most options for configuring the proxy and introspecting its state are available through the amqpprox_ctl program, begin by sending 'HELP' to it.
+
+This program supports the following options to allow running multiple instances on a machine and a simplified configuration mode. In the simplified configuration mode the --listenPort, --destinationDNS and --destinationPort must all be specified, and after which it immediately starts listening on all interfaces for that port and sends all vhosts to the destination DNS entry. More complicated configuration, such as sending different vhosts to different destinations, necessitates the use of the amqpprox_ctl.
+
+Although most configuration is injected by the amqpprox_ctl program, the logging directories and the control UNIX domain socket are specified on this program, to facilitate safely running multiple instances of amqpprox on a single host.
+)helptext";
 }
+
 
 int main(int argc, char *argv[])
 {
+    using namespace std::string_literals;
     using namespace Bloomberg::amqpprox;
     namespace po = boost::program_options;
 
     std::string logDirectory;
     std::string controlSocket;
     uint32_t    cleanupIntervalMs;
+    uint16_t    easyListenPort;
+    uint16_t    easyDestinationPort;
+    std::string easyDestinationDNS;
+    uint16_t    consoleVerbosity;
 
     // Set up the basic command line options to allow multiple instances to run
     // on a single box without colliding
@@ -97,7 +103,21 @@ int main(int argc, char *argv[])
         po::value<std::string>(&controlSocket)->default_value("/tmp/amqpprox"),
         "Set control UNIX domain socket location")(
         "cleanupIntervalMs",
-        po::value<uint32_t>(&cleanupIntervalMs)->default_value(1000u));
+        po::value<uint32_t>(&cleanupIntervalMs)->default_value(1000u),
+        "Set the cleanup interval to garbage collect connections")(
+        "listenPort",
+        po::value<uint16_t>(&easyListenPort)->default_value(0),
+        "Simple config mode: listening port")(
+        "destinationPort",
+        po::value<uint16_t>(&easyDestinationPort)->default_value(0),
+        "Simple config mode: destination port")(
+        "destinationDNS",
+        po::value<std::string>(&easyDestinationDNS)->default_value(""),
+        "Simple config mode: destination DNS address")(
+        "consoleVerbosity,v",
+        po::value<uint16_t>(&consoleVerbosity)->default_value(0),
+        "Default console logging verbosity (0 = No output through to 5 = "
+        "Trace-level)");
 
     po::variables_map variablesMap;
 
@@ -117,6 +137,23 @@ int main(int argc, char *argv[])
     if (variablesMap.count("help")) {
         std::cout << options << "\n";
         return 1;
+    }
+
+    // Check if using simple configuration
+    if ((easyListenPort != 0 || easyDestinationPort != 0 ||
+         easyDestinationDNS != "") &&
+        (easyListenPort == 0 || easyDestinationPort == 0 ||
+         easyDestinationDNS == "")) {
+        // All the easy options must be set at once
+        std::cout
+            << "If configuring in simple mode, the --listenPort, "
+               "--destinationPort and --destinationDNS must all be set\n";
+        return 2;
+    }
+
+    if (consoleVerbosity > 5) {
+        std::cout << "Console log verbosity must be between 0 and 5\n";
+        return 3;
     }
 
     Logging::start(logDirectory);
@@ -226,6 +263,44 @@ int main(int argc, char *argv[])
 
     // Start the control thread separately
     std::thread controlThread([&]() { control.run(); });
+
+    auto output = [](const std::string &output, bool finish) -> bool {
+        std::cout << output;
+        return true;
+    };
+
+    if (consoleVerbosity > 0) {
+        control.getControlCommand("LOG")->handleCommand(
+            "LOG",
+            "CONSOLE "s + std::to_string(consoleVerbosity),
+            output,
+            &server,
+            &control);
+    }
+
+    if (easyListenPort != 0) {
+        control.getControlCommand("BACKEND")->handleCommand(
+            "BACKEND",
+            "ADD_DNS default-backend none "s + easyDestinationDNS + " " +
+                std::to_string(easyDestinationPort),
+            output,
+            &server,
+            &control);
+        control.getControlCommand("FARM")->handleCommand(
+            "FARM",
+            "ADD default round-robin default-backend",
+            output,
+            &server,
+            &control);
+        control.getControlCommand("MAP")->handleCommand(
+            "MAP", "DEFAULT default", output, &server, &control);
+        control.getControlCommand("LISTEN")->handleCommand(
+            "LISTEN",
+            "START "s + std::to_string(easyListenPort),
+            output,
+            &server,
+            &control);
+    }
 
     // Start the server loop and block
     const int rc = server.run();
