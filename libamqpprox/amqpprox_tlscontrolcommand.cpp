@@ -134,7 +134,7 @@ void TlsControlCommand::handleCommand(const std::string & /* command */,
                 output << "Failed to set cipher suite. ";
             }
 
-            output << "New ciphers:\n";
+            output << "Updated cipher list:\n";
             logCipherSuites(context, output);
 
             return;
