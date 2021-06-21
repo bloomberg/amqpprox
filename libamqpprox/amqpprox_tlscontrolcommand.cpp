@@ -140,7 +140,7 @@ void TlsControlCommand::handleCommand(const std::string & /* command */,
             return;
         }
     }
-    // All other commands operator on a single file argument
+    // All other commands operate on a single file argument
 
     iss >> file;
 
