@@ -13,16 +13,16 @@ All examples in this section are applicable for ingress and egress connections. 
 
 For both ingress and egress connections, the `amqpprox` certificate can be specified using 
 
-`amqpprox_ctl /tmp/amqpprox INGRESS CERT_CHAIN_FILE /path/to/cert.crt`
+`amqpprox_ctl /tmp/amqpprox TLS INGRESS CERT_CHAIN_FILE /path/to/cert.crt`
 
 This file path is given to OpenSSL which expects it to be in PEM format.
 
 ### 2. Private Keys
 The ingress/egress private keys can be configured using:
 
-`amqpprox_ctl /tmp/amqpprox INGRESS KEY_FILE /path/to/private.key`
+`amqpprox_ctl /tmp/amqpprox TLS INGRESS KEY_FILE /path/to/private.key`
 or
-`amqpprox_ctl /tmp/amqpprox INGRESS RSA_KEY_FILE /path/to/private.key`
+`amqpprox_ctl /tmp/amqpprox TLS INGRESS RSA_KEY_FILE /path/to/private.key`
 
 PEM format is expected for both key file types.
 
@@ -32,21 +32,33 @@ The level of certificate verification performed during the TLS handshake is conf
 
 #### Enable peer verification
 E.g. the following instructs `amqpprox` to verify the opposing party's certificate during the connection.
-`amqpprox_ctl /tmp/amqpprox INGRESS VERIFY_MODE PEER`
+`amqpprox_ctl /tmp/amqpprox TLS INGRESS VERIFY_MODE PEER`
 
 #### Disable peer verification
-`amqpprox_ctl /tmp/amqpprox INGRESS VERIFY_MODE NONE`
+`amqpprox_ctl /tmp/amqpprox TLS INGRESS VERIFY_MODE NONE`
 
 #### Require other party to present certificate
-`amqpprox_ctl /tmp/amqpprox INGRESS VERIFY_MODE FAIL_IF_NO_PEER_CERT`
+`amqpprox_ctl /tmp/amqpprox TLS INGRESS VERIFY_MODE FAIL_IF_NO_PEER_CERT`
 
 ### 4. CA Certificates
 
 The CA Certificate(s) used to verify the other party are configured using:
 
-`amqpprox_ctl /tmp/amqpprox INGRESS CA_CERT_FILE /path/to/cacert.crt`
+`amqpprox_ctl /tmp/amqpprox TLS INGRESS CA_CERT_FILE /path/to/cacert.crt`
 
 This file path is given to OpenSSL which expects it to be in PEM format.
+
+### 5. Supported Cipher Suites
+
+The Cipher suites enabled by default will depend on the openssl version amqpprox is being built with.
+
+To query which ciphers are enabled, use:
+
+`amqpprox_ctl /tmp/amqpprox TLS INGRESS CIPHERS PRINT`
+
+The supported set can be updated (& therefore restricted) using:
+
+`amqpprox_ctl /tmp/amqpprox TLS INGRESS CIPHERS SET ECDHE-ECDSA-AES256-GCM-SHA384`
 
 ## Ingress configuration
 
@@ -60,11 +72,11 @@ https://wiki.openssl.org/index.php/Diffie-Hellman_parameters
 
 dh parameters can be configured using:
 
-`amqpprox_ctl /tmp/amqpprox INGRESS TMP_DH_FILE /path/to/dhparams.pem`
+`amqpprox_ctl /tmp/amqpprox TLS INGRESS TMP_DH_FILE /path/to/dhparams.pem`
 This file must be in PEM format.
 
 ### Only request client certificate once
-`amqpprox_ctl /tmp/amqpprox INGRESS VERIFY_MODE CLIENT_ONCE`
+`amqpprox_ctl /tmp/amqpprox TLS INGRESS VERIFY_MODE CLIENT_ONCE`
 
  > See SSL_CTX_set_verify documentation for more information e.g. https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_verify.html
 
@@ -77,3 +89,5 @@ A RabbitMQ broker (backend) can be flagged as requiring a TLS connection during 
  > Note this can be combined with the Proxy Protocol header as follows
 
 `amqpprox_ctl /tmp/amqpprox BACKEND ADD server1 local 127.0.0.1 5671 TLS SEND-PROXY`
+
+Use `amqpprox_ctl /tmp/amqpprox TLS EGRESS ...` to configure TLS parameters for connecting to RabbitMQ brokers.
