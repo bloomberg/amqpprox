@@ -18,8 +18,13 @@
 #include <amqpprox_buffer.h>
 #include <amqpprox_fieldtable.h>
 #include <amqpprox_fieldvalue.h>
+#include <amqpprox_logging.h>
 
 #include <boost/endian/arithmetic.hpp>
+
+// Note this is not 'pure' AMQP 0-9-1  aiming for the same compatibility as the
+// server see https://www.rabbitmq.com/amqp-0-9-1-errata.html &
+// https://github.com/rabbitmq/rabbitmq-server/blob/master/deps/rabbit_common/src/rabbit_binary_parser.erl
 
 namespace Bloomberg {
 namespace amqpprox {
@@ -141,9 +146,12 @@ bool Types::decodeFieldValue(FieldValue *outValue, Buffer &buffer)
         FieldValue value(type, (uint64_t)buffer.copy<big_uint8_t>());
         *outValue = value;
     } break;
-    case 'U':  // short-int
+    case 'U':
+        LOG_DEBUG << "Converting unsupported field type 'U' to 's'";
+        // fall through
+    case 's':  // short-int
     {
-        FieldValue value(type, (int64_t)buffer.copy<big_int16_t>());
+        FieldValue value('s', (int64_t)buffer.copy<big_int16_t>());
         *outValue = value;
     } break;
     case 'u':  // short-uint
@@ -161,55 +169,54 @@ bool Types::decodeFieldValue(FieldValue *outValue, Buffer &buffer)
         FieldValue value(type, (uint64_t)buffer.copy<big_uint32_t>());
         *outValue = value;
     } break;
-    case 'L':  // long-long-int
+    case 'l':  // long-long-int
+    case 'L':  // compatibility long-long-int
     {
         FieldValue value(type, (int64_t)buffer.copy<big_int64_t>());
-        *outValue = value;
-    } break;
-    case 'l':  // long-long-uint
-    {
-        FieldValue value(type, (uint64_t)buffer.copy<big_uint64_t>());
         *outValue = value;
     } break;
     case 'f':  // float
     {
         std::vector<uint8_t> floatBuf;
-        decodeByteVector(&floatBuf, buffer, FLOAT_OCTETS);
+        if (!decodeByteVector(&floatBuf, buffer, FLOAT_OCTETS)) {
+            return false;
+        }
         FieldValue value(type, floatBuf);
         *outValue = value;
     } break;
     case 'd':  // double
     {
         std::vector<uint8_t> doubleBuf;
-        decodeByteVector(&doubleBuf, buffer, DOUBLE_OCTETS);
+        if (!decodeByteVector(&doubleBuf, buffer, DOUBLE_OCTETS)) {
+            return false;
+        }
         FieldValue value(type, doubleBuf);
         *outValue = value;
     } break;
     case 'D':  // decimal-value
     {
         std::vector<uint8_t> decimalBuf;
-        decodeByteVector(&decimalBuf, buffer, DECIMAL_OCTETS);
+        if (!decodeByteVector(&decimalBuf, buffer, DECIMAL_OCTETS)) {
+            return false;
+        }
         FieldValue value(type, decimalBuf);
-        *outValue = value;
-    } break;
-    case 's':  // short-string
-    {
-        std::string val;
-        decodeShortString(&val, buffer);
-        FieldValue value(type, val);
         *outValue = value;
     } break;
     case 'S':  // long-string
     {
         std::string val;
-        decodeLongString(&val, buffer);
+        if (!decodeLongString(&val, buffer)) {
+            return false;
+        }
         FieldValue value(type, val);
         *outValue = value;
     } break;
     case 'A':  // field-array
     {
         std::vector<FieldValue> val;
-        decodeFieldArray(&val, buffer);
+        if (!decodeFieldArray(&val, buffer)) {
+            return false;
+        }
         FieldValue value(type, val);
         *outValue = value;
     } break;
@@ -221,13 +228,30 @@ bool Types::decodeFieldValue(FieldValue *outValue, Buffer &buffer)
     case 'F':  // field-table
     {
         auto sp = std::make_shared<FieldTable>();
-        decodeFieldTable(sp.get(), buffer);
+        if (!decodeFieldTable(sp.get(), buffer)) {
+            return false;
+        }
         FieldValue value(type, sp);
         *outValue = value;
     } break;
     case 'V':  // No value
     {
         // There is no value to return.
+    } break;
+    case 'x':  // byte array
+    {
+        std::vector<uint8_t> val;
+        if (buffer.available() < sizeof(uint32_t)) {
+            return false;
+        }
+
+        uint32_t length = buffer.copy<big_uint32_t>();
+
+        if (!decodeByteVector(&val, buffer, length)) {
+            return false;
+        }
+        FieldValue value(type, val);
+        *outValue = value;
     } break;
     default: {
         return false;
@@ -270,7 +294,7 @@ bool Types::encodeFieldValue(Buffer &buffer, const FieldValue &fv)
             return false;
         }
     } break;
-    case 'U':  // short-int
+    case 's':  // short-int
     {
         if (!writeBuffer.writeIn<big_int16_t>(fv.value<int64_t>())) {
             return false;
@@ -294,39 +318,18 @@ bool Types::encodeFieldValue(Buffer &buffer, const FieldValue &fv)
             return false;
         }
     } break;
-    case 'L':  // long-long-int
+    case 'L':  // compatibility long-long-int
+    case 'l':  // long-long-int
     {
         if (!writeBuffer.writeIn<big_int64_t>(fv.value<int64_t>())) {
             return false;
         }
     } break;
-    case 'l':  // long-long-uint
-    {
-        if (!writeBuffer.writeIn<big_uint64_t>(fv.value<uint64_t>())) {
-            return false;
-        }
-    } break;
     case 'f':  // float
-    {
-        if (!encodeByteVector(writeBuffer, fv.value<std::vector<uint8_t>>())) {
-            return false;
-        }
-    } break;
     case 'd':  // double
-    {
-        if (!encodeByteVector(writeBuffer, fv.value<std::vector<uint8_t>>())) {
-            return false;
-        }
-    } break;
     case 'D':  // decimal-value
     {
         if (!encodeByteVector(writeBuffer, fv.value<std::vector<uint8_t>>())) {
-            return false;
-        }
-    } break;
-    case 's':  // short-string
-    {
-        if (!encodeShortString(writeBuffer, fv.value<std::string>())) {
             return false;
         }
     } break;
@@ -363,6 +366,17 @@ bool Types::encodeFieldValue(Buffer &buffer, const FieldValue &fv)
     case 'V':  // No value
     {
         // There is no value to write
+    } break;
+    case 'x':  // byte array
+    {
+        const std::vector<uint8_t> &byteArray =
+            fv.value<std::vector<uint8_t>>();
+        if (!writeBuffer.writeIn<big_uint32_t>(byteArray.size())) {
+            return false;
+        }
+        if (!encodeByteVector(writeBuffer, byteArray)) {
+            return false;
+        }
     } break;
     default: {
         return false;

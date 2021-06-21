@@ -77,7 +77,6 @@ std::ostream &operator<<(std::ostream &os, const FieldValue &value)
         os << *boost::get<std::shared_ptr<FieldTable>>(value.d_value);
         break;
     case 'S':
-    case 's':
         os << "\"";
         boost::apply_visitor(FieldValuePrinter(os), value.d_value);
         os << "\"";

@@ -36,7 +36,7 @@ TEST(Methods_Start, Start_Breathing)
 TEST(Methods_Start, Start_Encode_Decode)
 {
     FieldTable ft;
-    FieldValue fv('s', std::string("ShortString"));
+    FieldValue fv('S', std::string("String"));
     ft.pushField("foo", fv);
     Start startMethod(0, 9, ft, {"PLAIN", "AMQPLAIN"}, {"en-US"});
 
@@ -56,7 +56,7 @@ TEST(Methods_Start, Start_Encode_Decode)
 TEST(Methods_Start, Start_Decode_Fail)
 {
     FieldTable ft;
-    FieldValue fv('s', std::string("ShortString"));
+    FieldValue fv('S', std::string("String"));
     ft.pushField("foo", fv);
     Start startMethod(0, 9, ft, {"PLAIN", "AMQPLAIN"}, {"en-US"});
 
@@ -66,7 +66,7 @@ TEST(Methods_Start, Start_Decode_Fail)
     EXPECT_TRUE(encoded);
 
     Buffer encodedData = encodeBuf.currentData();
-    auto len = encodedData.size();
+    auto   len         = encodedData.size();
     for (int i = len - 1; i > 0; --i) {
         Buffer testData(encodedData.originalPtr(), i);
         Start  decodedStartMethod;

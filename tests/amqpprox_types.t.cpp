@@ -409,7 +409,7 @@ TEST(TypesEncoding, ShouldRoundTripFieldArrayStringsAndBytesCorrectly)
     std::vector<uint8_t> encodedFloat(4);
     memcpy(encodedFloat.data(), static_cast<void *>(&floatValue), 4);
 
-    FieldValue fieldValue1('s', std::string("ThisIsAShortString!"));
+    FieldValue fieldValue1('S', std::string("ThisIsAString!"));
     FieldValue fieldValue2('f', encodedFloat);
     FieldValue fieldValue3('t', true);
 
@@ -429,4 +429,55 @@ TEST(TypesEncoding, ShouldRoundTripFieldArrayStringsAndBytesCorrectly)
     // THEN
     EXPECT_TRUE(result);
     EXPECT_EQ(fieldArray, resultFieldArray);
+}
+
+TEST(TypesAMQPExceptionals, ShouldPreserveCompatibilityTypes)
+{
+    // GIVEN
+    FieldValue fieldValue1('s', int64_t(1337));
+    FieldValue fieldValue2('l', int64_t(1333333333333333337));
+    FieldValue fieldValue3('L', int64_t(7333333333333333331));
+    FieldValue fieldValue4('S', std::string("ThisIsAString"));
+    FieldValue fieldValue5('x', std::vector<uint8_t>({1, 3, 3, 7}));
+
+    std::vector<FieldValue> fieldArray{
+        fieldValue1, fieldValue2, fieldValue3, fieldValue4};
+
+    std::vector<uint8_t> backingStore;
+    backingStore.resize(512);
+    Buffer buffer(backingStore.data(), backingStore.capacity());
+
+    // WHEN
+    Types::encodeFieldArray(buffer, fieldArray);
+
+    buffer.seek(0);
+    std::vector<FieldValue> resultFieldArray;
+    bool result = Types::decodeFieldArray(&resultFieldArray, buffer);
+
+    // THEN
+    EXPECT_TRUE(result);
+    EXPECT_EQ(fieldArray, resultFieldArray);
+}
+
+TEST(TypesAMQPExceptionals, ShouldConvertUTosForShortInt)
+{
+    FieldValue expected('s', int64_t(1337));
+
+    std::vector<uint8_t> backingStore;
+    backingStore.resize(32);
+    Buffer buffer(backingStore.data(), backingStore.capacity());
+
+    // WHEN
+    bool result     = Types::encodeFieldValue(buffer, expected);
+    backingStore[0] = 'U';  // manually override to amqp 'U' field
+
+    EXPECT_TRUE(result);
+
+    buffer.seek(0);
+
+    FieldValue decodedField('V', false);
+    result = Types::decodeFieldValue(&decodedField, buffer);
+
+    EXPECT_TRUE(result);
+    EXPECT_EQ(decodedField, expected);
 }
