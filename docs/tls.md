@@ -60,6 +60,18 @@ The supported set can be updated (& therefore restricted) using:
 
 `amqpprox_ctl /tmp/amqpprox TLS INGRESS CIPHERS SET ECDHE-ECDSA-AES256-GCM-SHA384`
 
+Multiple ciphers can be passed using `:` to deliminate. For example:
+
+```
+amqpprox_ctl /tmp/amqpprox TLS INGRESS CIPHERS SET "ECDHE-ECDSA-AES128-CCM:ECDHE-ECDSA-AES256-GCM-SHA384"
+Updated cipher list:
+TLS_AES_256_GCM_SHA384
+TLS_CHACHA20_POLY1305_SHA256
+TLS_AES_128_GCM_SHA256
+ECDHE-ECDSA-AES128-CCM
+ECDHE-ECDSA-AES256-GCM-SHA384
+```
+
 ## Ingress configuration
 
 Inbound TLS sessions can be configured by enabling a 'secure' port to listen on:
