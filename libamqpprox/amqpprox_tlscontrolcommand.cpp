@@ -23,8 +23,23 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include <openssl/ssl.h>
+
 namespace Bloomberg {
 namespace amqpprox {
+namespace {
+void logCipherSuites(boost::asio::ssl::context &context, std::ostream &os)
+{
+    STACK_OF(SSL_CIPHER) *ciphers =
+        SSL_CTX_get_ciphers(context.native_handle());
+
+    for (size_t i = 0; i < sk_SSL_CIPHER_num(ciphers); i++) {
+        const SSL_CIPHER *cipher = sk_SSL_CIPHER_value(ciphers, i);
+
+        os << SSL_CIPHER_get_name(cipher) << "\n";
+    }
+}
+}
 
 TlsControlCommand::TlsControlCommand()
 {
@@ -69,8 +84,6 @@ void TlsControlCommand::handleCommand(const std::string & /* command */,
     boost::system::error_code ec;
 
     if ("VERIFY_MODE" == command) {
-        // Verify mode is a special case, everything else expects a filename
-        // argument
         boost::asio::ssl::verify_mode mode = 0;
         std::string                   mode_str;
         while (iss >> mode_str) {
@@ -102,6 +115,32 @@ void TlsControlCommand::handleCommand(const std::string & /* command */,
 
         return;
     }
+    else if ("CIPHERS" == command) {
+        std::string argument;
+        iss >> argument;
+        if ("PRINT" == argument) {
+            output << "Ciphers:\n";
+            logCipherSuites(context, output);
+            return;
+        }
+        else if ("SET" == argument) {
+            std::string cipherList;
+            std::getline(iss, cipherList);
+
+            int rc = SSL_CTX_set_cipher_list(context.native_handle(),
+                                             cipherList.c_str());
+
+            if (!rc) {
+                output << "Failed to set cipher suite. ";
+            }
+
+            output << "New ciphers:\n";
+            logCipherSuites(context, output);
+
+            return;
+        }
+    }
+    // All other commands operator on a single file argument
 
     iss >> file;
 
