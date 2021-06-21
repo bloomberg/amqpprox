@@ -30,8 +30,14 @@ namespace amqpprox {
 namespace {
 void logCipherSuites(boost::asio::ssl::context &context, std::ostream &os)
 {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    // OpenSSL >= 1.1.x
     STACK_OF(SSL_CIPHER) *ciphers =
         SSL_CTX_get_ciphers(context.native_handle());
+#else
+    // Assumed to be a recent OpenSSL 1.0 release
+    STACK_OF(SSL_CIPHER) *ciphers = context.native_handle()->cipher_list;
+#endif
 
     for (size_t i = 0; i < sk_SSL_CIPHER_num(ciphers); i++) {
         const SSL_CIPHER *cipher = sk_SSL_CIPHER_value(ciphers, i);
