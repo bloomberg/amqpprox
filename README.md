@@ -50,7 +50,7 @@ talk](https://www.youtube.com/watch?v=tTh1nIKEOU4) at RabbitMQ Summit 2019.
 - [X] Statistics about each interaction
 - [X] Able to easily test client failover by severing connections on demand
 
-## Future Future Ideas and Direction
+## Future Ideas and Direction
 
 - [ ] Introducing `SO_REUSEPORT` to scale up on one host
 - [ ] Traffic throttling/shaping per vhost/session/connection
