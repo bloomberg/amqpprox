@@ -15,7 +15,9 @@
 */
 
 
+#include <amqpprox_backendselector.h>
 #include <amqpprox_backendselectorstore.h>
+#include <amqpprox_robinbackendselector.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -27,4 +29,9 @@ using namespace testing;
 
 TEST(BackendSelectorStore, Breathing) {
     BackendSelectorStore store;
+    std::unique_ptr<BackendSelector> selector(new RobinBackendSelector());
+    store.addSelector(std::move(selector));
+
+    EXPECT_EQ(store.getSelector("not-existing"), nullptr);
+    EXPECT_NE(store.getSelector("round-robin"), nullptr);
 }
