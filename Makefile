@@ -1,6 +1,7 @@
 UNAME_OVERRIDE ?= `uname`
 BUILD_PARALLELISM ?= `nproc`
 BUILDDIR ?= build/$(UNAME_OVERRIDE)
+CUR_DIR ?= $(shell pwd)
 
 test:
 	cd $(BUILDDIR) && make -j$(BUILD_PARALLELISM)
@@ -13,17 +14,17 @@ setup: BUILD_FLAVOUR ?= conan
 setup:
 	mkdir -p $(BUILDDIR)
 	/bin/echo -n "$(BUILD_FLAVOUR)" > $(BUILDDIR)/flavour
-	(test -x ./buildfiles/$(BUILD_FLAVOUR)/bootstrap && ./buildfiles/$(BUILD_FLAVOUR)/bootstrap $(BUILDDIR) $(realpath .)) || true
+	(test -x ./buildfiles/$(BUILD_FLAVOUR)/bootstrap && ./buildfiles/$(BUILD_FLAVOUR)/bootstrap $(BUILDDIR) $(CUR_DIR)) || true
 
 init:
-	cd $(BUILDDIR) && cmake $(EXTRA_CMAKE_ARGS) $(shell pwd)
+	cd $(BUILDDIR) && cmake $(EXTRA_CMAKE_ARGS) $(CUR_DIR)
 
 clean:
 	cd $(BUILDDIR) && make clean
 
 DOCKER_IMAGE ?= amqpprox
 DOCKER_BUILDDIR ?= build/docker-$(DOCKER_IMAGE)
-DOCKER_ARGS ?= $(DOCKER_EXTRA_ARGS) -v $(shell pwd):/source -v $(shell realpath $(DOCKER_BUILDDIR)):/build -it $(DOCKER_IMAGE)
+DOCKER_ARGS ?= $(DOCKER_EXTRA_ARGS) -v $(CUR_DIR):/source -v $(CUR_DIR)/$(DOCKER_BUILDDIR):/build -it $(DOCKER_IMAGE)
 DOCKER_RUN ?= docker run $(DOCKER_ARGS)
 
 docker-setup: BUILD_FLAVOUR ?= conan
