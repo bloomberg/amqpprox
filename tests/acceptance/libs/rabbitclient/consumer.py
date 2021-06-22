@@ -1,3 +1,6 @@
+# Reference source: https://github.com/pika/pika/blob/master/examples/asynchronous_consumer_example.py
+# License: https://github.com/pika/pika/blob/master/LICENSE
+
 """ Pika consumer """
 
 import logging
