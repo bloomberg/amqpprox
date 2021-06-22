@@ -15,7 +15,9 @@
 */
 
 
+#include <amqpprox_datacenter.h>
 #include <amqpprox_partitionpolicystore.h>
+#include <amqpprox_affinitypartitionpolicy.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -27,4 +29,13 @@ using namespace testing;
 
 TEST(PartitionPolicyStore, Breathing) {
     PartitionPolicyStore store;
+
+    Datacenter datacenter;
+    datacenter.set("LONDON");
+    std::unique_ptr<PartitionPolicy> policy(new AffinityPartitionPolicy(&datacenter));
+
+    store.addPolicy(std::move(policy));
+    EXPECT_NE(store.getPolicy("datacenter-affinity"), nullptr);
+    EXPECT_EQ(store.getPolicy("non-existing"), nullptr);
 }
+

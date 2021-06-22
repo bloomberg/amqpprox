@@ -16,7 +16,6 @@
 #ifndef BLOOMBERG_AMQPPROX_BACKEND
 #define BLOOMBERG_AMQPPROX_BACKEND
 
-#include "amqpprox_frame.h"
 #include <iosfwd>
 #include <string>
 
