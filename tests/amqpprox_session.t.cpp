@@ -28,11 +28,12 @@
  *     and a simulated 'broker'
  * [x] TLS handshake failure with the newly connected 'client'
  * [x] Proxy protocol header is inserted before the AMQP header
- * [ ] Handshaking fails due to a bad message
- * [ ] Handshaking fails due to no broker to connect to
- * [ ] Handshaking succeeds after first broker connection fails and needs to be
+ * [X] Handshaking fails due to no broker to connect to
+ * [X] Handshaking succeeds after first broker connection fails and needs to be
  *     retried
- *
+ * [ ] Handshaking fails due to a bad message / garbage content / fuzzing
+ * [ ] Simulate failures of less common conditions, such as error codes from
+ *     shutdown/close/setting socket options
  */
 
 #define SOCKET_TESTING 1
@@ -913,6 +914,221 @@ TEST_F(SessionTest, Failover_Dns_Failure)
     // Run the tests through to completion
     driveTo(18);
 }
+
+TEST_F(SessionTest, Connection_Then_Ping_Then_Force_Disconnect)
+{
+    EXPECT_CALL(d_selector, acquireConnection(_, _))
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+
+    EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
+        .WillRepeatedly(Return(std::string("host1")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 1234)))
+        .WillRepeatedly(Return(std::string("host0")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 32000)))
+        .WillRepeatedly(Return(std::string("host0")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("3.4.5.6", 5672)))
+        .WillRepeatedly(Return(std::string("host2")));
+
+    TestSocketState::State base;
+    base.d_local  = makeEndpoint("1.2.3.4", 1234);
+    base.d_remote = makeEndpoint("2.3.4.5", 2345);
+    base.d_secure = false;
+
+    TestSocketState::State clientBase;
+    clientBase.d_local  = makeEndpoint("1.2.3.4", 32000);
+    clientBase.d_remote = makeEndpoint("3.4.5.6", 5672);
+    clientBase.d_secure = false;
+
+    // Initialise the state
+    d_serverState.pushItem(0, base);
+    driveTo(0);
+
+    testSetupServerHandshake(1);
+    testSetupClientSendsProtocolHeader(2);
+    testSetupClientStartOk(3);
+    testSetupClientOpen(4);
+    testSetupProxyConnect(5, &clientBase);
+    testSetupProxySendsProtocolHeader(6);
+    testSetupProxySendsStartOk(7, "host1", 2345, LOCAL_HOSTNAME, 1234, 32000);
+    testSetupProxyOpen(8);
+    testSetupProxyPassOpenOkThrough(9);
+    testSetupBrokerSendsHeartbeat(10);
+    testSetupClientSendsHeartbeat(11);
+
+    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioService,
+                                             std::move(serverSocket),
+                                             std::move(clientSocket),
+                                             &d_selector,
+                                             &d_eventSource,
+                                             &d_pool,
+                                             &d_dnsResolver,
+                                             d_mapper,
+                                             LOCAL_HOSTNAME);
+
+    session->start();
+
+    // Force disconnect after the heartbeats
+    d_serverState.pushItem(12,
+                           Func([&session] { session->disconnect(true); }));
+
+    // Lastly, check it's elligible to be deleted
+    d_serverState.pushItem(
+        13, Func([&session] {
+            EXPECT_TRUE(session->finished());
+            EXPECT_EQ(session->state().getDisconnectType(),
+                      SessionState::DisconnectType::DISCONNECTED_PROXY);
+        }));
+
+    // Run the tests through to completion
+    driveTo(13);
+}
+
+TEST_F(SessionTest, Connection_Then_Ping_Then_Backend_Disconnect)
+{
+    EXPECT_CALL(d_selector, acquireConnection(_, _))
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+
+    EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
+        .WillRepeatedly(Return(std::string("host1")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 1234)))
+        .WillRepeatedly(Return(std::string("host0")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 32000)))
+        .WillRepeatedly(Return(std::string("host0")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("3.4.5.6", 5672)))
+        .WillRepeatedly(Return(std::string("host2")));
+
+    TestSocketState::State base;
+    base.d_local  = makeEndpoint("1.2.3.4", 1234);
+    base.d_remote = makeEndpoint("2.3.4.5", 2345);
+    base.d_secure = false;
+
+    TestSocketState::State clientBase;
+    clientBase.d_local  = makeEndpoint("1.2.3.4", 32000);
+    clientBase.d_remote = makeEndpoint("3.4.5.6", 5672);
+    clientBase.d_secure = false;
+
+    // Initialise the state
+    d_serverState.pushItem(0, base);
+    driveTo(0);
+
+    testSetupServerHandshake(1);
+    testSetupClientSendsProtocolHeader(2);
+    testSetupClientStartOk(3);
+    testSetupClientOpen(4);
+    testSetupProxyConnect(5, &clientBase);
+    testSetupProxySendsProtocolHeader(6);
+    testSetupProxySendsStartOk(7, "host1", 2345, LOCAL_HOSTNAME, 1234, 32000);
+    testSetupProxyOpen(8);
+    testSetupProxyPassOpenOkThrough(9);
+    testSetupBrokerSendsHeartbeat(10);
+    testSetupClientSendsHeartbeat(11);
+
+    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioService,
+                                             std::move(serverSocket),
+                                             std::move(clientSocket),
+                                             &d_selector,
+                                             &d_eventSource,
+                                             &d_pool,
+                                             &d_dnsResolver,
+                                             d_mapper,
+                                             LOCAL_HOSTNAME);
+
+    session->start();
+
+    // Disconnect only backend side
+    d_serverState.pushItem(12,
+                           Func([&session] { session->backendDisconnect(); }));
+
+    d_clientState.expect(12, [this](const auto &items) {
+        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
+    });
+    d_serverState.expect(12, [this](const auto &items) {
+        EXPECT_THAT(items, Not(Contains(VariantWith<Call>(Call("shutdown")))));
+        EXPECT_THAT(items, Not(Contains(VariantWith<Call>(Call("close")))));
+    });
+
+    // Lastly, check it's NOT elligible to be deleted
+    d_serverState.pushItem(
+        13, Func([&session] { EXPECT_FALSE(session->finished()); }));
+
+    // Run the tests through to completion
+    driveTo(13);
+}
+
+TEST_F(SessionTest, Printing_Breathing_Test)
+{
+    EXPECT_CALL(d_selector, acquireConnection(_, _))
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+
+    EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
+        .WillRepeatedly(Return(std::string("host1")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 1234)))
+        .WillRepeatedly(Return(std::string("host0")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 32000)))
+        .WillRepeatedly(Return(std::string("host0")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("3.4.5.6", 5672)))
+        .WillRepeatedly(Return(std::string("host2")));
+
+    TestSocketState::State base;
+    base.d_local  = makeEndpoint("1.2.3.4", 1234);
+    base.d_remote = makeEndpoint("2.3.4.5", 2345);
+    base.d_secure = false;
+
+    TestSocketState::State clientBase;
+    clientBase.d_local  = makeEndpoint("1.2.3.4", 32000);
+    clientBase.d_remote = makeEndpoint("3.4.5.6", 5672);
+    clientBase.d_secure = false;
+
+    // Initialise the state
+    d_serverState.pushItem(0, base);
+    driveTo(0);
+
+    runStandardConnect(&clientBase);
+
+    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioService,
+                                             std::move(serverSocket),
+                                             std::move(clientSocket),
+                                             &d_selector,
+                                             &d_eventSource,
+                                             &d_pool,
+                                             &d_dnsResolver,
+                                             d_mapper,
+                                             LOCAL_HOSTNAME);
+
+    session->start();
+
+    std::stringstream oss;
+    // Print the Session then graceful disconnect after the heartbeats
+    d_serverState.pushItem(12, Func([&session, &oss] {
+                               session->print(oss);
+                               session->disconnect(false);
+                           }));
+
+    // Lastly, check it's elligible to be deleted
+    d_serverState.pushItem(
+        17, Func([&session] {
+            EXPECT_TRUE(session->finished());
+            EXPECT_EQ(session->state().getDisconnectType(),
+                      SessionState::DisconnectType::DISCONNECTED_CLEANLY);
+        }));
+
+    // Run the tests through to completion
+    driveTo(17);
+
+    // Check that something was printed, NB we do not expect any exact format
+    EXPECT_NE(oss.str().length(), 0);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 //     Test Apparatus
