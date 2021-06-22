@@ -22,7 +22,8 @@
 namespace Bloomberg {
 namespace amqpprox {
 
-/* \brief Output statistics in basic JSON notation.
+/**
+ * \brief Output statistics in basic JSON notation.
  *
  * This component outputs various statistics objects used by the
  * `StatCollector` in basic machine readable JSON format onto provided ostream
@@ -31,19 +32,59 @@ namespace amqpprox {
 class JsonStatFormatter : public StatFormatter {
   public:
     // MANIPULATORS
+    /**
+     * \brief output the connection stats into the output stream in a JSON
+     * format.
+     *
+     * \param os the output stream
+     *
+     * \param connectionStats reference to the connectionStats
+     */
     virtual void format(std::ostream &         os,
                         const ConnectionStats &connectionStats) override;
 
+    /**
+     * \brief output the `StatSnapshot::StatsMap` into the output stream in a
+     * JSON format.
+     *
+     * \param os the output stream
+     *
+     * \param statsMap reference to the StatsMap
+     */
     virtual void format(std::ostream &                os,
                         const StatSnapshot::StatsMap &statsMap) override;
-
+    /**
+     * \brief output the `StatSnapshot` into the output stream in a
+     * JSON format.
+     *
+     * \param os the output stream
+     *
+     * \param statSnapshot reference to the connectionStats
+     */
     virtual void format(std::ostream &      os,
                         const StatSnapshot &statSnapshot) override;
 
+    /**
+     * \brief output the `StatSnapshot::ProcessStats` into the output stream in
+     * a JSON format.
+     *
+     * \param os the output stream
+     *
+     * \param processStats reference to the ProcessStats
+     */
     virtual void
     format(std::ostream &                    os,
            const StatSnapshot::ProcessStats &processStats) override;
-
+    /**
+     * \brief output the `StatSnapshot::PoolStats` into the output stream in
+     * a JSON format.
+     *
+     * \param os the output stream
+     *
+     * \param poolStats reference to the vector of PoolStats
+     *
+     * \param poolSpillover the amount of poolSpillover
+     */
     virtual void format(std::ostream &                              os,
                         const std::vector<StatSnapshot::PoolStats> &poolStats,
                         uint64_t poolSpillover) override;

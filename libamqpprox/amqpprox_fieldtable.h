@@ -25,22 +25,76 @@
 namespace Bloomberg {
 namespace amqpprox {
 
+/**
+ * \brief Representation of an AMQP Field Table
+ */
 class FieldTable {
     std::vector<std::pair<std::string, FieldValue>> d_fields;
 
   public:
     FieldTable();
 
+    /**
+     * \brief add a field to the table with
+     * \param name the name of the field
+     * \param value the Field
+     */
     void pushField(const std::string &name, const FieldValue &value);
+
+    /**
+     * \brief resets the Field table to an empty state
+     */
     void reset();
 
+    /**
+     * \brief find a field in the table by name and populate the value passed
+     * in.
+     * \param value - pointer to a value instance to be populated
+     * \param name - the name of the field to populat the value for
+     * \returns true if field with name found, false otherwise
+     */
     bool findFieldValue(FieldValue *value, const std::string &name) const;
+
+    /**
+     * \brief find a field's index based on it's name
+     * \param index the index of the field is populated
+     * \param name of the field to find
+     * \returns true if the field with name found, false otherwise
+     */
     bool findFieldIndex(std::size_t *index, const std::string &name) const;
-    std::size_t        numberFields() const;
-    const FieldValue & fieldIndex(std::size_t index) const;
-    FieldValue &       fieldIndex(std::size_t index);
+
+    /**
+     * \returns the number of fields
+     */
+    std::size_t numberFields() const;
+
+    /**
+     * \param index valid only if 0 <= index < `numberFields()`, passing an
+     * invalid index yields undefined behaviour
+     * \returns a non-modifiable  reference to the field based on the index
+     */
+    const FieldValue &fieldIndex(std::size_t index) const;
+
+    /**
+     * \param index valid only if 0 <= index < `numberFields()`,passing an
+     * invalid index yields undefined behaviour
+     * \returns a modifiable reference to the field based on the index
+     */
+    FieldValue &fieldIndex(std::size_t index);
+
+    /**
+     * \param index valid only if 0 <= index < `numberFields()`, passing an
+     * invalid index yields undefined behaviour
+     * \returns the non-modifiable field name based on the index
+     */
     const std::string &fieldName(std::size_t index) const;
-    std::string &      fieldName(std::size_t index);
+
+    /**
+     * \param index valid only if 0 <= index < `numberFields()`, passing an
+     * invalid index yields undefined behaviour
+     * \returns a modifiable reference to the field name based on the index.
+     */
+    std::string &fieldName(std::size_t index);
 };
 
 inline void FieldTable::pushField(const std::string &name,

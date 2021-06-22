@@ -24,6 +24,9 @@
 namespace Bloomberg {
 namespace amqpprox {
 
+/**
+ * \brief Represents a datacenter location for AMQP broker nodes
+ */
 class Datacenter {
   private:
     // DATA
@@ -31,9 +34,16 @@ class Datacenter {
 
   public:
     // MANIPULATORS
+    /**
+     * \param datacenter
+     * Set the name of the datacenter
+     */
     void set(std::string datacenter);
 
     // ACCESSORS
+    /**
+     * \return the datacenter name
+     */
     const std::string &get() const;
 };
 

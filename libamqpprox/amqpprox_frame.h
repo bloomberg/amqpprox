@@ -21,6 +21,9 @@
 namespace Bloomberg {
 namespace amqpprox {
 
+/**
+ * \brief Representation of an AMQP 0-9-1 Frame
+ */
 class Frame {
     static std::size_t maxFrameSize;
 
@@ -32,23 +35,67 @@ class Frame {
 
     Frame();
 
+    /**
+     * \brief Decode a frame from a buffer per spec:
+     * <type> <channel> <size> <payload> <end of frame byte>
+     *
+     * \throw  will throw a runtime_error if the frame is malformed e.g. no
+     * frame end byte
+     *
+     * \param frame points to the `Frame` object to be populated
+     *
+     * \param endOfFrame populates the pointer pointed to with the first byte
+     * beyond in the buffer after the decoded frame (useful for the next
+     * decode)
+     *
+     * \param remaining points to the variable to be populated with the
+     * number of bytes remaining in the buffer
+     *
+     * \param buffer pointer to the beginning of the byte stream to decode
+     * from
+     *
+     * \param bufferLen the number of readable bytes contained in the buffer
+     *
+     * \returns true if a frame was successfully read, false if there was not
+     * enough bytes in the buffer to decode the frame
+     */
     static bool decode(Frame *      frame,
                        const void **endOfFrame,
                        std::size_t *remaining,
                        const void * buffer,
                        std::size_t  bufferLen);
 
+    /**
+     * \brief Encode a frame into a buffer per spec:
+     * <type> <channel> <size> <payload> <end of frame byte>
+     *
+     * \param output a buffer of size >= maximum frame size, passing a buffer
+     * smaller than the serialized size of the frame yields undefined behaviour
+     *
+     * \param writtenSize populated with the serialized frame length in bytes
+     *
+     * \param frame reference to a the frame to be encoded
+     *
+     * \returns true if a frame was successfully written to the buffer, false
+     * if the frame was too large
+     */
     static bool
     encode(void *output, std::size_t *writtenSize, const Frame &frame);
 
+    /**
+     * \returns the maximum frame size we support in bytes
+     */
     static std::size_t getMaxFrameSize();
-    ///< Return the maximum frame size we support
 
+    /**
+     * \returns the overhead of the framing, beyond the payload size in bytes
+     */
     static constexpr std::size_t frameOverhead();
-    ///< Return the overhead of the framing, beyond the payload size
 
+    /**
+     * \returns the size of the frame header in bytes
+     */
     static constexpr std::size_t frameHeaderSize();
-    ///< Return the size of the frame header
 };
 
 constexpr std::size_t Frame::frameOverhead()

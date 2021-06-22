@@ -26,6 +26,10 @@
 namespace Bloomberg {
 namespace amqpprox {
 
+/**
+ * \brief DNSHostnameMapper facilitates reverse lookups based on IP address to
+ * hostname, implements the HostnameMapper interface
+ */
 class DNSHostnameMapper : public HostnameMapper {
     std::unordered_map<std::string, std::string> d_hostnameMap;
     mutable boost::shared_mutex                  d_lg;
@@ -33,10 +37,23 @@ class DNSHostnameMapper : public HostnameMapper {
   public:
     DNSHostnameMapper();
 
+    /**
+     * \brief prime the cache of hostnames with a list of endpoints
+     * \param ioService handle to the boost asio service
+     * \param endpoints list of endpoints to prime the cache with
+     */
     void prime(boost::asio::io_service &                             ioService,
                std::initializer_list<boost::asio::ip::tcp::endpoint> endpoints)
         override;
 
+    /**
+     * \brief sychronously reverse lookup the ip address to hostname based on
+     * cached data
+     * \param endpoint - ip address
+     * \returns hostname if the ip address is
+     * in the cache (hit), returns the endpoint as a string e.g. "127.0.0.1" on
+     * miss
+     */
     std::string mapToHostname(
         const boost::asio::ip::tcp::endpoint &endpoint) const override;
 };

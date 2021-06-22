@@ -40,12 +40,6 @@ FieldValue::FieldValue(char type, uint64_t value)
 {
 }
 
-FieldValue::FieldValue(char type, double value)
-: d_value(value)
-, d_type(type)
-{
-}
-
 FieldValue::FieldValue(char type, bool value)
 : d_value(value)
 , d_type(type)
