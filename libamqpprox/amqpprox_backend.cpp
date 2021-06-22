@@ -66,5 +66,15 @@ std::ostream &operator<<(std::ostream &os, const Backend &backend)
     return os;
 }
 
+bool operator==(const Backend &lhs, const Backend &rhs)
+{
+    return (lhs.name() == rhs.name() &&
+            lhs.datacenterTag() == rhs.datacenterTag() &&
+            lhs.host() == rhs.host() && lhs.ip() == rhs.ip() &&
+            lhs.port() == rhs.port() &&
+            lhs.proxyProtocolEnabled() == rhs.proxyProtocolEnabled() &&
+            lhs.tlsEnabled() == rhs.tlsEnabled());
+}
+
 }
 }

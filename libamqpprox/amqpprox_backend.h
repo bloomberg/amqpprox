@@ -16,6 +16,7 @@
 #ifndef BLOOMBERG_AMQPPROX_BACKEND
 #define BLOOMBERG_AMQPPROX_BACKEND
 
+#include "amqpprox_frame.h"
 #include <iosfwd>
 #include <string>
 
@@ -95,6 +96,8 @@ inline bool Backend::dnsBasedEntry() const
 }
 
 std::ostream &operator<<(std::ostream &os, const Backend &backend);
+
+bool operator==(const Backend& lhs, const Backend& rhs);
 
 }
 }

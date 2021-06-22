@@ -12,6 +12,8 @@ target_link_libraries(amqpprox_testapparatus
 add_executable(amqpprox_tests
     amqpprox_affinitypartitionpolicy.t.cpp
     amqpprox_backend.t.cpp
+    amqpprox_backendstore.t.cpp
+    amqpprox_backendselectorstore.t.cpp
     amqpprox_buffer.t.cpp
     amqpprox_bufferhandle.t.cpp
     amqpprox_bufferpool.t.cpp
@@ -22,8 +24,10 @@ add_executable(amqpprox_tests
     amqpprox_farmstore.t.cpp
     amqpprox_frame.t.cpp
     amqpprox_flowtype.t.cpp
+    amqpprox_mappingconnectionselector.t.cpp
     amqpprox_methods_start.t.cpp
     amqpprox_packetprocessor.t.cpp
+    amqpprox_partitionpolicystore.t.cpp
     amqpprox_proxyprotocolheaderv1.t.cpp
     amqpprox_resourcemapper.t.cpp
     amqpprox_robinbackendselector.t.cpp
