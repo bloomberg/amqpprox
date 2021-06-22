@@ -70,6 +70,22 @@ TEST(StatSnapshot, Swap)
     EXPECT_EQ(snapshot2.backends()["bar"], stats1);
     EXPECT_EQ(snapshot2.sources()["baz"], stats1);
     EXPECT_EQ(snapshot2.process().d_user, 1);
+    EXPECT_NE(snapshot2.process(), emptyProcessStats);
     EXPECT_FALSE(snapshot2.pool().empty());
     EXPECT_EQ(snapshot2.poolSpillover(), 2);
+}
+
+TEST(StatSnapshot, Const_Breathing)
+{
+    const StatSnapshot         snapshot;
+    ConnectionStats            emptyStats;
+    StatSnapshot::ProcessStats emptyProcessStats;
+
+    EXPECT_EQ(snapshot.overall(), emptyStats);
+    EXPECT_TRUE(snapshot.vhosts().empty());
+    EXPECT_TRUE(snapshot.sources().empty());
+    EXPECT_TRUE(snapshot.backends().empty());
+    EXPECT_TRUE(snapshot.pool().empty());
+    EXPECT_EQ(snapshot.process(), emptyProcessStats);
+    EXPECT_EQ(snapshot.poolSpillover(), 0);
 }
