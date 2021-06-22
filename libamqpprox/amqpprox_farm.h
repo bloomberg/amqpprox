@@ -29,6 +29,9 @@
 namespace Bloomberg {
 namespace amqpprox {
 
+/**
+ * \brief Encapsulates a farm of 'backend' nodes
+ */
 class Farm {
     std::string                     d_name;
     std::unordered_set<std::string> d_backendMembers;
@@ -41,41 +44,92 @@ class Farm {
     mutable std::mutex d_mutex;
 
     // PRIVATE MANIPULATORS
-    void setBackendSet(std::shared_ptr<BackendSet> backendSet);
-    ///< Replace the `BackendSet` instance for this farm with the specified
-    ///< `backendSet`.
 
+    /**
+     * \brief Replace the `BackendSet` instance for this farm with the
+     * specified `backendSet`.
+     * \param backendSet shared pointer to a `BackendSet`
+     */
+    void setBackendSet(std::shared_ptr<BackendSet> backendSet);
+
+    /**
+     * \brief Perform repartitioning of the `BackendSet` for this farm. The
+     * behaviour of this function is undefined unless it is called within a
+     * lock on `d_mutex`.
+     * \param guard for the mutex to prove that we're safe during the critical
+     * section
+     */
     void doRepartitionWhileLocked(std::lock_guard<std::mutex> &guard);
-    ///< Perform repartitioning of the `BackendSet` for this farm. The
-    ///< behaviour of this function is undefined unless it is called within
-    ///< a lock on `d_mutex`.
 
   public:
     // CREATORS
+    /**
+     * \brief construct a Farm object
+     * \param name of the farm
+     * \param members vector the members addresses in string form
+     * \param backendStore pointer the the `BackendStore` of members
+     * \param backendSelector pointer to the `BackendSelector` logic used to
+     * partition members
+     */
     Farm(const std::string &             name,
          const std::vector<std::string> &members,
          BackendStore *                  backendStore,
          BackendSelector *               backendSelector);
 
     // MANIPULATORS
+    /**
+     * \brief add a backend node to the farm
+     * \param backend string containing the backend's address
+     */
     void addMember(const std::string &backend);
+
+    /**
+     * \brief remove a backend node from the farm
+     * \param backend string containing the backend's address
+     */
     void removeMember(const std::string &backend);
 
+    /**
+     * \brief Set the selector used for this `Farm` to the specified
+     * `selector`.
+     * \param selector the `BackendSelector` to be used.
+     */
     void setBackendSelector(BackendSelector *selector);
-    ///< Set the selector used for this `Farm` to the specified `selector`.
 
+    /**
+     * \brief Add the specified `partitionPolicy` to this `Farm`.
+     * \param partitionPolicy pointer to the `PartitionPolicy` logic to
+     * partition the members
+     */
     void addPartitionPolicy(PartitionPolicy *partitionPolicy);
-    ///< Add the specified `partitionPolicy` to this `Farm`.
 
+    /**
+     * \brief Recalculate the `BackendSet` for this `Farm` using the ordered
+     * vector of `PartitionPolicy` instances attached to this `Farm`.
+     */
     void repartition();
-    ///< Recalculate the `BackendSet` for this `Farm` using the ordered
-    ///< vector of `PartitionPolicy` instances attached to this `Farm`.
 
     // ACCESSORS
+    /**
+     * \returns name of the farm
+     */
     const std::string &name() const;
-    void               members(std::vector<std::string> *members) const;
+
+    /**
+     * \param members will be populated with the addresses of
+     * the farm members
+     */
+    void members(std::vector<std::string> *members) const;
+
+    /**
+     * \returns shared pointer to the `BackendSet`
+     */
     std::shared_ptr<BackendSet> backendSet() const;
-    BackendSelector *           backendSelector() const;
+
+    /**
+     * \returns pointer to the `BackendSelector` in play for the farm
+     */
+    BackendSelector *backendSelector() const;
 };
 
 std::ostream &operator<<(std::ostream &os, const Farm &farm);

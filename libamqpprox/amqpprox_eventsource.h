@@ -27,7 +27,8 @@ class Backend;
 class Session;
 class StatCollector;
 
-/* \brief Provides a central source of events relating to connections
+/**
+ * \brief Provides a central source of events relating to connections
  *
  */
 class EventSource {
@@ -55,53 +56,72 @@ class EventSource {
   public:
     EventSource();
 
+    /**
+     * \brief Emitted after a connection is received, before the handshaking
+     * begins
+     * \return signal relating to the connection initation
+     */
     ConnectionReceived &connectionReceived() { return *d_connectionReceived; }
-    ///< Emitted after a connection is received, before the handshaking
-    ///< begins
 
+    /**
+     * \brief Emitted after a connection has done enough handshaking to
+     * determine its vhost
+     * \return signal relating to the vhost connection
+     */
     ConnectionVhostEstablished &connectionVhostEstablished()
-    ///< Emitted after a connection has done enough handshaking to determine
-    ///< its vhost
     {
         return *d_connectionVhostEstablished;
     }
 
+    /**
+     * \brief Emitted after a connection has been fully established
+     * \return signal relating to the established connection
+     */
     ConnectionEstablished &connectionEstablished()
-    ///< Emitted after a connection has been fully established
     {
         return *d_connectionEstablished;
     }
 
-    ConnectionFailed &connectionFailed()
-    ///< Emitted after a connection to a backend fails
-    {
-        return *d_connectionFailed;
-    }
+    /**
+     * \brief Emitted after a connection to a backend fails
+     * \return signal relating to the failed connection
+     */
+    ConnectionFailed &connectionFailed() { return *d_connectionFailed; }
 
+    /**
+     * \brief Emitted after a connection to a backend snaps
+     * \return signal relating to the broker snapped connection
+     */
     BrokerConnectionSnapped &brokerConnectionSnapped()
-    ///< Emitted after a connection to a backend snaps
     {
         return *d_brokerConnectionSnapped;
     }
 
+    /**
+     * \brief Emitted after a connection from a client snaps
+     * \return signal relating to the client snapped connection
+     */
     ClientConnectionSnapped &clientConnectionSnapped()
-    ///< Emitted after a connection from a client snaps
     {
         return *d_clientConnectionSnapped;
     }
 
-    CleanDisconnect &cleanDisconnectClient()
-    ///< Emitted after a connection is
-    {
-        return *d_cleanDisconnect;
-    }
+    /**
+     * \brief Emitted after a connection disconnects gracefully
+     * \return signal relating to the clean disconnect
+     */
+    CleanDisconnect &cleanDisconnectClient() { return *d_cleanDisconnect; }
 
+    /**
+     * \brief Emitted when statistics are available for collection
+     * \return handle to the `StatsCollector`
+     */
     StatisticsAvailable &statisticsAvailable()
-    ///< Emitted when statistics are available for collection
     {
         return *d_statisticsAvailable;
     }
 
+    // TODO signal wishlist
     // Slow response
     // Heartbeat volatility
     // Missing heartbeat

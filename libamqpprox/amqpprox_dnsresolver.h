@@ -21,11 +21,10 @@
 #include <boost/asio.hpp>
 #include <boost/container_hash/hash.hpp>
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <unordered_map>
-
 
 namespace Bloomberg {
 namespace amqpprox {
@@ -92,6 +91,10 @@ class DNSResolver {
      * Errors are reported through the callback's return code, and in the
      * success case the callback's endpoint vector will be updated to include a
      * possible list of entries.
+     *
+     * \param query_host the hostname to resolve
+     * \param query_service the service to resolve
+     * \param callback is called back with the result of the resolution
      */
     template <typename ResolveCallback>
     void resolve(std::string_view       query_host,
@@ -103,6 +106,9 @@ class DNSResolver {
      *
      * This will set the cache timeout to the `timeoutMs`, this doesn't take
      * effect until the next cache cleanup.
+     *
+     * \param timeoutMs number of milliseconds an entry can be in the cache for
+     * before it's considered ready for cleanup
      */
     void setCacheTimeout(int timeoutMs);
 
@@ -145,6 +151,8 @@ class DNSResolver {
      *
      * IMPORTANT: This is intended for testing purposes only and is NOT
      * threadsafe. It must be called before any of these classes are utilised.
+     *
+     * \param func Function to be called in lieu of the dns resolution
      */
     static void setOverrideFunction(OverrideFunction func);
 
@@ -152,10 +160,12 @@ class DNSResolver {
      * \brief Helper to ensure override function is removed after a scope
      */
     struct OverrideFunctionGuard {
-        OverrideFunctionGuard(OverrideFunction func) {
+        OverrideFunctionGuard(OverrideFunction func)
+        {
             DNSResolver::setOverrideFunction(func);
         }
-        ~OverrideFunctionGuard() {
+        ~OverrideFunctionGuard()
+        {
             DNSResolver::setOverrideFunction(OverrideFunction());
         }
     };
@@ -180,7 +190,7 @@ void DNSResolver::resolve(std::string_view       query_host,
         auto it = d_cache.find(std::make_pair(host, service));
         if (it != d_cache.end()) {
             boost::system::error_code ec;
-            std::vector<TcpEndpoint> result = it->second;
+            std::vector<TcpEndpoint>  result = it->second;
             auto cb = [callback, ec, result] { callback(ec, result); };
             d_ioService.post(cb);
             return;

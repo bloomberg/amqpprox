@@ -26,8 +26,9 @@
 namespace Bloomberg {
 namespace amqpprox {
 
-/* \brief Provides a collection of farms which reference selection policies and
- *        current members.
+/**
+ *  \brief Provides a collection of farms which reference selection policies
+ * and current members.
  */
 class FarmStore {
   private:
@@ -43,21 +44,35 @@ class FarmStore {
     FarmStore();
 
     // MANIPULATORS
+    /**
+     * \brief Add or override a farm by name
+     */
     void addFarm(std::unique_ptr<Farm> farm);
-    ///< Add or override a farm by name
 
+    /**
+     * \brief Remove a farm by its name
+     * \param farmName the name of the farm to remove
+     */
     void removeFarmByName(const std::string &farmName);
-    ///< Remove a farm by its name
 
+    /**
+     * \brief Repartition all of the farms stored
+     */
     void repartitionAll();
-    ///< Repartition all of the farms stored
 
     // ACCESSORS
+    /**
+     * \brief Return a modifiable reference to the farm associated with this
+     * name
+     * \param name of farm to retrieve
+     * \returns a reference to the Farm named
+     */
     Farm &getFarmByName(const std::string &name) const;
-    ///< Return a modifiable reference to the farm associated with this name
 
+    /**
+     * \brief Print all of the farms in the store
+     */
     void print(std::ostream &os) const;
-    ///< Print all of the farms in the store
 };
 
 }

@@ -24,6 +24,10 @@ namespace amqpprox {
 class Datacenter;
 class FarmStore;
 
+/**
+ * \brief Command message for controlling the datacenter objects, implements
+ * the ControlCommand interface
+ */
 class DatacenterControlCommand : public ControlCommand {
   private:
     // DATA
@@ -32,23 +36,39 @@ class DatacenterControlCommand : public ControlCommand {
 
   public:
     // CREATORS
+    /**
+     * \brief Construct a DatacenterControlCommand
+     * \param datacenter
+     * \param farmStore
+     */
     DatacenterControlCommand(Datacenter *datacenter, FarmStore *farmStore);
 
     virtual ~DatacenterControlCommand() override = default;
 
     // MANIPULATORS
+    /**
+     *  \returns the command verb this handles
+     */
     virtual std::string commandVerb() const override;
-    ///< Returns the command verb this handles
 
+    /**
+     *  \returns a string of the help text for this command
+     */
     virtual std::string helpText() const override;
-    ///< Returns a string of the help text for this command
 
+    /**
+     * \brief Execute a command, providing any output to the provided functor
+     * \param command to execute
+     * \param restOfCommand parameters for the command
+     * \param outputFunctor is called back with the output
+     * \param serverHandle access to the Server object
+     * \param controlHandle access to the Control object
+     */
     virtual void handleCommand(const std::string &  command,
                                const std::string &  restOfCommand,
                                const OutputFunctor &outputFunctor,
                                Server *             serverHandle,
                                Control *            controlHandle) override;
-    ///< Execute a command, providing any output to the provided functor
 };
 
 }

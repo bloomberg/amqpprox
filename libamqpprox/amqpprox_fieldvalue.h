@@ -27,11 +27,14 @@ namespace amqpprox {
 
 class FieldTable;
 
+/**
+ * \brief Represents a RabbitMQ AMQP Field type
+ * https://www.rabbitmq.com/amqp-0-9-1-errata.html
+ */
 class FieldValue {
     boost::variant<std::string,
                    uint64_t,
                    int64_t,
-                   double,
                    bool,
                    std::vector<uint8_t>,
                    std::vector<FieldValue>,
@@ -40,20 +43,82 @@ class FieldValue {
     char d_type;
 
   public:
+    /**
+     * \brief create a string value type field
+     * \param type the RabbitMQ type, this should be 'S' for Long String
+     * \param value the string value
+     */
     FieldValue(char type, const std::string &value);
+
+    /**
+     * \brief create a signed integer value type field
+     * \param type the RabbitMQ type, this should be 'b','s','I','l' for 8, 16,
+     * 32, 64 bit signed integers respectively
+     * \param value the signed integer value, note that passing a value higher
+     * than can be represented by the RabbitMQ `type` yields undefined
+     * behaviour.
+     */
     FieldValue(char type, int64_t value);
-    FieldValue(char type, uint64_t value);
-    FieldValue(char type, double value);
+
+    /**
+     * \brief create a boolean or empty value type field
+     * \param type the RabbitMQ type, this should be 't', or 'V' for empty
+     * field
+     * \param value of the boolean
+     */
     FieldValue(char type, bool value);
+
+    /**
+     * \brief create a byte array style value type field
+     * \param type the RabbitMQ type, this should be 'f','d','D','x'
+     * for 32bit float, 64bit float (double), decimal, byte array respectively
+     * \param value expressed as bytes in host byte order.
+     */
     FieldValue(char type, std::vector<uint8_t> value);
+
+    /**
+     * \brief create a Field Array value
+     * \param type the RabbitMQ type, this should be 'A'
+     * \param value of the field array
+     */
     FieldValue(char type, std::vector<FieldValue> value);
+
+    /**
+     * \brief create a Field Table value
+     * \param type the RabbitMQ type, this should be 'F'
+     * \param value shared pointer pointing to the field table
+     */
     FieldValue(char type, const std::shared_ptr<FieldTable> &value);
 
+    /**
+     * \brief create a signed integer value type field
+     * \param type the RabbitMQ type, this should be 'B','u','i'
+     * 8, 16, 32 bit unsigned integers respectively
+     * \param value the unsigned integer value, note that passing a value
+     * higher than can be represented by the RabbitMQ `type` yields undefined
+     * behaviour.
+     */
+    FieldValue(char type, uint64_t value);
+
+    /**
+     * \returns the amqp type enumeration of the field e.g. 't' for boolean,
+     * 'D' for decimal
+     */
     inline char type() const;
 
+    /**
+     * \returns the value of the field provided the typename specified is
+     * complaint with what type is set on the variant, otherwise undefined
+     * behaviour.
+     */
     template <typename T>
     T value();
 
+    /**
+     * \returns the value of the field provided the typename specified is
+     * complaint with what type is set on the variant, otherwise undefined
+     * behaviour.
+     */
     template <typename T>
     T value() const;
 

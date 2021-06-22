@@ -21,7 +21,8 @@
 namespace Bloomberg {
 namespace amqpprox {
 
-/* \brief Which side of the proxy is being serviced with a particular flow
+/**
+ * \brief Which side of the proxy is being serviced with a particular flow
  *
  * This describes the direction of the data flow with respect to the proxy.
  * The `INGRESS` direction is for flows originating from the proxies'
