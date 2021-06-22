@@ -1,4 +1,5 @@
 #  amqpprox
+
 amqpprox is an AMQP 0.9.1 proxy server, it is designed for use in front of an
 AMQP 0.9.1 compliant message queue broker such as RabbitMQ.
 
@@ -20,14 +21,17 @@ gracefully. With amqpprox we built a similar proxy, except tailored
 specifically for the AMQP 0.9.1 protocol. This brings benefits which cannot
 be achieved by a layer 4 proxying alone.
 
+This proxy and how we use it was first publicly outlined in [this
+talk](https://www.youtube.com/watch?v=tTh1nIKEOU4) at RabbitMQ Summit 2019.
+
 ### Key Advantages
 
-1. Applying policies per vhost
-2. Able to understand/log/replay AMQP sessions
-3. Able to understand the downstream farm being a DNS resolve not single
-   IP/port pairs
-4. Detail statistics without relying on the RabbitMQ implementation
-5. Ability to easily have clients test failovers locally
+1. We can redirect different virtual hosts to different broker clusters
+2. We are able to understand/log AMQP 0.9.1 sessions passing through the proxy
+3. We can alter the which brokers are connected to, in order to optimise
+   network/datacenter cross-traffic.
+4. We can get detailed statistics without relying on the RabbitMQ broker itself
+5. We can easily have clients test connection failovers locally
 
 ## Documentation
 
@@ -36,54 +40,86 @@ be achieved by a layer 4 proxying alone.
 * [How AMQP handshaking works in the proxy](docs/handshake.md)
 * [Overview of the TLS options](docs/tls.md)
 
-## Roadmap
+## Features
 
-#### Basic Features
-
-- [X] Fast teardown/reestablishment: allow switching between farms per vhost
-- [X] Load balancing between the farm members
-- [ ] Resources (vhosts) can be pointed at DNS farms, not just IPs
-- [ ] Periodic DNS refreshing
-
-#### Advanced Features
-
-- [ ] Traffic throttling/shaping per vhost/session/connection
-- [ ] Load balancing that is aware of current queue location
-- [ ] Automatic connection teardown/moving if IP leaves the farm
-- [ ] Retry last frame to new connection on a failure
-- [ ] Multiplexing multiple connections with multiple channels to existing
-      connection + channels
-
-#### Operational Features
-
-- [X] Unix domain socket / pipe for control plane
 - [X] No dependencies: config is pushed into it, does nothing by default
-- [X] Be able to easily test client failover by severing connections on demand
-- [ ] `SO_REUSEPORT` to scale on one box
+- [X] Unix domain socket for control plane operations
+- [X] Allow switching connections between farms per vhost
+- [X] Load balancing between the farm members
+- [X] Resources (vhosts) can be pointed at DNS farms, not just IPs
+- [X] Statistics about each interaction
+- [X] Able to easily test client failover by severing connections on demand
 
-#### Introspection Features
+## Future Future Ideas and Direction
 
-- [X] Maintain statistics about each connection/channel
-- [ ] Be able to capture or trace selectively
-- [ ] Be able to replay an interaction
+- [ ] Introducing `SO_REUSEPORT` to scale up on one host
+- [ ] Traffic throttling/shaping per vhost/session/connection
+- [ ] Automatic connection teardown/moving when an IP endpoint leaves the farm
+- [ ] Be able to capture or trace more selectively
+- [ ] Utilise io_uring for more efficient asynchronous networking
 
-## `amqpprox` & `amqpprox_ctl` Quick Start
+## Getting Started (Simplest configuration)
 
-`amqpprox` is the core proxy executable. It always starts up with no mapped vhosts/broker backends/listening ports/other configuration. `amqpprox_ctl` is used to provide config.
+Assuming you have a RabbitMQ broker already running on `localhost` port
+`5672`, to first see amqpprox running you can run it in a most simple proxying
+mode:
+
+```
+$ amqpprox --consoleVerbosity 5 --destinationDNS localhost --destinationPort 5672 --listenPort 5673
+Starting amqpprox, logging to: 'logs' control using: '/tmp/amqpprox'
+TRACE: Session cleanup starting
+TRACE: Clean up finished with no sessions to clean up
+...<snip>...
+```
+
+You can then connect your RabbitMQ client via `localhost:5673` and the proxy
+will proxy all connections into `5673` to the running broker on `5672`. Until
+you make a connection you won't see much other than periodic cleanup trace, but
+you can interact with it fully through the `amqpprox_ctl` interface.
+
+This mode is designed for simple use cases where a user is using only one vhost or
+wants to do local-only testing.
+
+## Getting Started Combining `amqpprox` & `amqpprox_ctl`
+
+`amqpprox` is the core proxy executable. It by default starts up with no mapped
+vhosts/broker backends/listening ports/other configuration. `amqpprox_ctl` is
+used to provide configuration before telling it to begin listening.
 
 ### Start `amqpprox`
 ```
 $ amqpprox --help
 amqpprox AMQP v0.9.1 proxy:
-This is a proxy program for AMQP, designed to sit in front of a RabbitMQ
-cluster. Most options for configuring the proxy and introspecting its
-state are available through the amqpprox_ctl program, begin by sending
-HELP to it. This program supports the following options to allow running
-multiple instances on a machine:
+
+This is a proxy program for AMQP v0.9.1, designed to sit in front of a RabbitMQ
+cluster. Most options for configuring the proxy and introspecting its state are
+available through the amqpprox_ctl program, begin by sending 'HELP' to it.
+
+This program supports the following options to allow running multiple instances
+on a machine and a simplified configuration mode. In the simplified
+configuration mode the --listenPort, --destinationDNS and --destinationPort
+must all be specified, and after which it immediately starts listening on all
+interfaces for that port and sends all vhosts to the destination DNS entry.
+More complicated configuration, such as sending different vhosts to different
+destinations, necessitates the use of the amqpprox_ctl.
+
+Although most configuration is injected by the amqpprox_ctl program, the
+logging directories and the control UNIX domain socket are specified on this
+program, to facilitate safely running multiple instances of amqpprox on a
+single host.  
+:
   --help                               This help information
   --logDirectory arg (=logs)           Set logging directory
   --controlSocket arg (=/tmp/amqpprox) Set control UNIX domain socket location
-  --cleanupIntervalMs arg (=1000)
+  --cleanupIntervalMs arg (=1000)      Set the cleanup interval to garbage
+                                       collect connections
+  --listenPort arg (=0)                Simple config mode: listening port
+  --destinationPort arg (=0)           Simple config mode: destination port
+  --destinationDNS arg                 Simple config mode: destination DNS
+                                       address
+  -v [ --consoleVerbosity ] arg (=0)   Default console logging verbosity (0 =
+                                       No output through to 5 = Trace-level)
+                                       
 $ amqpprox
 Starting amqpprox, logging to: 'logs' control using: '/tmp/amqpprox'
 ```
@@ -103,7 +139,7 @@ BACKEND (ADD name datacenter host port [SEND-PROXY] [TLS] | DELETE name | PRINT)
 CONN Print the connected sessions
 DATACENTER SET name | PRINT
 EXIT Exit the program gracefully.
-FARM (ADD_DNS name dnsname port | ADD_MANUAL name selector backend* | PARTITION name policy | DELETE name | PRINT) - Change farms
+FARM (ADD name selector backend* | PARTITION name policy | DELETE name | PRINT) - Change farms
 HELP Print this help text.
 LISTEN START port | START_SECURE port | STOP [port]
 LOG CONSOLE verbosity | FILE verbosity
@@ -174,7 +210,9 @@ the native build there.
 
 ## Installation
 
-//TODO
+At present we do not provide any pre-built releases and we expect users to
+build from source. If you are interested in having a pre-built release for your
+preferred package management system, please open an issue letting us know.
 
 ## Contributions
 
