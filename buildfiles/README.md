@@ -30,6 +30,7 @@ Overall:
 
 - `BUILD_FLAVOUR`: Used at setup time to select which set of buildfiles to be
     used. Selects a sub-directory of the buildfiles directory.
+- `CUR_DIR`: The directory of the makefile (defaults to `pwd`)
 
 For native builds:
 

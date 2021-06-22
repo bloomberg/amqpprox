@@ -172,6 +172,10 @@ We only recommend using Linux based operating systems for running amqpprox;
 however, we also regularly develop it on Mac OS and expect changes to not break
 the native build there.
 
+By default the build doesn't contain debug symbols, for Debug one can make use of the 
+`CMAKE_EXTRA_ARGS='-DCMAKE_BUILD_TYPE=Debug'` environment, for Release optimisations 
+one can set this to `CMAKE_EXTRA_ARGS='-DCMAKE_BUILD_TYPE=Release'` 
+
 ## Installation
 
 //TODO
