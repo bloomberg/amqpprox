@@ -60,7 +60,7 @@ std::string TlsControlCommand::helpText() const
 {
     return "(INGRESS | EGRESS) (KEY_FILE file | CERT_CHAIN_FILE file | "
            "RSA_KEY_FILE file | TMP_DH_FILE file | CA_CERT_FILE file | "
-           "VERIFY_MODE mode*)";
+           "VERIFY_MODE mode* | CIPHERS (PRINT | SET <ciphersuites>))";
 }
 
 void TlsControlCommand::handleCommand(const std::string & /* command */,
