@@ -1,5 +1,5 @@
 /*
-** Copyright 2020 Bloomberg Finance L.P.
+** Copyright 2021 Bloomberg Finance L.P.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -48,13 +48,13 @@ TEST(Frame, Equality_Mismatch)
 
     EXPECT_NE(f1, f2);
 
-    f2.type = 8;
+    f2.type    = 8;
     f2.channel = 1;
 
     EXPECT_NE(f1, f2);
 
     f2.channel = 0;
-    f2.length = 1;
+    f2.length  = 1;
 
     EXPECT_NE(f1, f2);
 
@@ -194,15 +194,15 @@ TEST(Frame, BadSentinelChar)
     EXPECT_EQ(endOfFrame, nullptr);
 }
 
-TEST(Frame, Cant_Encode_Payload_Too_Large) {
+TEST(Frame, Cant_Encode_Payload_Too_Large)
+{
     Frame f1;
     f1.type    = 8;
     f1.channel = 0;
     f1.length  = Frame::getMaxFrameSize() - Frame::frameOverhead() + 1;
     f1.payload = nullptr;
 
-    void* output;
+    void *      output;
     std::size_t sz = 0;
     EXPECT_FALSE(Frame::encode(output, &sz, f1));
 }
-

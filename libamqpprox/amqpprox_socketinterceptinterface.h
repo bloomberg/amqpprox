@@ -1,5 +1,5 @@
 /*
-** Copyright 2020 Bloomberg Finance L.P.
+** Copyright 2021 Bloomberg Finance L.P.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ class SocketInterceptInterface {
     /**
      * \brief Return if the socket is in secure mode
      */
-    virtual bool isSecure() const       = 0;
+    virtual bool isSecure() const = 0;
 
     /**
      * \brief Reset the socket's context as if it is a fresh socket
@@ -141,9 +141,9 @@ class SocketInterceptInterface {
      * \param handler The completion handler to invoke on success/error, it
      *                will also return the amount of bytes written.
      */
-    virtual void
-    async_write_some(const std::vector<std::pair<const void *, size_t>> &buffers,
-                     AsyncWriteHandler handler) = 0;
+    virtual void async_write_some(
+        const std::vector<std::pair<const void *, size_t>> &buffers,
+        AsyncWriteHandler                                   handler) = 0;
 
     /**
      * \brief Synchronously read some data onto the socket

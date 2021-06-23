@@ -1,5 +1,5 @@
 /*
-** Copyright 2020 Bloomberg Finance L.P.
+** Copyright 2021 Bloomberg Finance L.P.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -56,8 +56,7 @@ void PacketProcessor::process(FlowType direction, const Buffer &readBuffer)
             LOG_DEBUG << "Haven't quite read enough for full protocol header: "
                       << remaining;
 
-            d_remainingBuffer =
-                Buffer(readBuffer.originalPtr(), remaining);
+            d_remainingBuffer = Buffer(readBuffer.originalPtr(), remaining);
             return;
         }
 

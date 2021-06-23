@@ -1,5 +1,5 @@
 /*
-** Copyright 2020 Bloomberg Finance L.P.
+** Copyright 2021 Bloomberg Finance L.P.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -21,30 +21,33 @@
 
 using Bloomberg::amqpprox::VhostState;
 
-TEST(VhostState, Starts_Unpaused) {
+TEST(VhostState, Starts_Unpaused)
+{
     VhostState state;
     EXPECT_FALSE(state.isPaused("/"));
 }
 
-TEST(VhostState, Manipulate) {
+TEST(VhostState, Manipulate)
+{
     VhostState state;
 
     // Manipulate to true
     state.setPaused("/", true);
     EXPECT_TRUE(state.isPaused("/"));
-    
+
     // Check unrelated
     EXPECT_FALSE(state.isPaused("unrelated"));
 
     // Manipulate to false
     state.setPaused("/", false);
     EXPECT_FALSE(state.isPaused("/"));
-    
+
     // Check unrelated
     EXPECT_FALSE(state.isPaused("unrelated"));
 }
 
-TEST(VhostState, Print_Empty) {
+TEST(VhostState, Print_Empty)
+{
     VhostState state;
 
     std::ostringstream oss;
@@ -53,7 +56,8 @@ TEST(VhostState, Print_Empty) {
     EXPECT_EQ(oss.str(), "");
 }
 
-TEST(VhostState, Print_Two) {
+TEST(VhostState, Print_Two)
+{
     VhostState state;
     state.setPaused("foo", true);
     state.setPaused("bar", false);

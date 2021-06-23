@@ -1,5 +1,5 @@
 /*
-** Copyright 2020 Bloomberg Finance L.P.
+** Copyright 2021 Bloomberg Finance L.P.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ TEST(Methods_Start, Start_Decode_Fail)
     EXPECT_TRUE(encoded);
 
     Buffer encodedData = encodeBuf.currentData();
-    auto len = encodedData.size();
+    auto   len         = encodedData.size();
     for (int i = len - 1; i > 0; --i) {
         Buffer testData(encodedData.originalPtr(), i);
         Start  decodedStartMethod;

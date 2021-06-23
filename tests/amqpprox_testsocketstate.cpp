@@ -1,5 +1,5 @@
 /*
-** Copyright 2020 Bloomberg Finance L.P.
+** Copyright 2021 Bloomberg Finance L.P.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -63,8 +63,8 @@ bool TestSocketState::drive()
     bool  didWork = false;
 
     for (; step.d_produceIndex < sz; ++step.d_produceIndex) {
-        auto item           = &step.d_produce[step.d_produceIndex];
-        didWork = true;
+        auto item = &step.d_produce[step.d_produceIndex];
+        didWork   = true;
 
         if (auto state = std::get_if<State>(item)) {
             d_currentState = *state;

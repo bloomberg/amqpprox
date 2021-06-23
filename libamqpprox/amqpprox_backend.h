@@ -1,5 +1,5 @@
 /*
-** Copyright 2020 Bloomberg Finance L.P.
+** Copyright 2021 Bloomberg Finance L.P.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ class Backend {
     inline const std::string &name() const;
     inline bool               proxyProtocolEnabled() const;
     inline bool               tlsEnabled() const;
-    inline bool               dnsBasedEntry() const;  
+    inline bool               dnsBasedEntry() const;
 };
 
 inline const std::string &Backend::host() const

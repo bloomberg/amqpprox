@@ -1,5 +1,5 @@
 /*
-** Copyright 2020 Bloomberg Finance L.P.
+** Copyright 2021 Bloomberg Finance L.P.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -23,13 +23,15 @@
 using namespace Bloomberg;
 using namespace amqpprox;
 
-TEST(FlowType, StringStreamIngress) {
+TEST(FlowType, StringStreamIngress)
+{
     std::ostringstream ss;
     ss << FlowType::INGRESS;
     EXPECT_EQ(ss.str(), "INGRESS");
 }
 
-TEST(FlowType, StringStreamEgress) {
+TEST(FlowType, StringStreamEgress)
+{
     std::ostringstream ss;
     ss << FlowType::EGRESS;
     EXPECT_EQ(ss.str(), "EGRESS");

@@ -1,5 +1,5 @@
 /*
-** Copyright 2020 Bloomberg Finance L.P.
+** Copyright 2021 Bloomberg Finance L.P.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 #ifndef BLOOMBERG_AMQPPROX_PROCESS
 #define BLOOMBERG_AMQPPROX_PROCESS
 
-#include <amqpprox_flowtype.h>
 #include <amqpprox_buffer.h>
+#include <amqpprox_flowtype.h>
 
 #include <cstddef>
 

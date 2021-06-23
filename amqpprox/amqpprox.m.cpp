@@ -1,5 +1,5 @@
 /*
-** Copyright 2020 Bloomberg Finance L.P.
+** Copyright 2021 Bloomberg Finance L.P.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -77,7 +77,6 @@ Although most configuration is injected by the amqpprox_ctl program, the logging
 )helptext";
 }
 
-
 int main(int argc, char *argv[])
 {
     using namespace std::string_literals;
@@ -95,29 +94,62 @@ int main(int argc, char *argv[])
     // Set up the basic command line options to allow multiple instances to run
     // on a single box without colliding
     po::options_description options(HELP_TEXT);
-    options.add_options()("help", "This help information")(
-        "logDirectory",
-        po::value<std::string>(&logDirectory)->default_value("logs"),
-        "Set logging directory")(
-        "controlSocket",
-        po::value<std::string>(&controlSocket)->default_value("/tmp/amqpprox"),
-        "Set control UNIX domain socket location")(
-        "cleanupIntervalMs",
-        po::value<uint32_t>(&cleanupIntervalMs)->default_value(1000u),
-        "Set the cleanup interval to garbage collect connections")(
-        "listenPort",
-        po::value<uint16_t>(&easyListenPort)->default_value(0),
-        "Simple config mode: listening port")(
-        "destinationPort",
-        po::value<uint16_t>(&easyDestinationPort)->default_value(0),
-        "Simple config mode: destination port")(
-        "destinationDNS",
-        po::value<std::string>(&easyDestinationDNS)->default_value(""),
-        "Simple config mode: destination DNS address")(
-        "consoleVerbosity,v",
-        po::value<uint16_t>(&consoleVerbosity)->default_value(0),
-        "Default console logging verbosity (0 = No output through to 5 = "
-        "Trace-level)");
+    options
+        .add_options()("help", "This help information")(
+            "logDirectory",
+            po::value<std::string>(&logDirectory)->default_value("logs"),
+            "Set logging directory")("controlSocket",
+                                     po::value<std::string>(&controlSocket)
+                                         ->default_value("/tmp/amqpprox"),
+                                     "Set control UNIX domain socket "
+                                     "location")("cleanupIntervalMs",
+                                                 po::value<uint32_t>(
+                                                     &cleanupIntervalMs)
+                                                     ->default_value(1000u),
+                                                 "Set the cleanup interval to "
+                                                 "garbage collect "
+                                                 "connections")("listenPort",
+                                                                po::value<
+                                                                    uint16_t>(
+                                                                    &easyListenPort)
+                                                                    ->default_value(
+                                                                        0),
+                                                                "Simple "
+                                                                "config mode: "
+                                                                "listening "
+                                                                "port")("desti"
+                                                                        "natio"
+                                                                        "nPor"
+                                                                        "t",
+                                                                        po::value<
+                                                                            uint16_t>(
+                                                                            &easyDestinationPort)
+                                                                            ->default_value(
+                                                                                0),
+                                                                        "Simpl"
+                                                                        "e "
+                                                                        "confi"
+                                                                        "g "
+                                                                        "mode:"
+                                                                        " dest"
+                                                                        "inati"
+                                                                        "on "
+                                                                        "por"
+                                                                        "t")("destinationDNS",
+                                                                             po::value<
+                                                                                 std::
+                                                                                     string>(
+                                                                                 &easyDestinationDNS)
+                                                                                 ->default_value(
+                                                                                     ""),
+                                                                             "Simple config mode: destination DNS address")("consoleVerbosity,v",
+                                                                                                                            po::value<
+                                                                                                                                uint16_t>(
+                                                                                                                                &consoleVerbosity)
+                                                                                                                                ->default_value(
+                                                                                                                                    0),
+                                                                                                                            "Default console logging verbosity (0 = No output through to 5 = "
+                                                                                                                            "Trace-level)");
 
     po::variables_map variablesMap;
 

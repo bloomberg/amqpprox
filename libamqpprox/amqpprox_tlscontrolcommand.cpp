@@ -1,5 +1,5 @@
 /*
-** Copyright 2020 Bloomberg Finance L.P.
+** Copyright 2021 Bloomberg Finance L.P.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -84,9 +84,9 @@ void TlsControlCommand::handleCommand(const std::string & /* command */,
         return;
     }
 
-    auto &context = (direction == "INGRESS")
-                        ? serverHandle->ingressTlsContext()
-                        : serverHandle->egressTlsContext();
+    auto &                    context = (direction == "INGRESS")
+                                            ? serverHandle->ingressTlsContext()
+                                            : serverHandle->egressTlsContext();
     boost::system::error_code ec;
 
     if ("VERIFY_MODE" == command) {

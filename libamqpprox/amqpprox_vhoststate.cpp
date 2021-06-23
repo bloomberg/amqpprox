@@ -1,5 +1,5 @@
 /*
-** Copyright 2020 Bloomberg Finance L.P.
+** Copyright 2021 Bloomberg Finance L.P.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ VhostState::State::State()
 {
 }
 
-VhostState::State::State(const State& rhs)
+VhostState::State::State(const State &rhs)
 : d_paused(rhs.d_paused)
 {
 }
@@ -60,7 +60,6 @@ void VhostState::print(std::ostream &os)
                   d_vhosts.cend(),
                   std::inserter(sortedVhosts, sortedVhosts.end()));
     }
-
 
     for (const auto &vhost : sortedVhosts) {
         auto paused = (vhost.second.isPaused() ? "PAUSED" : "UNPAUSED");

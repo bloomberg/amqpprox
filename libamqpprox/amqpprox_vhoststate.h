@@ -1,5 +1,5 @@
 /*
-** Copyright 2020 Bloomberg Finance L.P.
+** Copyright 2021 Bloomberg Finance L.P.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ class VhostState {
 
       public:
         State();
-        State(const State& rhs);
+        State(const State &rhs);
 
         inline bool isPaused() const { return d_paused; }
 
@@ -59,7 +59,7 @@ class VhostState {
      */
     bool isPaused(const std::string &vhost);
 
-    /** 
+    /**
      * \brief Set the specified vhost to the given paused state
      *
      * \param vhost The vhost to be manipulated
@@ -72,7 +72,7 @@ class VhostState {
      *
      * \param os The ostream to print to
      */
-    void print(std::ostream& os);
+    void print(std::ostream &os);
 };
 
 }
