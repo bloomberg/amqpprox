@@ -33,14 +33,6 @@ DST_FARM_URI="http://localhost:$DST_PORT"
 
 RUNID="switch$RANDOM"
 
-# echo "Vhost: $4"
-# echo "Encoded Vhost: $ENCODED_VHOST"
-# echo "Destination: $3"
-# echo "Src Farm Uri : $SRC_FARM_URI"
-# echo "Dst Farm Uri : $DST_FARM_URI"
-# echo "Defs file: $DEFS_FILE"
-# echo "Queues file: $QS_FILE"
-
 echo "Pausing vhost $4"
 $1 $2 vhost pause $4
 echo "Switching $4 to farm $3"

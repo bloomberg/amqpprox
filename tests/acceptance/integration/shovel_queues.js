@@ -10,12 +10,6 @@ var encodedVhost = process.argv[6];
 var localPort = process.argv[7];
 
 var counter = 0;
-/*
-console.info("Run id: ", runIdentifier,
-             " localServer: ", localServer,
-             " remoteServer: ", remoteServer,
-             " encodedVhost: ", encodedVhost, " localPort: ", localPort);
-*/
 var queuesInfo = JSON.parse(fs.readFileSync(queuesFile, 'utf8'));
 for (var i in queuesInfo) {
     var q = queuesInfo[i];
@@ -24,27 +18,6 @@ for (var i in queuesInfo) {
         startShovel(q.name);
     }
 }
-
-/*
-
-   [  
-   {  
-   "node":"rabbit@gabrieleMacBook",
-   "timestamp":"2015-06-02 15:34:27",
-   "name":"test",
-   "vhost":"/",
-   "type":"dynamic",
-   "state":"running",
-   "definition":{  
-   "src-queue":"test",
-   "dest-queue":"test2"
-   },
-   "src_uri":"amqp://xxxxxxx",
-   "dest_uri":"amqp://xxxxxxx"
-   }
-   ]
-
- */
 
 checkShovels(function() {
     console.info('Completed shoveling');
