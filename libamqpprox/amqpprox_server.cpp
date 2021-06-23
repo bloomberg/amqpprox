@@ -22,6 +22,8 @@
 #include <amqpprox_session.h>
 #include <amqpprox_tlsutil.h>
 
+#include <openssl/opensslv.h>
+
 #include <iostream>
 
 namespace Bloomberg {
@@ -29,6 +31,28 @@ namespace amqpprox {
 
 using namespace boost::asio::ip;
 using namespace boost::system;
+
+void initTLS(boost::asio::ssl::context &context)
+{
+    context.set_options(boost::asio::ssl::context::default_workarounds);
+
+    // Custom TLS flags
+    SSL_CTX *sslContext = context.native_handle();
+
+    long flags = SSL_CTX_get_options(sslContext);
+
+    flags |= SSL_OP_CIPHER_SERVER_PREFERENCE;
+
+    SSL_CTX_set_options(sslContext, flags);
+
+    // Explicitly load ECC ciphers
+    // SSL_CTX_set_ecdh_auto is deprecated and removed in OpenSSL 1.1.x -
+    // https://github.com/openssl/openssl/issues/1437
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    SSL_CTX_set_ecdh_auto(sslContext, 1);
+#endif  // OPENSSL_VERSION_NUMBER < 0x10100000L
+    TlsUtil::setupTlsLogging(context);
+}
 
 Server::Server(ConnectionSelector *selector,
                EventSource *       eventSource,
@@ -52,13 +76,8 @@ Server::Server(ConnectionSelector *selector,
     d_dnsResolver.setCacheTimeout(1000);
     d_dnsResolver.startCleanupTimer();
 
-    d_ingressTlsContext.set_options(
-        boost::asio::ssl::context::default_workarounds);
-    d_egressTlsContext.set_options(
-        boost::asio::ssl::context::default_workarounds);
-
-    TlsUtil::setupTlsLogging(d_ingressTlsContext);
-    TlsUtil::setupTlsLogging(d_egressTlsContext);
+    initTLS(d_ingressTlsContext);
+    initTLS(d_egressTlsContext);
 
     timer();
 }
