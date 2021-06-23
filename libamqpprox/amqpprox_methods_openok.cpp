@@ -24,13 +24,13 @@ namespace Bloomberg {
 namespace amqpprox {
 namespace methods {
 
-bool OpenOk::decode(OpenOk *open, Buffer &buffer)
+bool OpenOk::decode(OpenOk *openOk, Buffer &buffer)
 {
     std::string dummy;
     return Types::decodeShortString(&dummy, buffer);
 }
 
-bool OpenOk::encode(Buffer &buffer, const OpenOk &open)
+bool OpenOk::encode(Buffer &buffer, const OpenOk &openOk)
 {
     return Types::encodeShortString(buffer, "");
 }

@@ -26,14 +26,23 @@ class Buffer;
 
 namespace methods {
 
+/**
+ * \brief Represents AMQP Connection OPEN method
+ */
 class Open {
     std::string d_virtualHost{};
 
   public:
     const std::string &virtualHost() const { return d_virtualHost; }
 
+    /**
+     * \brief Decode specified buffer and copy the data into open method
+     */
     static bool decode(Open *open, Buffer &buffer);
 
+    /**
+     * \brief Encode open method and write the data into buffer
+     */
     static bool encode(Buffer &buffer, const Open &open);
 
     constexpr inline static int classType() { return 10; }

@@ -28,6 +28,9 @@ class Buffer;
 
 namespace methods {
 
+/**
+ * \brief Represents AMQP Connection TUNE method
+ */
 class Tune {
     // https://github.com/rabbitmq/rabbitmq-server/issues/1593
     boost::endian::big_uint16_t d_channelMax{Constants::channelMaximum()};
@@ -44,8 +47,14 @@ class Tune {
 
     uint16_t heartbeatInterval() const { return d_heartbeatInterval; }
 
+    /**
+     * \brief Decode specified buffer and copy the data into tune method
+     */
     static bool decode(Tune *tune, Buffer &buffer);
 
+    /**
+     * \brief Encode tune method and write the data into buffer
+     */
     static bool encode(Buffer &buffer, const Tune &tune);
 
     constexpr inline static int classType() { return 10; }

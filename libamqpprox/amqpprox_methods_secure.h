@@ -26,13 +26,19 @@ class Buffer;
 
 namespace methods {
 
+/**
+ * \brief Represents AMQP Connection SECURE method
+ */
 class Secure {
     std::string d_challenge;
 
   public:
     const std::string &challenge() const { return d_challenge; }
 
-    static bool decode(Secure *start, Buffer &buffer);
+    /**
+     * \brief Decode specified buffer and copy the data into secure method
+     */
+    static bool decode(Secure *secure, Buffer &buffer);
 
     constexpr inline static int methodType() { return 20; }
 };

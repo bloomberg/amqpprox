@@ -21,14 +21,14 @@
 namespace Bloomberg {
 namespace amqpprox {
 
-/* \brief Represents a proxy protocol V1 header.
+/**
+ * \brief Represents a proxy protocol V1 header.
  *
  * The proxy protocol V1 header consists of one line of US-ASCII text sent
  * immediately and at once upon the connection establishment and prepended
  * before any data flowing from the sender to the receiver.
  *
  * PROXY <INET-PROTOCOL> <SRC-IP> <DEST-IP> <SRC-PORT> <DEST-PORT>\r\n
- *
  * where INET-PROTOCOL is one of TCP4, TCP6 or UNKNOWN
  *
  * More details here

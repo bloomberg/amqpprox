@@ -26,13 +26,19 @@ class Buffer;
 
 namespace methods {
 
+/**
+ * \brief Represents AMQP Connection SECURE-OK method
+ */
 class SecureOk {
     std::string d_response;
 
   public:
     const std::string &response() const { return d_response; }
 
-    static bool decode(SecureOk *start, Buffer &buffer);
+    /**
+     * \brief Decode specified buffer and copy the data into secure-ok method
+     */
+    static bool decode(SecureOk *secureOk, Buffer &buffer);
 
     constexpr inline static int methodType() { return 21; }
 };

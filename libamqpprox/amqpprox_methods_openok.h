@@ -25,10 +25,20 @@ class Buffer;
 
 namespace methods {
 
+/**
+ * \brief Represents AMQP Connection OPEN-OK method
+ */
 class OpenOk {
   public:
-    static bool decode(OpenOk *open, Buffer &buffer);
-    static bool encode(Buffer &buffer, const OpenOk &open);
+    /**
+     * \brief Decode specified buffer and copy the data into open-ok method
+     */
+    static bool decode(OpenOk *openOk, Buffer &buffer);
+
+    /**
+     * \brief Encode open-ok method and write the data into buffer
+     */
+    static bool encode(Buffer &buffer, const OpenOk &openOk);
 
     constexpr inline static int classType() { return 10; }
 

@@ -23,9 +23,9 @@ namespace Bloomberg {
 namespace amqpprox {
 namespace methods {
 
-bool Secure::decode(Secure *start, Buffer &buffer)
+bool Secure::decode(Secure *secure, Buffer &buffer)
 {
-    return Types::decodeLongString(&start->d_challenge, buffer);
+    return Types::decodeLongString(&secure->d_challenge, buffer);
 }
 
 std::ostream &operator<<(std::ostream &os, const Secure &item)

@@ -26,17 +26,17 @@ namespace methods {
 using boost::endian::big_uint16_t;
 using boost::endian::big_uint32_t;
 
-bool TuneOk::decode(TuneOk *tune, Buffer &buffer)
+bool TuneOk::decode(TuneOk *tuneOk, Buffer &buffer)
 {
-    if (sizeof(tune->d_channelMax) + sizeof(tune->d_frameMax) +
-            sizeof(tune->d_heartbeatInterval) >
+    if (sizeof(tuneOk->d_channelMax) + sizeof(tuneOk->d_frameMax) +
+            sizeof(tuneOk->d_heartbeatInterval) >
         buffer.available()) {
         return false;
     }
 
-    tune->d_channelMax        = buffer.copy<big_uint16_t>();
-    tune->d_frameMax          = buffer.copy<big_uint32_t>();
-    tune->d_heartbeatInterval = buffer.copy<big_uint16_t>();
+    tuneOk->d_channelMax        = buffer.copy<big_uint16_t>();
+    tuneOk->d_frameMax          = buffer.copy<big_uint32_t>();
+    tuneOk->d_heartbeatInterval = buffer.copy<big_uint16_t>();
     return true;
 }
 

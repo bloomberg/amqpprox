@@ -16,8 +16,8 @@
 #ifndef BLOOMBERG_AMQPPROX_PROCESS
 #define BLOOMBERG_AMQPPROX_PROCESS
 
-#include <amqpprox_flowtype.h>
 #include <amqpprox_buffer.h>
+#include <amqpprox_flowtype.h>
 
 #include <cstddef>
 
@@ -27,6 +27,12 @@ namespace amqpprox {
 class Connector;
 class SessionState;
 
+/**
+ * \brief Splits the received buffer into AMQP frames, decode into AMQP methods
+ * and pass them to Connector if required. It is also responsible for setting
+ * which slices of memory are to be used by the Session for sending to ingress
+ * or egress sockets.
+ */
 class PacketProcessor {
     SessionState &d_state;
     Connector &   d_connector;
@@ -37,6 +43,12 @@ class PacketProcessor {
   public:
     PacketProcessor(SessionState &state, Connector &connector);
 
+    /**
+     * \brief Split the readBuffer into AMQP frames, decode into AMQP methods
+     * and pass them to connector if required
+     * \param direction specifies egress or ingress communication
+     * \param readBuffer is the buffer to be processed
+     */
     void process(FlowType direction, const Buffer &readBuffer);
 
     inline Buffer remaining();

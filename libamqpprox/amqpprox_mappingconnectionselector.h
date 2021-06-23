@@ -30,6 +30,10 @@ class FarmStore;
 class BackendStore;
 class ResourceMapper;
 
+/**
+ * \brief Determines where to make the egress connection(proxy to broker),
+ * implements the ConnectionSelector interface
+ */
 class MappingConnectionSelector : public ConnectionSelector {
     FarmStore *                              d_farmStore_p;
     BackendStore *                           d_backendStore_p;
@@ -40,6 +44,12 @@ class MappingConnectionSelector : public ConnectionSelector {
 
   public:
     // CREATORS
+    /**
+     * \brief Construct a MappingConnectionSelector
+     * \param farmStore
+     * \param backendStore
+     * \param resourceMapper
+     */
     MappingConnectionSelector(FarmStore *     farmStore,
                               BackendStore *  backendStore,
                               ResourceMapper *resourceMapper);
@@ -47,19 +57,25 @@ class MappingConnectionSelector : public ConnectionSelector {
     virtual ~MappingConnectionSelector();
 
     // MANIPULATORS
+    /**
+     * \brief Acquire a connection from the specified session `state` and set
+     * `connectionOut` to be a `ConnectionManager` instance tracking connection
+     * attempt.
+     * \return zero on success, or a non-zero value otherwise
+     */
     virtual int
     acquireConnection(std::shared_ptr<ConnectionManager> *connectionOut,
                       const SessionState &                state) override;
-    ///< Acquire a connection from the specified session `state` and set
-    ///< `connectionOut` to be a `ConnectionManager` instance tracking the
-    ///< connection attempt.
-    ///< Returns zero on success, or a non-zero value otherwise.
 
+    /**
+     * \brief Set the default farm if a mapping is not found
+     */
     void setDefaultFarm(const std::string &farmName);
-    ///< Set the default farm if a mapping is not found
 
+    /**
+     * \brief Unset any default farm if a mapping is not found
+     */
     void unsetDefaultFarm();
-    ///< Unset any default farm if a mapping is not found
 };
 
 }

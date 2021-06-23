@@ -26,6 +26,9 @@ class Buffer;
 
 namespace methods {
 
+/**
+ * \brief Represents AMQP Connection CLOSE method
+ */
 class Close {
     boost::endian::big_uint16_t d_replyCode;
     std::string                 d_replyString;
@@ -49,8 +52,14 @@ class Close {
         d_replyString = text;
     }
 
+    /**
+     * \brief Decode specified buffer and copy the data into close method
+     */
     static bool decode(Close *close, Buffer &buffer);
 
+    /**
+     * \brief Encode specified close method and write the data into buffer
+     */
     static bool encode(Buffer &buffer, const Close &close);
 
     constexpr inline static int classType() { return 10; }

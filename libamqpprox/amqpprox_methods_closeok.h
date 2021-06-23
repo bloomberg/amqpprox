@@ -25,8 +25,14 @@ class Buffer;
 
 namespace methods {
 
+/**
+ * \brief Represents AMQP Connection CLOSE-OK method
+ */
 class CloseOk {
   public:
+    /**
+     * \brief Encode close-ok method and write the data into buffer
+     */
     static inline bool encode(Buffer &buffer, const CloseOk &closeOk)
     {
         return true;  // nothing to encode

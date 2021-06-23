@@ -29,6 +29,9 @@ class Buffer;
 
 namespace methods {
 
+/**
+ * \brief Represents AMQP Connection START method
+ */
 class Start {
     boost::endian::big_uint8_t d_versionMajor;
     boost::endian::big_uint8_t d_versionMinor;
@@ -55,8 +58,14 @@ class Start {
 
     uint8_t versionMinor() const { return d_versionMinor; }
 
+    /**
+     * \brief Decode specified buffer and copy the data into start method
+     */
     static bool decode(Start *start, Buffer &buffer);
 
+    /**
+     * \brief Encode start method and write the data into buffer
+     */
     static bool encode(Buffer &buffer, const Start &start);
 
     constexpr inline static int classType() { return 10; }

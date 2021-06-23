@@ -23,6 +23,9 @@
 namespace Bloomberg {
 namespace amqpprox {
 
+/**
+ * \brief Represents generic AMQP methods
+ */
 class Method {
   public:
     boost::endian::big_uint16_t classType;
@@ -30,9 +33,15 @@ class Method {
     const void *                payload;
     std::size_t                 length;
 
+    /**
+     * \brief Decode specified buffer and copy the data into method object
+     */
     static bool
     decode(Method *method, const void *buffer, std::size_t bufferLen);
 
+    /**
+     * \brief Encode specified method and write the data into buffer
+     */
     template <typename T>
     static bool encode(Buffer &buffer, const T &method);
 };
