@@ -56,8 +56,7 @@ void PacketProcessor::process(FlowType direction, const Buffer &readBuffer)
             LOG_DEBUG << "Haven't quite read enough for full protocol header: "
                       << remaining;
 
-            d_remainingBuffer =
-                Buffer(readBuffer.originalPtr(), remaining);
+            d_remainingBuffer = Buffer(readBuffer.originalPtr(), remaining);
             return;
         }
 

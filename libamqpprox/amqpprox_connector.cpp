@@ -34,10 +34,56 @@ namespace Bloomberg {
 namespace amqpprox {
 
 namespace {
+
+std::ostream &streamOutMethod(std::ostream &os, const Method &method)
+{
+    switch (method.methodType) {
+    case methods::Close::methodType():
+        return os << "Close";
+    case methods::CloseOk::methodType():
+        return os << "CloseOk";
+    case methods::Open::methodType():
+        return os << "Open";
+    case methods::OpenOk::methodType():
+        return os << "OpenOk";
+    case methods::Secure::methodType():
+        return os << "Secure";
+    case methods::SecureOk::methodType():
+        return os << "SecureOk";
+    case methods::Start::methodType():
+        return os << "Start";
+    case methods::StartOk::methodType():
+        return os << "StartOk";
+    case methods::Tune::methodType():
+        return os << "Tune";
+    case methods::TuneOk::methodType():
+        return os << "TuneOk";
+    }
+    return os << "Unknown: " << method.methodType;
+}
+
+template <typename T>
+void decodeMethod(T *t, const Method &method, Buffer &buffer)
+{
+    if (method.methodType != T::methodType()) {
+        std::ostringstream oss;
+        oss << "Expected " << typeid(T).name() << ", got: ";
+        streamOutMethod(oss, method);
+        throw std::runtime_error(oss.str());
+    }
+
+    if (!T::decode(t, buffer)) {
+        std::ostringstream oss;
+        oss << "Failed to decode " << typeid(T).name();
+        throw std::runtime_error(oss.str());
+    }
+}
+
 const Buffer protocolHeader(Constants::protocolHeader(),
                             Constants::protocolHeaderLength());
 const Buffer legacyProtocolHeader(Constants::legacyProtocolHeader(),
                                   Constants::legacyProtocolHeaderLength());
+
 }
 
 Connector::Connector(SessionState *   sessionState,
@@ -85,7 +131,8 @@ void Connector::receive(const Method &method, FlowType direction)
     Buffer methodPayload(method.payload, method.length);
 
     // Normal pass-through: just look for CloseOk
-    if (d_state == State::OPEN) {
+    switch (d_state) {
+    case State::OPEN: {
         // Once the session is fully open and passing through messages, we can
         // discard the synthesized reply buffers
         d_synthesizedReplyBuffer.release();
@@ -96,46 +143,29 @@ void Connector::receive(const Method &method, FlowType direction)
             // side intentionally closing the connection, and the client
             // misbehaving and not respecting it with a CloseOk. This should
             // still count as graceful.
-            LOG_TRACE << "Received Close/CloseOk";
+            LOG_TRACE << "Close/CloseOk";
             d_state = State::CLOSED;
         }
-    }
+    } break;
     // Acting as a server
-    else if (d_state == State::START_SENT) {
-        if (method.methodType != methods::StartOk::methodType()) {
-            // TODO error
-        }
+    case State::START_SENT: {
+        decodeMethod(&d_startOk, method, methodPayload);
 
-        if (!methods::StartOk::decode(&d_startOk, methodPayload)) {
-            // TODO error
-        }
-
-        LOG_TRACE << "Received: " << d_startOk;
+        LOG_TRACE << "StartOk: " << d_startOk;
 
         sendResponse(d_synthesizedTune, true);
         d_state = State::TUNE_SENT;
-    }
-    else if (d_state == State::TUNE_SENT) {
-        if (method.methodType != methods::TuneOk::methodType()) {
-            // TODO error
-        }
+    } break;
+    case State::TUNE_SENT: {
+        decodeMethod(&d_tuneOk, method, methodPayload);
 
-        if (!methods::TuneOk::decode(&d_tuneOk, methodPayload)) {
-            // TODO error
-        }
-
-        LOG_TRACE << "Tuned: " << d_tuneOk;
+        LOG_TRACE << "TuneOk: " << d_tuneOk;
 
         d_state = State::AWAITING_OPEN;
-    }
-    else if (d_state == State::AWAITING_OPEN) {
-        if (method.methodType != methods::Open::methodType()) {
-            // TODO error
-        }
+    } break;
 
-        if (!methods::Open::decode(&d_open, methodPayload)) {
-            // TODO error
-        }
+    case State::AWAITING_OPEN: {
+        decodeMethod(&d_open, method, methodPayload);
 
         d_sessionState_p->setVirtualHost(d_open.virtualHost());
         d_eventSource_p->connectionVhostEstablished().emit(
@@ -145,16 +175,10 @@ void Connector::receive(const Method &method, FlowType direction)
 
         d_state = State::AWAITING_CONNECTION;
         d_connectionCreationHandler();
-    }
+    } break;
     // Acting as a client
-    else if (d_state == State::AWAITING_CONNECTION) {
-        if (method.methodType != methods::Start::methodType()) {
-            // TODO error
-        }
-
-        if (!methods::Start::decode(&d_receivedStart, methodPayload)) {
-            // TODO error
-        }
+    case State::AWAITING_CONNECTION: {
+        decodeMethod(&d_receivedStart, method, methodPayload);
 
         LOG_TRACE << "Server Start: " << d_receivedStart;
 
@@ -172,23 +196,16 @@ void Connector::receive(const Method &method, FlowType direction)
 
         sendResponse(d_startOk, false);
         d_state = State::STARTOK_SENT;
-    }
-    else if (d_state == State::STARTOK_SENT) {
-        if (method.methodType != methods::Tune::methodType()) {
-            // TODO error
-        }
-
-        if (!methods::Tune::decode(&d_receivedTune, methodPayload)) {
-            // TODO error
-        }
-
-        LOG_TRACE << "Received Tune: " << d_receivedTune;
+    } break;
+    case State::STARTOK_SENT: {
+        decodeMethod(&d_receivedTune, method, methodPayload);
+        LOG_TRACE << "Tune: " << d_receivedStart;
 
         sendResponse(d_tuneOk, false);
         sendResponse(d_open, false);
         d_state = State::OPEN_SENT;
-    }
-    else if (d_state == State::OPEN_SENT) {
+    } break;
+    case State::OPEN_SENT: {
         if (method.methodType == methods::OpenOk::methodType()) {
             // We are good to go
             d_state = State::OPEN;
@@ -204,8 +221,8 @@ void Connector::receive(const Method &method, FlowType direction)
                 d_connectionReadyHandler();
             }
         }
-    }
-    else if (d_state == State::CLIENT_CLOSE_SENT) {
+    } break;
+    case State::CLIENT_CLOSE_SENT: {
         if (direction == FlowType::INGRESS &&
             method.methodType == methods::CloseOk::methodType()) {
             LOG_TRACE << "Received CloseOk confirmation from client. Will now "
@@ -238,8 +255,8 @@ void Connector::receive(const Method &method, FlowType direction)
                         "Should be either Close or CloseOK sent by client. ";
             // discarding unexpected messages per specification
         }
-    }
-    else if (d_state == State::SERVER_CLOSE_SENT) {
+    } break;
+    case State::SERVER_CLOSE_SENT: {
         const bool isClose = method.methodType == methods::Close::methodType();
         const bool isCloseOk =
             method.methodType == methods::CloseOk::methodType();
@@ -262,7 +279,16 @@ void Connector::receive(const Method &method, FlowType direction)
                         "Should be either Close or CloseOK.";
             // discarding unexpected messages per specification
         }
-    }
+    }; break;
+    case State::AWAITING_PROTOCOL_HEADER:
+    case State::SECURE_SENT:
+    case State::EXPECTING_CLOSE:
+    case State::ERROR:
+    case State::CLOSED:
+        // No Op
+        break;
+
+    };  // switch
 }
 
 void Connector::synthesizeClose(bool sendToIngressSide)

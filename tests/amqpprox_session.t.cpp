@@ -157,6 +157,7 @@ class SessionTest : public ::testing::Test {
     void testSetupClientSendsProtocolHeader(int idx);
     void testSetupClientStartOk(int idx);
     void testSetupClientOpen(int idx);
+    void testSetupClientOpenWithoutTune(int idx);
     void testSetupProxyConnect(int idx, TestSocketState::State *clientBase);
     void testSetupProxySendsProtocolHeader(int idx);
     void testSetupProxySendsStartOk(int                idx,
@@ -166,6 +167,7 @@ class SessionTest : public ::testing::Test {
                                     int injectedProxyInboundPort,
                                     int injectedProxyOutbountPort);
     void testSetupProxyOpen(int idx);
+    void testSetupProxyOutOfOrderOpen(int idx);
     void testSetupProxyPassOpenOkThrough(int idx);
     void testSetupBrokerSendsHeartbeat(int idx);
     void testSetupClientSendsHeartbeat(int idx);
@@ -220,6 +222,15 @@ void SessionTest::testSetupClientOpen(int idx)
     d_serverState.pushItem(idx, Data(encode(clientOpen())));
     d_clientState.expect(idx, [this](const auto &items) {
         EXPECT_THAT(items, Contains(VariantWith<Call>(Call("async_connect"))));
+    });
+}
+
+void SessionTest::testSetupClientOpenWithoutTune(int idx)
+{
+    // Client  ------Open-------->  Proxy                         Broker
+    d_serverState.pushItem(idx, Data(encode(clientOpen())));
+    d_clientState.expect(idx, [this](const auto &items) {
+        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
     });
 }
 
@@ -279,6 +290,18 @@ void SessionTest::testSetupProxySendsStartOk(
 
                              EXPECT_EQ(data[0], Data(encode(startOk)));
                          });
+}
+
+void SessionTest::testSetupProxyOutOfOrderOpen(int idx)
+{
+    // Client                       Proxy  <--------OpenOk------ Broker
+    d_clientState.pushItem(idx, Data(encode(serverOpenOk())));
+    d_clientState.expect(idx, [this](const auto &items) {
+        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+    });
+    d_serverState.expect(idx, [this](const auto &items) {
+        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+    });
 }
 
 void SessionTest::testSetupProxyOpen(int idx)
@@ -506,6 +529,143 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Disconnect)
 
     // Run the tests through to completion
     driveTo(17);
+}
+
+TEST_F(SessionTest, BadClientHandshake)
+{
+    EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
+        .WillRepeatedly(Return(std::string("host1")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("0.0.0.0", 0)))
+        .WillRepeatedly(Return(std::string("host0")));
+
+    TestSocketState::State base;
+    base.d_local  = makeEndpoint("1.2.3.4", 1234);
+    base.d_remote = makeEndpoint("2.3.4.5", 2345);
+    base.d_secure = false;
+
+    TestSocketState::State clientBase;
+    clientBase.d_local  = makeEndpoint("1.2.3.4", 32000);
+    clientBase.d_remote = makeEndpoint("3.4.5.6", 5672);
+    clientBase.d_secure = false;
+
+    // Initialise the state
+    d_serverState.pushItem(0, base);
+    driveTo(0);
+
+    // Perform the 'TLS' handshake (no-op for tests), will just invoke the
+    // completion handler
+    testSetupServerHandshake(1);
+
+    // Read a protocol header from the client and reply with Start method
+    // Client  ----AMQP Header--->  Proxy                         Broker
+    // Client  <-----Start--------  Proxy                         Broker
+    testSetupClientSendsProtocolHeader(2);
+
+    // Client  ------StartOk----->  Proxy                         Broker
+    // Client  <-----Tune---------  Proxy                         Broker
+    testSetupClientStartOk(3);
+
+    // Client  ------TuneOk------>  Proxy                         Broker
+    // Client  ------Open-------->  Proxy                         Broker
+
+    testSetupClientOpenWithoutTune(4);
+
+    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioService,
+                                             std::move(serverSocket),
+                                             std::move(clientSocket),
+                                             &d_selector,
+                                             &d_eventSource,
+                                             &d_pool,
+                                             &d_dnsResolver,
+                                             d_mapper,
+                                             LOCAL_HOSTNAME);
+
+    session->start();
+
+    // Run the tests through to completion
+    driveTo(4);
+
+    EXPECT_TRUE(session->finished());
+}
+
+TEST_F(SessionTest, BadServerHandshake)
+{
+    EXPECT_CALL(d_selector, acquireConnection(_, _))
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+    EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
+        .WillRepeatedly(Return(std::string("host1")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 1234)))
+        .WillRepeatedly(Return(std::string("host0")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 32000)))
+        .WillRepeatedly(Return(std::string("host0")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("3.4.5.6", 5672)))
+        .WillRepeatedly(Return(std::string("host2")));
+
+    TestSocketState::State base;
+    base.d_local  = makeEndpoint("1.2.3.4", 1234);
+    base.d_remote = makeEndpoint("2.3.4.5", 2345);
+    base.d_secure = false;
+
+    TestSocketState::State clientBase;
+    clientBase.d_local  = makeEndpoint("1.2.3.4", 32000);
+    clientBase.d_remote = makeEndpoint("3.4.5.6", 5672);
+    clientBase.d_secure = false;
+
+    // Initialise the state
+    d_serverState.pushItem(0, base);
+    driveTo(0);
+
+    // Perform the 'TLS' handshake (no-op for tests), will just invoke the
+    // completion handler
+    testSetupServerHandshake(1);
+
+    // Read a protocol header from the client and reply with Start method
+    // Client  ----AMQP Header--->  Proxy                         Broker
+    // Client  <-----Start--------  Proxy                         Broker
+    testSetupClientSendsProtocolHeader(2);
+
+    // Client  ------StartOk----->  Proxy                         Broker
+    // Client  <-----Tune---------  Proxy                         Broker
+    testSetupClientStartOk(3);
+
+    // Client  ------TuneOk------>  Proxy                         Broker
+    // Client  ------Open-------->  Proxy                         Broker
+    testSetupClientOpen(4);
+
+    // Client                       Proxy  <----TCP CONNECT---->  Broker
+    testSetupProxyConnect(5, &clientBase);
+
+    // Client                       Proxy  <-----HANDSHAKE----->  Broker
+    // Client                       Proxy  -----AMQP Header---->  Broker
+    testSetupProxySendsProtocolHeader(6);
+
+    // not per protocol spec
+
+    // Client                       Proxy  <-------OpenOk------  Broker
+    testSetupProxyOutOfOrderOpen(7);
+
+    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioService,
+                                             std::move(serverSocket),
+                                             std::move(clientSocket),
+                                             &d_selector,
+                                             &d_eventSource,
+                                             &d_pool,
+                                             &d_dnsResolver,
+                                             d_mapper,
+                                             LOCAL_HOSTNAME);
+
+    session->start();
+
+    // Run the tests through to completion
+    driveTo(8);
+
+    EXPECT_TRUE(session->finished());
 }
 
 TEST_F(SessionTest, New_Client_Handshake_Failure)

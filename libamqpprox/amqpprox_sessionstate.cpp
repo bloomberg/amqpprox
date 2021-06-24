@@ -190,6 +190,12 @@ std::ostream &operator<<(std::ostream &os, const SessionState &state)
 
     os << std::setw(7) << state.id() << ": "
        << "vhost=" << state.getVirtualHost() << " "
+       << ", "
+       << (state.getDisconnectType() ==
+                   SessionState::DisconnectType::NOT_DISCONNECTED
+               ? ""
+               : "D")
+       << (state.getPaused() ? "P " : " ")
        << state.hostname(state.getIngress().second) << ":"
        << state.getIngress().second.port() << "->"
        << state.hostname(state.getIngress().first) << " --> "
