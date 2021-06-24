@@ -43,4 +43,7 @@ docker-build:
 docker-shell:
 	docker run --privileged $(DOCKER_ARGS) bash
 
-.PHONEY: setup init all clean
+docs:
+	doxygen Doxygen.config
+
+.PHONY: test build setup init all clean docker-setup docker-init docker-build docker-shell docs
