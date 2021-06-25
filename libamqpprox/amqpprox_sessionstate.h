@@ -68,7 +68,7 @@ class SessionState {
         EndpointPair;
 
     // CREATORS
-    SessionState(
+    explicit SessionState(
         const std::shared_ptr<HostnameMapper> &hostnameMapper = nullptr);
 
     // MANIPULATORS
