@@ -43,7 +43,7 @@ class TuneOk {
     /**
      * \brief Decode specified buffer and copy the data into tune-ok method
      */
-    static bool decode(TuneOk *tune, Buffer &buffer);
+    static bool decode(TuneOk *tuneOk, Buffer &buffer);
 
     /**
      * \brief Encode tune-ok method and write the data into buffer

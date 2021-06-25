@@ -27,7 +27,7 @@ class BackendControlCommand : public ControlCommand {
     BackendStore *d_store_p;  // HELD NOT OWNED
 
   public:
-    BackendControlCommand(BackendStore *store);
+    explicit BackendControlCommand(BackendStore *store);
 
     virtual std::string commandVerb() const override;
     ///< Returns the command verb this handles

@@ -55,7 +55,7 @@ class SocketIntercept {
      * \brief Construct the non-virtual interface with the virtual interface
      * \param impl Virtual interface for the implementation of the intercept
      */
-    SocketIntercept(SocketInterceptInterface &impl)
+    explicit SocketIntercept(SocketInterceptInterface &impl)
     : d_impl(impl)
     {
     }

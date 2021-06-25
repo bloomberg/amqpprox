@@ -38,7 +38,7 @@ class VhostState {
 
       public:
         State();
-        State(const State& rhs);
+        explicit State(const State &rhs);
 
         inline bool isPaused() const { return d_paused; }
 
@@ -59,7 +59,7 @@ class VhostState {
      */
     bool isPaused(const std::string &vhost);
 
-    /** 
+    /**
      * \brief Set the specified vhost to the given paused state
      *
      * \param vhost The vhost to be manipulated
@@ -72,7 +72,7 @@ class VhostState {
      *
      * \param os The ostream to print to
      */
-    void print(std::ostream& os);
+    void print(std::ostream &os);
 };
 
 }
