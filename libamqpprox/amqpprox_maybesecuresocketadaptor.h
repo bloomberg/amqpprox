@@ -26,10 +26,13 @@
 namespace Bloomberg {
 namespace amqpprox {
 
-// This class will sit in the session class wrapping the ssl socket to provide
-// a unified interface to the read/write parts, which internally switches on
-// the d_secured to determine if to use the underlying socket when not secured,
-// or the top level functions which pass through openssl if it is secured.
+/**
+ * \brief This class sits in the session class wrapping the ssl socket to
+ * provide a unified interface to the read/write parts, which internally
+ * switches on the d_secured to determine if to use the underlying socket when
+ * not secured, or the top level functions which pass through openssl if it is
+ * secured.
+ */
 class MaybeSecureSocketAdaptor {
     using stream_type = boost::asio::ssl::stream<boost::asio::ip::tcp::socket>;
     using endpoint    = boost::asio::ip::tcp::endpoint;

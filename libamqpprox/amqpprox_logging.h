@@ -41,6 +41,9 @@
 namespace Bloomberg {
 namespace amqpprox {
 
+/**
+ * \brief Manages logging across application
+ */
 class Logging {
   public:
     using AsyncConsoleSink = boost::log::sinks::asynchronous_sink<
@@ -69,15 +72,37 @@ class Logging {
         AMQPPROX_LOG_FATAL = 0
     };
 
+    /**
+     * \return logger which supports severity level
+     */
     static inline boost::log::sources::severity_logger_mt<> &get()
     {
         static boost::log::sources::severity_logger_mt<> logger;
         return logger;
     }
 
+    /**
+     * \brief Initialize logging component and start logging
+     * \param logDirectory specifies location of log directory,
+     * where all amqpprox logs will be stored. All the logs will be logged in
+     * UTC time.
+     */
     static void start(const std::string &logDirectory);
+    /**
+     * \brief Deinitialize logging component and stop logging
+     */
     static void stop();
+    /**
+     * \brief Set console verbosity
+     * \param verbosity can be any integer value from enum
+     * `AMQPPROX_LOG_LEVELS`
+     */
     static void setConsoleVerbosity(int verbosity);
+    /**
+     * \brief Set log file verbosity
+     * \param verbosity can be any integer value from enum
+     * `AMQPPROX_LOG_LEVELS`
+     */
     static void setFileVerbosity(int verbosity);
 };
 

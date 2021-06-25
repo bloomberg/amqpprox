@@ -29,6 +29,9 @@ class Buffer;
 
 namespace methods {
 
+/**
+ * \brief Represents AMQP Connection START-OK method
+ */
 class StartOk {
     FieldTable  d_properties;
     std::string d_mechanism;
@@ -46,9 +49,15 @@ class StartOk {
 
     const std::string &locale() const { return d_locale; }
 
+    /**
+     * \brief Decode specified buffer and copy the data into start-ok method
+     */
     static bool decode(StartOk *startOk, Buffer &buffer);
 
-    static bool encode(Buffer &buffer, const StartOk &start);
+    /**
+     * \brief Encode start-ok method and write the data into buffer
+     */
+    static bool encode(Buffer &buffer, const StartOk &startOk);
 
     constexpr inline static int classType() { return 10; }
 

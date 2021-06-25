@@ -23,8 +23,10 @@ namespace amqpprox {
 
 namespace Reply {
 
-/// All reply codes per AMQP 0.9.1 specification,
-/// https://www.rabbitmq.com/amqp-0-9-1-reference.html#domain.reply-code
+/**
+ * \brief Represents rely codes per AMQP 0.9.1 specification.
+ * https://www.rabbitmq.com/amqp-0-9-1-reference.html#domain.reply-code
+ */
 struct Codes {
     enum {
         reply_success       = 200,
@@ -62,4 +64,4 @@ struct CloseOkExpected {
 }
 }
 
-#endif  // !BLOOMBERG_AMQPPROX_REPLY
+#endif

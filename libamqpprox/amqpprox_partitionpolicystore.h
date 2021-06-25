@@ -25,6 +25,9 @@
 namespace Bloomberg {
 namespace amqpprox {
 
+/**
+ * \brief Stores different partition policies for BackendSelector
+ */
 class PartitionPolicyStore {
   private:
     // DATA
@@ -32,14 +35,18 @@ class PartitionPolicyStore {
 
   public:
     // MANIPULATORS
+    /**
+     * \brief Add the specified `PartitionPolicy` to the map of named policies
+     * installed in this store.
+     */
     void addPolicy(std::unique_ptr<PartitionPolicy> policy);
-    ///< Add the specified `PartitionPolicy` to the map of named policies
-    ///< installed in this store.
 
     // ACCESSORS
+    /**
+     * \return a pointer to the `PartitionPolicy` instance with the specified
+     * `name`.
+     */
     PartitionPolicy *getPolicy(const std::string &name) const;
-    ///< Return a pointer to the `PartitionPolicy` instance with the
-    ///< specified `name`.
 };
 
 }

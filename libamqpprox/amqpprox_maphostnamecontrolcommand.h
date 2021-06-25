@@ -23,20 +23,35 @@
 namespace Bloomberg {
 namespace amqpprox {
 
+/**
+ * \brief Control command to set up mapping of IPs to hostnames,
+ * implements the ControlCommand interface
+ */
 class MapHostnameControlCommand : public ControlCommand {
   public:
+    /**
+     * \return the command verb this handles
+     */
     virtual std::string commandVerb() const override;
-    ///< Returns the command verb this handles
 
+    /**
+     * \return a string of the help text for this command
+     */
     virtual std::string helpText() const override;
-    ///< Returns a string of the help text for this command
 
+    /**
+     * \brief Execute a command, providing any output to the provided functor
+     * \param command to execute
+     * \param restOfCommand parameters for the command
+     * \param outputFunctor is called back with the output
+     * \param serverHandle access to the Server object
+     * \param controlHandle access to the Control object
+     */
     virtual void handleCommand(const std::string &  command,
                                const std::string &  restOfCommand,
                                const OutputFunctor &outputFunctor,
                                Server *             serverHandle,
                                Control *            controlHandle) override;
-    ///< Execute a command, providing any output to the provided functor
 };
 
 }  // namespace amqpprox

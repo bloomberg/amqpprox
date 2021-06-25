@@ -28,6 +28,10 @@ namespace amqpprox {
 class Backend;
 class BackendSet;
 
+/**
+ * \brief Selects the available Backend instance from the set using
+ * round-robin algorithm, implements the BackendSelector interface
+ */
 class RobinBackendSelector : public BackendSelector {
   public:
     // CREATORS
@@ -39,9 +43,11 @@ class RobinBackendSelector : public BackendSelector {
                                   uint64_t retryCount) const override;
 
     // ACCESSORS
+    /**
+     * \return the name of this `BackendSelector`. This name is used to attach
+     * this selector to a given `Farm`.
+     */
     virtual const std::string &selectorName() const override;
-    ///< Return the name of this `BackendSelector`. This name is used to
-    ///< attach this selector to a given `Farm`.
 };
 
 }

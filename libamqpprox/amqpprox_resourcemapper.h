@@ -26,6 +26,10 @@ namespace amqpprox {
 
 class SessionState;
 
+/**
+ * \brief Maintains mappings of resources to servers. This mappings are being
+ * used by connectionSelector to determine where to make the egress connection
+ */
 class ResourceMapper {
     using Resource = std::pair<bool, std::string>;
     std::unordered_map<std::string, Resource> d_mappings;
@@ -35,18 +39,34 @@ class ResourceMapper {
     ResourceMapper();
 
     // MANIPULATORS
+    /**
+     * \brief Store mapping of vhost to farm
+     */
     void mapVhostToFarm(const std::string &vhost, const std::string &farmName);
 
+    /**
+     * \brief Store mapping of vhost to backend
+     */
     void mapVhostToBackend(const std::string &vhost,
                            const std::string &backendName);
 
+    /**
+     * \brief Remove mapping for the specified vhost
+     */
     void unmapVhost(const std::string &vhost);
 
     // ACCESSORS
+    /**
+     * \brief Get the resource mapping for specified session state
+     * \return true if entry found for the vhost, otherwise false
+     */
     bool getResourceMap(bool *              isFarm,
                         std::string *       resourceName,
                         const SessionState &state) const;
 
+    /**
+     * \brief Print all the resource mappings for different vhosts
+     */
     void print(std::ostream &os) const;
 };
 

@@ -25,6 +25,9 @@ class Buffer;
 
 namespace methods {
 
+/**
+ * \brief Represents AMQP Connection TUNE-OK method
+ */
 class TuneOk {
     boost::endian::big_uint16_t d_channelMax;
     boost::endian::big_uint32_t d_frameMax;
@@ -37,8 +40,14 @@ class TuneOk {
 
     uint16_t heartbeatInterval() const { return d_heartbeatInterval; }
 
+    /**
+     * \brief Decode specified buffer and copy the data into tune-ok method
+     */
     static bool decode(TuneOk *tune, Buffer &buffer);
 
+    /**
+     * \brief Encode tune-ok method and write the data into buffer
+     */
     static bool encode(Buffer &buffer, const TuneOk &tuneOk);
 
     constexpr inline static int classType() { return 10; }
