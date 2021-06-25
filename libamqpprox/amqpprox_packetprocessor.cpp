@@ -26,8 +26,6 @@
 #include <amqpprox_methods_closeok.h>
 #include <amqpprox_methods_open.h>
 #include <amqpprox_methods_openok.h>
-#include <amqpprox_methods_secure.h>
-#include <amqpprox_methods_secureok.h>
 #include <amqpprox_methods_start.h>
 #include <amqpprox_methods_startok.h>
 #include <amqpprox_methods_tune.h>
