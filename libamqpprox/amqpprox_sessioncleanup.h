@@ -24,7 +24,8 @@ class EventSource;
 class Server;
 class StatCollector;
 
-/* \brief Performs periodic cleanup over the sessions
+/**
+ * \brief Performs periodic cleanup over the sessions
  *
  * This class performs periodic cleanup and stat collection from all of the
  * sessions in a `Server`. It is designed to be invoked on a periodicity of the
@@ -37,18 +38,25 @@ class SessionCleanup {
 
   public:
     // CREATORS
+    /**
+     * \brief Construct a `SessionCleanup` object and take references to the
+     * `StatCollector` and `EventSource` for storing session metrics in and
+     * notifying that metrics are available for consumption
+     * \param statCollector pointer to `StatCollector`
+     * \param eventSource pointer to `EventSource`
+     */
     SessionCleanup(StatCollector *statCollector, EventSource *eventSource);
-    ///< Construct a `SessionCleanup` object and take references to the
-    ///< `StatCollector` and `EventSource` for storing session metrics in
-    ///< and notifying that metrics are available for consumption
 
     // MANIPULATORS
+    /**
+     * \brief Run the cleanup of sessions on the given `Server` object and
+     * returns a boolean indicating successful completion. This is designed to
+     * operate with the recurring event scheduling in `Control`, which uses a
+     * `true` return to indicate scheduling the event again.
+     *  \param control pointer to `Control`
+     *  \param server pointer to `Server`
+     */
     bool cleanup(Control *control, Server *server);
-    ///< Run the cleanup of sessions on the given `Server` object and
-    ///< returns a boolean indicating successful completion. This is
-    ///< designed to operate with the recurring event scheduling in
-    ///< `Control`, which uses a `true` return to indicate scheduling the
-    ///< event again.
 };
 
 }

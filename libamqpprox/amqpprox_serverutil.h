@@ -21,8 +21,15 @@ namespace amqpprox {
 
 class Server;
 
+/**
+ * \brief Util class for Server
+ */
 class ServerUtil {
   public:
+    /**
+     * \brief Clean garbage sessions for specified server
+     * \param server pointer to Server object
+     */
     static bool cleanGarbageSessions(Server *server);
 };
 

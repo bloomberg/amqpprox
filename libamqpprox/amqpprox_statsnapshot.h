@@ -25,7 +25,8 @@
 namespace Bloomberg {
 namespace amqpprox {
 
-/* \brief Value type for a snapshot of all statistics from the program.
+/**
+ * \brief Value type for a snapshot of all statistics from the program.
  *
  * This component provides a value type for encapsulating all the statistics
  * that the program collects.
@@ -76,28 +77,75 @@ class StatSnapshot {
     StatSnapshot();
 
     // ACCESSORS
-    inline StatsMap &      vhosts();
+    /**
+     * \return reference to StatsMap for vhosts
+     */
+    inline StatsMap &vhosts();
+    /**
+     * \return const reference to StatsMap for vhosts
+     */
     inline const StatsMap &vhosts() const;
 
-    inline StatsMap &      sources();
+    /**
+     * \return reference to StatsMap for sources
+     */
+    inline StatsMap &sources();
+    /**
+     * \return const reference to StatsMap for sources
+     */
     inline const StatsMap &sources() const;
 
-    inline StatsMap &      backends();
+    /**
+     * \return reference to StatsMap for backends
+     */
+    inline StatsMap &backends();
+    /**
+     * \return const reference to StatsMap for backends
+     */
     inline const StatsMap &backends() const;
 
-    inline ConnectionStats &      overall();
+    /**
+     * \return reference to overall ConnectionStats
+     */
+    inline ConnectionStats &overall();
+    /**
+     * \return const reference to overall ConnectionStats
+     */
     inline const ConnectionStats &overall() const;
 
-    inline ProcessStats &      process();
+    /**
+     * \return reference to ProcessStats
+     */
+    inline ProcessStats &process();
+    /**
+     * \return const reference to ProcessStats
+     */
     inline const ProcessStats &process() const;
 
-    inline std::vector<PoolStats> &      pool();
+    /**
+     * \return reference to vector of PoolStats
+     */
+    inline std::vector<PoolStats> &pool();
+    /**
+     * \return const reference to vector of PoolStats
+     */
     inline const std::vector<PoolStats> &pool() const;
 
-    inline uint64_t &      poolSpillover();
+    /**
+     * \return reference to the amount of poolSpillover
+     */
+    inline uint64_t &poolSpillover();
+    /**
+     * \return const reference to the amount of poolSpillover
+     */
     inline const uint64_t &poolSpillover() const;
 
     // MANIPULATORS
+    /**
+     * \brief swap the current StatSnapshot with supplied StatSnapshot
+     * \param rhs StatSnapshot whose value will be replaced with current
+     * StatSnapshot
+     */
     void swap(StatSnapshot &rhs);
 };
 

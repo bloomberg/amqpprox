@@ -27,6 +27,10 @@ namespace amqpprox {
 
 class ConnectionStats;
 
+/**
+ * \brief Provides support to publish various statistics objects used by the
+ * `StatCollector` to configured StatsD endpoint
+ */
 class StatsDPublisher {
     boost::asio::ip::udp::endpoint d_statsdEndpoint;
     boost::asio::ip::udp::socket   d_socket;
@@ -42,17 +46,45 @@ class StatsDPublisher {
                     int                      port);
 
     // MANIPULATORS
+    /**
+     * \brief Publish `StatSnapshot` to the StatsD endpoint
+     * \param statSnapshot const reference to `StatSnapshot`
+     */
     void publish(const StatSnapshot &statSnapshot);
 
+    /**
+     * \brief Publish `ConnectionStats` with metric tags to the StatsD endpoint
+     * \param stats const reference to `ConnectionStats`
+     * \param tags const reference to the vector of metric tags
+     */
     void publish(const ConnectionStats &stats, const TagVector &tags);
 
+    /**
+     * \brief Publish `StatSnapshot::ProcessStats` to the StatsD endpoint
+     * \param stats const reference to `StatSnapshot::ProcessStats`
+     */
     void publish(const StatSnapshot::ProcessStats &stats);
 
+    /**
+     * \brief Publish `StatSnapshot::StatsMap` to the StatsD endpoint
+     * \param stats const reference to `StatSnapshot::StatsMap`
+     */
     void publishVhost(const StatSnapshot::StatsMap &stats);
 
+    /**
+     * \brief Publish `StatSnapshot::PoolStats` to the StatsD endpoint
+     * \param poolStats const reference to the vector of
+     * `StatSnapshot::PoolStats`
+     * \param poolSpillover the amount of poolSpillover
+     */
     void publish(const std::vector<StatSnapshot::PoolStats> &poolStats,
                  uint64_t                                    poolSpillover);
 
+    /**
+     * \brief Publish hostname metric to the StatsD endpoint
+     * \param stats const reference to `StatSnapshot::StatsMap`
+     * \param type of endpoint
+     */
     void publishHostnameMetrics(const StatSnapshot::StatsMap &stats,
                                 const std::string &           type);
 };

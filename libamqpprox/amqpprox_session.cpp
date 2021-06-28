@@ -54,7 +54,7 @@ namespace amqpprox {
 //    to get the per connection adaption based on the heavyness of the
 //    connection being proxied.
 //
-// Ingress direction:
+// Ingress/Egress direction:
 //
 // Ingress in this component means that data has originated at the client and
 // is being sent to the broker, egress means that it's data coming from the

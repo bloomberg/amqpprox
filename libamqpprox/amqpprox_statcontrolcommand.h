@@ -30,6 +30,10 @@ namespace amqpprox {
 class StatSnapshot;
 class EventSource;
 
+/**
+ * \brief Control command to perform certain operations over output statistics,
+ * implements the ControlCommand interface
+ */
 class StatControlCommand : public ControlCommand {
     using StatFunctor = std::function<bool(const StatSnapshot &)>;
 
@@ -40,22 +44,35 @@ class StatControlCommand : public ControlCommand {
   public:
     explicit StatControlCommand(EventSource *eventSource);
 
+    /**
+     * \return the command verb this handles
+     */
     virtual std::string commandVerb() const override;
-    ///< Returns the command verb this handles
 
+    /**
+     * \return a string of the help text for this command
+     */
     virtual std::string helpText() const override;
-    ///< Returns a string of the help text for this command
 
+    /**
+     * \brief Execute a command, providing any output to the provided functor
+     * \param command to execute
+     * \param restOfCommand parameters for the command
+     * \param outputFunctor is called back with the output
+     * \param serverHandle access to the Server object
+     * \param controlHandle access to the Control object
+     */
     virtual void handleCommand(const std::string &  command,
                                const std::string &  restOfCommand,
                                const OutputFunctor &outputFunctor,
                                Server *             serverHandle,
                                Control *            controlHandle) override;
-    ///< Execute a command, providing any output to the provided functor
 
   private:
+    /**
+     * \brief Invoke the stats on all of the functors waiting for information
+     */
     void invokeHandlers(StatCollector *collector);
-    ///< Invoke the stats on all of the functors waiting for information
 };
 
 }
