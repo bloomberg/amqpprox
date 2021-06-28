@@ -54,6 +54,14 @@ class ConnectionManager {
 
   public:
     // CREATORS
+    /**
+     * \brief Create a `ConnectionManager` instance backed by the specified
+     * `backendSet` and `backendSelector`. The `Marker` value of the specified
+     * `backendSet` will be snapshotted at construction time.
+     *
+     * \param backendSet Backend set
+     * \param backendSelector Backend selector
+     */
     ConnectionManager(std::shared_ptr<BackendSet> backendSet,
                       BackendSelector *           backendSelector);
     ///< Create a `ConnectionManager` instance backed by the specified
@@ -62,29 +70,38 @@ class ConnectionManager {
     ///< snapshotted at construction time.
 
     // ACCESSORS
+    /**
+     * \return `BackendSet` backing this instance, from which `Backend`
+     * connection candidates will be drawn by the selector.
+     */
     const std::shared_ptr<BackendSet> &backendSet() const;
-    ///< Return the `BackendSet` backing this instance, from which
-    ///< `Backend` connection candidates will be drawn by the selector.
 
+    /**
+     * \return const reference to the `Marker` snapshot that was taken of the
+     * `BackendSet` at the point this instance was created
+     */
     const std::vector<BackendSet::Marker> &markerSnapshot() const;
-    ///< Return a const reference to the `Marker` snapshot that was taken
-    ///< of the `BackendSet` at the point this instance was created.
 
+    /**
+     * \return pointer to the `BackendSelector` instance being used by this
+     * instance to select `Backend` connection candidates for the caller
+     */
     BackendSelector *backendSelector() const;
-    ///< Return a pointer to the `BackendSelector` instance being used by
-    ///< this instance to select `Backend` connection candidates for the
-    ///< caller.
 
+    /**
+     * \brief Return a pointer to a `Backend` connection candidate, to which an
+     * outgoing connection should be attempted.
+     * \param retryCount Retry count
+     * \return pointer to a `Backend` connection candidate or `nullptr`
+     *
+     * If an outgoing connection attempt is unsuccessful, this method should be
+     * re-called with an incremented `retryCount`. The possible candidates are
+     * defined by the `BackendSet` backing this instance. The order in which
+     * the candidates will be returned is defined by the `BackendSelector` and
+     * `Marker` snapshot. If there are no valid `Backend` instances to connect
+     * to, this method will return `nullptr`.
+     */
     const Backend *getConnection(uint64_t retryCount) const;
-    ///< Return a pointer to a `Backend` connection candidate, to which an
-    ///< outgoing connection should be attempted. If an outgoing connection
-    ///< attempt is unsuccessful, this method should be re-called with an
-    ///< incremented `retryCount`.
-    ///< The possible candidates are defined by the `BackendSet` backing
-    ///< this instance. The order in which the candidates will be returned
-    ///< is defined by the `BackendSelector` and `Marker` snapshot.
-    ///< If there are no valid `Backend` instances to connect to, this
-    ///< method will return `nullptr`.
 };
 
 // ACCESSORS

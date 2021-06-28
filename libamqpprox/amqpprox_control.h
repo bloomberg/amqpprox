@@ -29,6 +29,9 @@ namespace amqpprox {
 class EventSource;
 class Server;
 
+/**
+ * \brief Class for running control service
+ */
 class Control {
     Server *                                               d_server_p;
     EventSource *                                          d_eventSource_p;
@@ -42,33 +45,53 @@ class Control {
     Control(Server *server, EventSource *source, const std::string &udsPath);
 
     // MANIPULATORS
+    /**
+     * \brief Start the control thread running, blocking call until it is
+     * stopped
+     */
     void run();
-    ///< Start the control thread running, blocking call until it is stopped
 
+    /**
+     * \brief Stop the control thread gracefully
+     */
     void stop();
-    ///< Stop the control thread gracefully
 
+    /**
+     * \brief Schedule an event identified by `name` for `intervalMs`
+     * milliseconds later, and if the called event functor returns true, it
+     * will be scheduled again.
+     * \param intervalMs Event scheduling interval
+     * \param name Event name
+     */
     void scheduleRecurringEvent(
         int                                             intervalMs,
         const std::string &                             name,
         const std::function<bool(Control *, Server *)> &event);
-    ///< Schedule an event identified by `name` for `intervalMs`
-    ///< milliseconds later, and if the called event functor returns true,
-    ///< it will be scheduled again.
 
+    /**
+     * \brief Register a control command handling object
+     * \param command Control command
+     */
     void addControlCommand(std::unique_ptr<ControlCommand> command);
-    ///< Register a control command handling object
 
     // ACCESSORS
+    /**
+     * \brief Retrieve a control command handler by its command verb
+     * \param verb Command verb
+     * \return Control command handler
+     */
     ControlCommand *getControlCommand(const std::string &verb);
-    ///< Retrieve a control command handler by its command verb
 
+    /**
+     * \brief Visit all of the control command handlers in an unspecified order
+     */
     void
     visitControlCommands(const std::function<void(ControlCommand *)> &visitor);
-    ///< Visit all of the control command handlers in an unspecified order
 
+    /**
+     * \return IO service for the control thread
+     */
     boost::asio::io_service &ioService();
-    ///< Retrieve the io service for the control thread
 
   private:
     void doAccept();

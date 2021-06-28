@@ -31,6 +31,9 @@ namespace amqpprox {
 class Control;
 class Server;
 
+/**
+ * Class for monitoring CPU usage
+ */
 class CpuMonitor {
     double                  d_currentCpuUser;
     double                  d_currentCpuSystem;
@@ -41,32 +44,44 @@ class CpuMonitor {
 
   public:
     // TYPES
+    /**
+     * Tuple encoding the ratio of user cpu time versus wall time for the first
+     * value, and system cpu time versus wall time for the second.
+     */
     using UserSystemUsage = std::tuple<double, double>;
-    ///< Tuple encoding the ratio of user cpu time versus wall time for the
-    ///< first value, and system cpu time versus wall time for the second.
 
     // CREATORS
     CpuMonitor();
 
     // MANIPULATORS
+    /**
+     * \brief Sample the process statistics
+     */
     bool clock(Control *unused1, Server *unused2);
-    ///< Sample the process statistics
 
     // ACCESSORS
+    /**
+     * \return Tuple of ratios of cpu clock versus wallclock, first
+     * element is the user time, and second is the system time.
+     */
     UserSystemUsage currentCpu() const;
-    ///< Return a tuple of ratios of cpu clock versus wallclock, first
-    ///< element is the user time, and second is the system time.
 
+    /**
+     * \return RSS in KiloBytes
+     */
     std::size_t currentRssKB() const;
-    ///< Return the RSS in KiloBytes
 
+    /**
+     * \return True iff enough samples have been collected for the stats to be
+     * valid.
+     */
     bool valid() const;
-    ///< Determines if enough samples have been collected for the stats to
-    ///< be valid.
 
     // STATIC ACCESSORS
+    /**
+     * \return Time difference to clocking cycles in milliseconds
+     */
     static int intervalMs();
-    ///< Return the time difference to clocking cycles in milliseconds
 };
 
 }

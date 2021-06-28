@@ -26,6 +26,9 @@ namespace amqpprox {
 
 class Datacenter;
 
+/**
+ * \brief Represents affinity partition policy
+ */
 class AffinityPartitionPolicy : public PartitionPolicy {
   private:
     // DATA
@@ -38,22 +41,27 @@ class AffinityPartitionPolicy : public PartitionPolicy {
     virtual ~AffinityPartitionPolicy() override = default;
 
     // MANIPULATORS
+    /**
+     * \brief Partition the specified `backendSet` according to datacenter
+     * affinity
+     * \return Shared pointer to the new `BackendSet` that was
+     * partitioned according to this strategy
+     *
+     * Every partition currently in the `BackendSet` will be split into two new
+     * partitions. The first partition will contain elements that match the
+     * affinity of this policy and the second will contain all other elements.
+     * The resulting partitions will be merged, in order, to form a new
+     * `BackendSet` excluding any empty partitions.
+     */
     virtual std::shared_ptr<BackendSet>
     partition(const std::shared_ptr<BackendSet> &backendSet) override;
-    ///< Partition the specified `backendSet` according to datacenter
-    ///< affinity.
-    ///< Every partition currently in the `BackendSet` will be split into
-    ///< two new partitions. The first partition will contain elements
-    ///< that match the affinity of this policy and the second will contain
-    ///< all other elements. The resulting partitions will be merged, in
-    ///< order, to form a new `BackendSet` excluding any empty partitions.
-    ///< Returns a a shared pointer to the new `BackendSet` that was
-    ///< partitioned according to this strategy.
 
     // ACCESSORS
+    /**
+     * \return Name of this `PartitionPolicy`. This name is used to attach this
+     * policy to a given `Farm`.
+     */
     virtual const std::string &policyName() const override;
-    ///< Return the name of this `PartitionPolicy`. This name is used to
-    ///< attach this policy to a given `Farm`.
 };
 
 }

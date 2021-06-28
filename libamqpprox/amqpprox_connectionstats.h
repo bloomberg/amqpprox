@@ -27,7 +27,8 @@
 namespace Bloomberg {
 namespace amqpprox {
 
-/* \brief Stores summary metrics from a set of sessions
+/**
+ * \brief Stores summary metrics from a set of sessions
  *
  * This component is for storing a set of summary metrics collected from
  * multiple sessions, it has counts of each lifecycle state of a session and
@@ -45,65 +46,97 @@ class ConnectionStats {
 
   public:
     // CREATORS
+    /**
+     * \brief Construct and zero all counters and totals
+     */
     ConnectionStats();
-    ///< Construct and zero all counters and totals
 
+    /**
+     * \brief Construct with predetermined values.  Mostly useful for unit
+     * testing
+     * \param stats Stats
+     * \param distributionStats Distribution stats
+     */
     ConnectionStats(const std::map<std::string, uint64_t> &stats,
                     const std::map<std::string, std::pair<uint64_t, uint64_t>>
                         &distributionStats);
-    ///< Construct with predetermined values.  Mostly useful for unit testing.
 
     // MANIPULATORS
+    /**
+     * \brief Swap the current connection stats object with the rhs object
+     */
     void swap(ConnectionStats &rhs);
-    ///< Swap the current connection stats object with the rhs object
 
+    /**
+     * \brief Add the value to the distribution stats
+     */
     void addDistributionStats(const std::string &name,
                               uint64_t           total,
                               uint64_t           count);
-    ///< Add the value to the distribution stats
 
     // ACCESSORS
+    /**
+     * \return Reference to the stats value named by name
+     */
     inline uint64_t &statsValue(const std::string &name);
-    ///< Return a reference to the stats value named by name
 
+    /**
+     * \return const reference to the stats value named by name
+     */
     inline const uint64_t &statsValue(const std::string &name) const;
-    ///< Return a const reference to the stats value named by name
 
+    /**
+     * \return Count for a distribution stat
+     */
     uint64_t distributionCount(const std::string &name) const;
-    ///< Return the count for a distribution stat.
 
+    /**
+     * \return Average value for a distribution stat
+     */
     double distributionValue(const std::string &name) const;
-    ///< Return the average value for a distribution stat.
 
+    /**
+     * \return (count, total) pair for the distribution metric
+     */
     std::pair<uint64_t, uint64_t>
     distributionPair(const std::string &name) const;
-    ///< Return the (count, total) pair for the distribution metric
 
+    /**
+     * \return All available stats types
+     */
     static const std::vector<std::string> &statsTypes()
-    ///< Return all available stats types
     {
         return s_statsTypes;
     }
 
+    /**
+     * \return All traffic stats types
+     */
     static const std::vector<std::string> &sessionMetrics()
-    ///< Return all traffic stats types
     {
         return s_sessionMetrics;
     }
 
+    /**
+     * \return The metrics for which distributions are published
+     */
     static const std::vector<std::string> &distributionMetrics()
     ///< Return all distribution metric types
     {
         return s_distributionMetrics;
     }
 
+    /**
+     * \return Comparison for equality of all counter and total values for the
+     * stats object
+     */
     bool operator==(const ConnectionStats &other) const;
-    ///< Compare for equality of all counter and total values for the stats
-    ///< object
 
+    /**
+     * \return Comparison for inequality of all counter and total values for
+     * the stats object
+     */
     bool operator!=(const ConnectionStats &other) const;
-    ///< Compare for inequality of all counter and total values for the stats
-    ///< object
 };
 
 inline uint64_t &ConnectionStats::statsValue(const std::string &name)

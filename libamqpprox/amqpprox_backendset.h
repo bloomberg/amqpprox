@@ -36,26 +36,38 @@ class BackendSet {
 
   public:
     // CREATORS
+    /**
+     * \brief Create a `BackendSet` containing the specified, ordered
+     * partitions. The set of partitions contained within this instance is
+     * immutable.
+     * \param partitions Partitions vector
+     */
     explicit BackendSet(std::vector<Partition> partitions);
-    ///< Create a `BackendSet` containing the specified, ordered
-    ///< partitions. The set of partitions contained within this instance
-    ///< is immutable.
 
     // MANIPULATORS
+    /**
+     * \brief Mark the specified `partitionId` as accessed
+     * \param partitionId Partition ID
+     * \return New value of the marker
+     *
+     * This will move the partition's marker. The behaviour is undefined unless
+     * `partitionId` is within the range of the number of markers for this
+     * instance.
+     */
     uint64_t markPartition(uint64_t partitionId);
-    ///< Mark the specified `partitionId` as accessed. This will move the
-    ///< partition's marker. Returns the new value of the marker.
-    ///< The behaviour is undefined unless `partitionId` is within the
-    ///< range of the number of markers for this instance.
 
     // ACCESSORS
+    /**
+     * \return Non-modifiable reference to the vector of `Partitions` stored in
+     * this `BackendSet` instance.
+     */
     const std::vector<Partition> &partitions() const;
-    ///< Return a non-modifiable reference to the vector of `Partitions`
-    ///< stored in this `BackendSet` instance.
 
+    /**
+     * \return Non-modifiable reference to the vector of markers stored in this
+     * `BackendSet` instance.
+     */
     const std::vector<Marker> &markers() const;
-    ///< Return a non-modifiable reference to the vector of markers stored
-    ///< in this `BackendSet` instance.
 };
 
 // ACCESSORS

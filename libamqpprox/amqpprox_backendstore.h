@@ -26,6 +26,9 @@
 namespace Bloomberg {
 namespace amqpprox {
 
+/**
+ * \brief Represents Backend store
+ */
 class BackendStore {
     std::unordered_map<std::string, Backend>               d_backends;
     std::map<std::pair<std::string, int>, const Backend *> d_backendAddresses;
