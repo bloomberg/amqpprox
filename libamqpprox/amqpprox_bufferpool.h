@@ -26,7 +26,8 @@
 namespace Bloomberg {
 namespace amqpprox {
 
-/* \brief Pool of buffers from a range of fixed size buffer sources.
+/**
+ * \brief Pool of buffers from a range of fixed size buffer sources.
  *
  * This component provides buffers either from heap allocation, or from a range
  * of `BufferSource` objects. The sizes the `BufferSource` objects provide is
@@ -42,13 +43,17 @@ class BufferPool {
 
   public:
     // TYPES
+    /**
+     * \brief The tuples are of the form: bufferSize, current allocation,
+     * highest allocation (both in number of buffers).
+     */
     using BufferAllocationStat = std::tuple<std::size_t, uint64_t, uint64_t>;
-    ///< The tuples are of the form: bufferSize, current allocation,
-    ///< highest allocation (both in number of buffers).
 
     // CREATORS
+    /**
+     * \brief Construct the pool with the given range of buffer sizes
+     */
     explicit BufferPool(const std::vector<std::size_t> &buckets);
-    ///< Construct the pool with the given range of buffer sizes
 
     BufferPool(const BufferPool &buffer) = delete;
     BufferPool &operator=(const BufferPool &) = delete;
@@ -56,16 +61,20 @@ class BufferPool {
     BufferPool &operator=(BufferPool &&) = delete;
 
     // MANIPULATORS
+    /**
+     * \brief Acquire a buffer of the given size `sz` and load it into the
+     * provided `handle`. If the allocation fails `std::bad_alloc` will be
+     * thrown
+     */
     void acquireBuffer(BufferHandle *handle, std::size_t sz);
-    ///< Acquire a buffer of the given size `sz` and load it into the
-    ///< provided `handle`. If the allocation fails `std::bad_alloc` will be
-    ///< thrown.
 
     // ACCESSORS
+    /**
+     * \brief Retrieve statistics on the current usage and highest usage for
+     * each buffer size in the pool.
+     */
     void getPoolStatistics(std::vector<BufferAllocationStat> *stats,
                            uint64_t *                         spilloverCount);
-    ///< Retrieve statistics on the current usage and highest usage for each
-    ///< buffer size in the pool.
 };
 
 }

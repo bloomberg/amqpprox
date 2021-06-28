@@ -24,17 +24,22 @@ namespace amqpprox {
 class ConnectionManager;
 class SessionState;
 
+/**
+ * \brief Represents a connection selector
+ */
 class ConnectionSelector {
   public:
     virtual ~ConnectionSelector() = default;
 
+    /**
+     * \brief Acquire a connection from the specified session `state` and set
+     * `connectionOut` to be a `ConnectionManager` instance tracking the
+     * connection attempt
+     * \return Zero on success, or a non-zero value otherwise
+     */
     virtual int
     acquireConnection(std::shared_ptr<ConnectionManager> *connectionOut,
                       const SessionState &                state) = 0;
-    ///< Acquire a connection from the specified session `state` and set
-    ///< `connectionOut` to be a `ConnectionManager` instance tracking the
-    ///< connection attempt.
-    ///< Returns zero on success, or a non-zero value otherwise.
 };
 
 }

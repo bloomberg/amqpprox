@@ -22,6 +22,9 @@
 namespace Bloomberg {
 namespace amqpprox {
 
+/**
+ * \brief Represents an backend server
+ */
 class Backend {
     std::string d_name;
     std::string d_datacenterTag;
@@ -51,7 +54,7 @@ class Backend {
     inline const std::string &name() const;
     inline bool               proxyProtocolEnabled() const;
     inline bool               tlsEnabled() const;
-    inline bool               dnsBasedEntry() const;  
+    inline bool               dnsBasedEntry() const;
 };
 
 inline const std::string &Backend::host() const
@@ -96,7 +99,7 @@ inline bool Backend::dnsBasedEntry() const
 
 std::ostream &operator<<(std::ostream &os, const Backend &backend);
 
-bool operator==(const Backend& lhs, const Backend& rhs);
+bool operator==(const Backend &lhs, const Backend &rhs);
 
 }
 }

@@ -32,14 +32,21 @@ class BackendSelectorStore {
 
   public:
     // MANIPULATORS
+    /**
+     * \brief Add the specified `BackendSelector` to the map of named selectors
+     * installed in this store.
+     * \param backendSelector Backend selector
+     */
     void addSelector(std::unique_ptr<BackendSelector> backendSelector);
-    ///< Add the specified `BackendSelector` to the map of named selectors
-    ///< installed in this store.
 
     // ACCESSORS
+    /**
+     * \brief Return a pointer to the `BackendSelector` instance with the
+     * specified `name`.
+     * \param name Backend selector name
+     * \return Backend selector
+     */
     BackendSelector *getSelector(const std::string &name) const;
-    ///< Return a pointer to the `BackendSelector` instance with the
-    ///< specified `name`.
 };
 
 }

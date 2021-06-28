@@ -25,6 +25,9 @@ namespace amqpprox {
 class Control;
 class Server;
 
+/**
+ * \brief Represents control command output
+ */
 template <typename Functor>
 class ControlCommandOutput : public std::ostringstream {
   private:
@@ -39,6 +42,9 @@ class ControlCommandOutput : public std::ostringstream {
     virtual ~ControlCommandOutput() override { d_functor(this->str(), true); }
 };
 
+/**
+ * \brief Class for executing a control command
+ */
 class ControlCommand {
   public:
     using OutputFunctor = std::function<bool(const std::string &, bool)>;
@@ -47,19 +53,30 @@ class ControlCommand {
     virtual ~ControlCommand() = default;
 
     // MANIPULATORS
+    /**
+     * \brief Execute a command, providing any output to the provided functor
+     * \param command Command
+     * \param restOfCommand Rest of command
+     * \param outputFunctor Output functor
+     * \param serverHandle Server handle
+     * \param controlHandle Control handle
+     */
     virtual void handleCommand(const std::string &  command,
                                const std::string &  restOfCommand,
                                const OutputFunctor &outputFunctor,
                                Server *             serverHandle,
                                Control *            controlHandle) = 0;
-    ///< Execute a command, providing any output to the provided functor
 
     // ACCESSORS
+    /**
+     * \return Command verb this handles
+     */
     virtual std::string commandVerb() const = 0;
-    ///< Returns the command verb this handles
 
+    /**
+     * \return Help text for this command
+     */
     virtual std::string helpText() const = 0;
-    ///< Returns a string of the help text for this command
 };
 
 }

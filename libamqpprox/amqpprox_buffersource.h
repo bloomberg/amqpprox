@@ -45,22 +45,33 @@ class BufferSource {
     BufferSource &operator=(const BufferSource &) = delete;
 
     // MANIPULATORS
+    /**
+     * \brief Release the buffer `data` passed in
+     */
     void release(void *data);
-    ///< Release the buffer `data` passed in
 
+    /**
+     * \brief Acquire a buffer of the `bufferSize`
+     */
     void *acquire();
-    ///< Acquire a buffer of the `bufferSize`
 
     // ACCESSORS
+    /**
+     * \return Size of the buffers managed by this component, this is a
+     * threadsafe method to call
+     */
     std::size_t bufferSize() const;
-    ///< Return the size of the buffers managed by this component, this is a
-    ///< threadsafe method to call
 
+    /**
+     * \brief Retrieve the current allocation statistics, this is a threadsafe
+     * method to call
+     * \param allocationCount Allocation count
+     * \param deallocationCount Deallocation count
+     * \param highwaterMark High-water mark
+     */
     void allocationStats(uint64_t *allocationCount,
                          uint64_t *deallocationCount,
                          uint64_t *highwaterMark) const;
-    ///< Retrieve the current allocation statistics, this is a threadsafe
-    ///< method to call
 };
 
 }

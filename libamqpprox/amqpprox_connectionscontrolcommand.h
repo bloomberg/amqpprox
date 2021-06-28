@@ -21,20 +21,34 @@
 namespace Bloomberg {
 namespace amqpprox {
 
+/**
+ * \brief Represents a connections control command
+ */
 class ConnectionsControlCommand : public ControlCommand {
   public:
+    /**
+     * \return Command verb this handles
+     */
     virtual std::string commandVerb() const override;
-    ///< Returns the command verb this handles
 
+    /**
+     * \return String of the help text for this command
+     */
     virtual std::string helpText() const override;
-    ///< Returns a string of the help text for this command
 
+    /**
+     * \brief Execute a command, providing any output to the provided functor
+     * \param command Command
+     * \param restOfCommand Rest of command
+     * \param outputFunctor Outpuf functor
+     * \param serverHandle Server handle
+     * \param controlHandle Control handle
+     */
     virtual void handleCommand(const std::string &  command,
                                const std::string &  restOfCommand,
                                const OutputFunctor &outputFunctor,
                                Server *             serverHandle,
                                Control *            controlHandle) override;
-    ///< Execute a command, providing any output to the provided functor
 };
 
 }

@@ -24,7 +24,8 @@ namespace amqpprox {
 
 class BufferSource;
 
-/* \brief Handle to own a sized buffer
+/**
+ * \brief Handle to own a sized buffer
  *
  * This component provides a simple scoped handle to own a buffer which is
  * either from the heap or a provided 'BufferSource'. At this time the
@@ -38,45 +39,63 @@ class BufferHandle {
 
   public:
     // CREATORS
+    /**
+     * \brief Initialise a handle with the prescribed data pointer, size and
+     * providence `BufferSource`.
+     */
     BufferHandle(void *data, std::size_t size, BufferSource *source);
-    ///< Initialise a handle with the prescribed data pointer, size and
-    ///< providence `BufferSource`.
 
+    /**
+     * \brief Initialise an unset handle
+     */
     BufferHandle();
-    ///< Initialise an unset handle
 
     BufferHandle(const BufferHandle &buffer) = delete;
     BufferHandle &operator=(const BufferHandle &) = delete;
     BufferHandle(BufferHandle &&)                 = delete;
     BufferHandle &operator=(BufferHandle &&) = delete;
 
+    /**
+     * \brief Release the held data, if the buffer handle is set
+     */
     ~BufferHandle();
-    ///< Release the held data, if the buffer handle is set
 
     // MANIPULATORS
+    /**
+     * \brief Set the `data`, `size` and `source` of this handle, releasing any
+     * prior held data before.
+     */
     void assign(void *data, std::size_t size, BufferSource *source);
-    ///< Set the `data`, `size` and `source` of this handle, releasing any
-    ///< prior held data before.
 
+    /**
+     * \brief Swap the contents of this handle with the provided `rhs`
+     */
     void swap(BufferHandle &rhs);
-    ///< Swap the contents of this handle with the provided `rhs`
 
+    /**
+     * \brief Release the data member either by using the `BufferSource` it
+     * came from, or array delete. Resets the pointers back to null, and size
+     * to zero.
+     */
     void release();
-    ///< Release the data member either by using the `BufferSource` it came
-    ///< from, or array delete. Resets the pointers back to null, and size
-    ///< to zero.
 
     // ACCESSORS
+    /**
+     * \brief Return the raw data pointer managed by this `BufferHandle`, or
+     * nullptr if unset.
+     */
     inline void *data();
-    ///< Return the raw data pointer managed by this `BufferHandle`, or
-    ///< nullptr if unset.
 
+    /**
+     * \brief Return the size of the managed data section, or 0 if unset.
+     */
     inline std::size_t size() const;
-    ///< Return the size of the managed data section, or 0 if unset.
 
+    /**
+     * \brief Return the `BufferSource` that was the providence of the data
+     * buffer, or nullptr if there is no source, or the handle is unset
+     */
     inline BufferSource *source() const;
-    ///< Return the `BufferSource` that was the providence of the data
-    ///< buffer, or nullptr if there is no source, or the handle is unset
 };
 
 inline void *BufferHandle::data()

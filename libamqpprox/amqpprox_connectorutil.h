@@ -36,6 +36,7 @@ namespace amqpprox {
 class ConnectorUtil {
     /**
      * \brief Generate the server property bag.
+     * \return Server properties field table
      *
      * This will have a similar set of capabilities as the RabbitMQ broker, but
      * contain the proxy's information.
@@ -45,11 +46,13 @@ class ConnectorUtil {
   public:
     /**
      * \brief Construct the start method the proxy will send
+     * \return Start method
      */
     static methods::Start synthesizedStart();
 
     /**
      * \brief Construct the tune method the proxy will send
+     * \return Tune method
      */
     static methods::Tune synthesizedTune();
 
@@ -58,6 +61,9 @@ class ConnectorUtil {
      * \param startOk output parameter for method to mutate
      * \param hostname the IP/hostname of the client of the proxy
      * \param port the TCP port of the client of the proxy
+     * \param localHostname Local hostname
+     * \param inboundListenPort Inbound listen port
+     * \param outboundListenPort Outbound listen port
      */
     static void injectProxyClientIdent(methods::StartOk * startOk,
                                        const std::string &clientHostname,

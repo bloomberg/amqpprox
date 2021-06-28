@@ -26,26 +26,38 @@ namespace amqpprox {
 class Backend;
 class BackendSet;
 
+/**
+ * \brief Represents a backend selector
+ */
 class BackendSelector {
   public:
     // CREATORS
     virtual ~BackendSelector() = default;
 
     // ACCESSORS
+    /**
+     * \brief Select a `Backend` instance from the specified `BackendSet` that
+     * should be connected to based on the specified `markers` and `retryCount`
+     * \param backendSet Backend set
+     * \param markers Markers
+     * \param retryCount Retry count
+     * \return Backend
+     *
+     * When a `Backend` is returned, the relevant `Partition` will be marked.
+     * If no `Backend` is suitable based on the specified values, a null
+     * pointer will be returned.
+     */
     virtual const Backend *select(BackendSet *                 backendSet,
                                   const std::vector<uint64_t> &markers,
                                   uint64_t retryCount) const = 0;
-    ///< Select a `Backend` instance from the specified `BackendSet` that
-    ///< should be connected to based on the specified `markers` and
-    ///< `retryCount`. When a `Backend` is returned, the relevant
-    ///< `Partition` will be marked.
-    ///< If no `Backend` is suitable based on the specified values, a null
-    ///< pointer will be returned.
 
     // ACCESSORS
+    /**
+     * \brief Return the name of this `BackendSelector`. This name is used to
+     * attach this selector to a given `Farm`.
+     * \return Backend selector name
+     */
     virtual const std::string &selectorName() const = 0;
-    ///< Return the name of this `BackendSelector`. This name is used to
-    ///< attach this selector to a given `Farm`.
 };
 
 }
