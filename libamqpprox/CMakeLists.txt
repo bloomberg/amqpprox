@@ -60,7 +60,6 @@ add_library(libamqpprox STATIC
     amqpprox_sessioncleanup.cpp
     amqpprox_sessioncontrolcommand.cpp
     amqpprox_sessionstate.cpp
-    amqpprox_simpleconnectionselector.cpp
     amqpprox_socketintercept.cpp
     amqpprox_socketinterceptinterface.cpp
     amqpprox_statcollector.cpp

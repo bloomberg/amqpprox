@@ -16,9 +16,9 @@
 #ifndef BLOOMBERG_AMQPPROX_SERVER
 #define BLOOMBERG_AMQPPROX_SERVER
 
+#include <amqpprox_connectionselector.h>
 #include <amqpprox_dnsresolver.h>
 #include <amqpprox_maybesecuresocketadaptor.h>
-#include <amqpprox_simpleconnectionselector.h>
 
 #include <boost/asio.hpp>
 
