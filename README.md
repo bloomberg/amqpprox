@@ -177,7 +177,7 @@ An AMQP 0.9.1 client can now connect to `vhost-example` on port 5673 and `amqppr
 ## Building
 
 The default build uses the Conan package manager, make, cmake and will require
-a C++14 compiler. These should be installed prior to doing the native build,
+a C++17 compiler. These should be installed prior to doing the native build,
 and conan will download the other dependencies during setup.
 
 Once you have set up the build dependencies on your machine, the project should
