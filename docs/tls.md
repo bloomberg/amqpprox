@@ -1,6 +1,6 @@
 # TLS Support in `amqpprox`
 
-`amqpprox` can be configured to use TLS for ingress (server) and egress (client) connections.
+`amqpprox` can be configured to use TLS for (client => proxy) ingress - incoming AMQP from client, and (proxy => broker) egress - outgoing AMQP to broker, connections.
 Some configuration options are shared between these two scenarios, and some differ. This document describes the available configuration parameters.
 
 `boost::asio::ssl` is used to provide TLS support, which internally uses OpenSSL. The actual version of OpenSSL may depend on how `amqpprox` is built. A genuinely secure TLS/RabbitMQ setup requires careful consideration and execution. Please refer to the appropriate OpenSSL docs for the version used. A reference for using TLS with RabbitMQ is available here: https://www.rabbitmq.com/ssl.html
