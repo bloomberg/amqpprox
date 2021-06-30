@@ -41,7 +41,8 @@ class ConnectionSelector;
 class EventSource;
 class DNSResolver;
 
-/* \brief Binds the incoming and outgoing sockets into a channel through the
+/**
+ * \brief Binds the incoming and outgoing sockets into a channel through the
  * proxy.
  *
  * This component provides the 'pumping' of data through the proxy for a
@@ -93,118 +94,207 @@ class Session : public std::enable_shared_from_this<Session> {
     ~Session();
 
     // MANIPULATORS
+    /**
+     * \brief Start the session and read the new socket for the protocol header
+     */
     void start();
-    ///< Start the session and read the new socket for the protocol header
 
+    /**
+     * \brief Print the session information
+     * \param os output stream object
+     */
     void print(std::ostream &os);
-    ///< Print the session information
 
+    /**
+     * \brief Pause all IO operations on the session
+     */
     void pause();
-    ///< Pause all IO operations on the session
 
+    /**
+     * \brief Disconnect both sides of the session
+     * \param forcible to specify forcefully disconnect
+     */
     void disconnect(bool forcible);
-    ///< Disconnect both sides of the session
 
+    /**
+     * \brief Disconnect the session from the backend, but leave the client
+     * connected.
+     */
     void backendDisconnect();
-    ///< Disconnect the session from the backend, but leave the client
-    ///< connected.
 
+    /**
+     * \return the state object for the session
+     */
     SessionState &state();
-    ///< Return the state object for the session
 
     // ACCESSORS
+    /**
+     * \return the boost::asio io service object
+     */
     boost::asio::io_service &ioService();
-    ///< Return the boost::asio io service object
 
+    /**
+     * \return the threadsafe state object for the session
+     */
     const SessionState &state() const;
-    ///< Return the threadsafe state object for the session
 
+    /**
+     * \return true if the session is disconnected and should be
+     * elligible to be deleted.
+     */
     bool finished();
-    ///< Return true if the session is disconnected and should be elligible to
-    ///< be deleted.
 
+    /**
+     * \brief Give proxy protocol header for the given backend
+     * \param currentBackend pointer to `Backend`
+     * \return proxy protocol header
+     */
     std::string getProxyProtocolHeader(const Backend *currentBackend);
-    ///< Return the proxy protocol header for the given backend
 
   private:
+    /**
+     * \brief Attempt next connection from the list managed by the specified
+     * `ConnectionManager` object.
+     * \param connectionManager shared pointer to `ConnectionManager`
+     */
     void attemptConnection(
         const std::shared_ptr<ConnectionManager> &connectionManager);
-    ///< Attempt next connection from the list managed by the
-    ///< `connectionManager`.
 
+    /**
+     * \brief Second stage of attempting a connection with a list of resolved
+     * endpoints.
+     * \param connectionManager shared pointer to `ConnectionManager`
+     */
     void attemptResolvedConnection(
         const std::shared_ptr<ConnectionManager> &connectionManager);
-    ///< Second stage of attempting a connection with a list of resolved
-    ///< endpoints.
 
+    /**
+     * \brief Third stage of attempting a connection with a fully resolved
+     * IP+port
+     * \param endpoint peer endpoint to be connected with
+     */
     void attemptEndpointConnection(
         boost::asio::ip::tcp::endpoint            endpoint,
         const std::shared_ptr<ConnectionManager> &connectionManager);
-    ///< Third stage of attempting a connection with a fully resolved IP+port
 
+    /**
+     * \brief Start establishing a connection for this incoming session
+     */
     void establishConnection();
-    ///< Start establishing a connection for this incoming session
 
+    /**
+     * \brief Send data stored in connector's buffer and originated on the
+     * proxy side
+     */
     void sendSyntheticData();
-    ///< Send data stored in connector's buffer and originated on the proxy
-    ///< side
 
+    /**
+     * \brief Handle the incoming data that's been received
+     * \param direction specifies direction of the data flow (ingress/egress)
+     */
     void handleData(FlowType direction);
-    ///< Handle the incoming data that's been received
 
+    /**
+     * \brief Read more data into the session
+     * \param direction specifies direction of the data flow (ingress/egress)
+     */
     void readData(FlowType direction);
-    ///< Read more data into the session
 
+    /**
+     * \brief Put the supplied data onto the outgoing socket, then re-read
+     * \param direction specifies direction of the data flow (ingress/egress)
+     * \param writeSocket to write the data
+     * \param data to be written onto the outgoing socket
+     */
     void handleWriteData(FlowType                  direction,
                          MaybeSecureSocketAdaptor &writeSocket,
                          Buffer                    data);
-    ///< Put the supplied data onto the outgoing socket, then re-read
 
+    /**
+     * \brief Handle errors on an established connection
+     * \param action specifies action information
+     * \param direction specifies direction of the data flow (ingress/egress)
+     * \param ec specifies error code
+     */
     void handleSessionError(const char *              action,
                             FlowType                  direction,
                             boost::system::error_code ec);
-    ///< Handle errors on an established connection
 
+    /**
+     * \brief Handle errors while establishing a connection
+     * \param action specifies action information
+     * \param ec specifies error code
+     * \param connectionManager shared pointer to `ConnectionManager`
+     */
     void handleConnectionError(
         const char *                              action,
         boost::system::error_code                 ec,
         const std::shared_ptr<ConnectionManager> &connectionManager);
-    ///< Handle errors while establishing a connection
 
+    /**
+     * \brief Disconnect both sockets forcibly
+     */
     void performDisconnectBoth();
-    ///< Disconnect both sockets forcibly
 
+    /**
+     * \brief Copy any remaining data from the incoming buffer to a new buffer
+     * for the next read operation to append to.
+     * \param direction specifies direction of the data flow (ingress/egress)
+     * \param remaining specifies remaining buffer data
+     */
     inline void copyRemaining(FlowType direction, const Buffer &remaining);
-    ///< Copy any remaining data from the incoming buffer to a new buffer
-    ///< for the next read operation to append to.
 
+    /**
+     * \param direction specifies direction of the data flow (ingress/egress)
+     * \return a mutable reference to the socket to read from
+     */
     inline MaybeSecureSocketAdaptor &readSocket(FlowType direction);
-    ///< Return a mutable reference to the socket to read from
 
+    /**
+     * \param direction specifies direction of the data flow (ingress/egress)
+     * \return a buffer to used for reading into
+     */
     inline Buffer readBuffer(FlowType direction);
-    ///< Return a buffer to used for reading into
 
+    /**
+     * \param direction specifies direction of the data flow (ingress/egress)
+     * \return a mutable reference to the amount of data already in the read
+     * buffer
+     */
     inline std::size_t &waterMark(FlowType direction);
-    ///< Return a mutable reference to the amount of data already in the
-    ///< read buffer
 
+    /**
+     * \param direction specifies direction of the data flow (ingress/egress)
+     * \return a mutable reference to the time we last saw traffic
+     */
     inline TimePoint &timePoint(FlowType direction);
-    ///< Return a mutable reference to the time we last saw traffic
 
+    /**
+     * \param direction specifies direction of the data flow (ingress/egress)
+     * \return a mutable reference to the ownership handle of the primary
+     * buffer
+     */
     inline BufferHandle &bufferHandle(FlowType direction);
-    ///< Return a mutable reference to the ownership handle of the primary
-    ///< buffer
 
+    /**
+     * \param direction specifies direction of the data flow (ingress/egress)
+     * \return a mutable reference to the ownership handle of the secondary
+     * buffer
+     */
     inline BufferHandle &bufferWriteDataHandle(FlowType direction);
-    ///< Return a mutable reference to the ownership handle of the secondary
-    ///< buffer
 
+    /**
+     * \param direction specifies direction of the data flow (ingress/egress)
+     * \return a mutable reference to the time when the last read started
+     */
     inline Session::TimePoint &startedAt(FlowType direction);
-    ///< Return a mutable reference to the time when the last read started
 
+    /**
+     * \param direction specifies direction of the data flow (ingress/egress)
+     * \return a mutable reference to whether we are currently reading a
+     * message off the wire or not.
+     */
     inline bool &currentlyReading(FlowType direction);
-    ///< Return a mutable reference to whether we are currently
-    /// reading a message off the wire or not.
 };
 
 inline MaybeSecureSocketAdaptor &Session::readSocket(FlowType direction)

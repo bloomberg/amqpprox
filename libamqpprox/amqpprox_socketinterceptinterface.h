@@ -23,7 +23,8 @@
 namespace Bloomberg {
 namespace amqpprox {
 
-/** \brief Provide a virtual interface for socket operations
+/**
+ * \brief Provide a virtual interface for socket operations
  *
  * This is a pure virtual interface derived from the non-virtual interfaces
  * expected by boost ASIO. This is predominantly designed to benefit testing
@@ -54,9 +55,9 @@ class SocketInterceptInterface {
     virtual void setSecure(bool secure) = 0;
 
     /**
-     * \brief Return if the socket is in secure mode
+     * \return if the socket is in secure mode
      */
-    virtual bool isSecure() const       = 0;
+    virtual bool isSecure() const = 0;
 
     /**
      * \brief Reset the socket's context as if it is a fresh socket
@@ -141,9 +142,9 @@ class SocketInterceptInterface {
      * \param handler The completion handler to invoke on success/error, it
      *                will also return the amount of bytes written.
      */
-    virtual void
-    async_write_some(const std::vector<std::pair<const void *, size_t>> &buffers,
-                     AsyncWriteHandler handler) = 0;
+    virtual void async_write_some(
+        const std::vector<std::pair<const void *, size_t>> &buffers,
+        AsyncWriteHandler                                   handler) = 0;
 
     /**
      * \brief Synchronously read some data onto the socket

@@ -30,7 +30,8 @@ class BufferPool;
 class CpuMonitor;
 class SessionState;
 
-/* \brief Collect statistics from Sessions for a time periodicity.
+/**
+ * \brief Collect statistics from Sessions for a time periodicity.
  *
  * This accumulates statistics along a number of axes such as vhost, backend
  * and source. It is designed to accumulate between those points until reset,
@@ -57,25 +58,45 @@ class StatCollector {
     StatCollector();
 
     // MANIPULATORS
+    /**
+     * \brief Reset the current accumulation and start a new collection
+     * interval
+     */
     void reset();
-    ///< Reset the current accumulation and start a new collection interval
 
+    /**
+     * \brief Collect and accumulate statistics from the given `session`
+     * \param session `SessionState` object, contains a counter of total bytes,
+     * packets and frames for each direction
+     */
     void collect(const SessionState &session);
-    ///< Collect and accumulate statistics from the given `session`
 
+    /**
+     * \brief Delete the accumulated metrics for deleted specified session
+     * \param session `SessionState` object, whose accumulated metrics will be
+     * removed from maintined collection
+     */
     void deletedSession(const SessionState &session);
-    ///< Handle a given `session` being deleted
 
+    /**
+     * \brief Set the CPU monitor to extract CPU usage statistics from
+     * \param monitor pointer to `CpuMonitor`
+     */
     void setCpuMonitor(CpuMonitor *monitor);
-    ///< Set the CPU monitor to extract CPU usage statistics from
 
+    /**
+     * \brief Set the buffer pool to extract statistics from
+     * \param pool pointer to `BuffrePool`
+     */
     void setBufferPool(BufferPool *pool);
-    ///< Set the buffer pool to extract statistics from
 
     // ACCESSORS
+    /**
+     * \brief Retrieve the statistics as a `snapshot` that have been
+     * accumulated since the class was constructed, or `reset` was last called
+     * \param snapshot pointere to `StatSnapshot`
+     */
     void populateStats(StatSnapshot *snapshot);
-    ///< Retrieve the statistics as a `snapshot` that have been accumulated
-    ///< since the class was constructed, or `reset` was last called
 
   private:
     void populateProgramStats(ConnectionStats *programStats) const;

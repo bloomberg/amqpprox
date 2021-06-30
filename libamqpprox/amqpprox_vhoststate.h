@@ -40,8 +40,15 @@ class VhostState {
         State();
         explicit State(const State &rhs);
 
+        /**
+         * \return whether virtual host is paused
+         */
         inline bool isPaused() const { return d_paused; }
 
+        /**
+         * \brief Set the virtual host to be paused state
+         * \param paused flag to specify paused or unpaused virtual host
+         */
         inline void setPaused(bool paused) { d_paused = paused; }
     };
 

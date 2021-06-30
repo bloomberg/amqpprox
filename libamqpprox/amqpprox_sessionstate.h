@@ -29,6 +29,9 @@ namespace amqpprox {
 
 class HostnameMapper;
 
+/**
+ * \brief Maintains the state and metrics of a particular session
+ */
 class SessionState {
   public:
     enum class DisconnectType {
@@ -72,58 +75,114 @@ class SessionState {
         const std::shared_ptr<HostnameMapper> &hostnameMapper = nullptr);
 
     // MANIPULATORS
+    /**
+     * \brief Set the tcp pair for egress
+     * \param ioService handle to the boost asio service
+     * \param local local endpoint
+     * \param remote remote endpoint
+     */
     void setEgress(boost::asio::io_service &      ioService,
                    boost::asio::ip::tcp::endpoint local,
                    boost::asio::ip::tcp::endpoint remote);
-    ///< Set the tcp pair for egress
 
+    /**
+     * \brief Set the tcp pair for ingress
+     * \param ioService handle to the boost asio service
+     * \param local local endpoint
+     * \param remote remote endpoint
+     */
     void setIngress(boost::asio::io_service &      ioService,
                     boost::asio::ip::tcp::endpoint local,
                     boost::asio::ip::tcp::endpoint remote);
-    ///< Set the tcp pair for ingress
 
+    /**
+     * \brief Set the virtual host
+     * \param vhost virtual host
+     */
     void setVirtualHost(const std::string &vhost);
-    ///< Set the virtual host
 
+    /**
+     * \brief Set the virtual host to be paused state
+     * \param paused flag to specify paused or unpaused virtual host
+     */
     void setPaused(bool paused);
-    ///< Set the virtual host to be paused state
 
+    /**
+     * \brief Set session as disconnected, along with which type of disconnect
+     * \param disconnectType specifies type of disconnection
+     */
     void setDisconnected(DisconnectType disconnectType);
-    ///< Set session as disconnected, along with which type of disconnect
 
+    /**
+     * \brief Set up a hostname mapper for the Session
+     * \param ioService handle to the boost asio service
+     * \param hostnameMapper shared pointer to `HostnameMapper`
+     */
     void
     setHostnameMapper(boost::asio::io_service &              ioService,
                       const std::shared_ptr<HostnameMapper> &hostnameMapper);
-    ///< Set up a hostname mapper for the Session
 
+    /**
+     * \brief Increment frames and bytes totals for ingress
+     * \param frames number of frames
+     * \param bytes number of bytes
+     */
     void incrementIngressTotals(uint64_t frames, uint64_t bytes);
-    ///< Increment frames and bytes totals for ingress
 
+    /**
+     * \brief Increment frames and bytes totals for egress
+     * \param frames number of frames
+     * \param bytes number of bytes
+     */
     void incrementEgressTotals(uint64_t frames, uint64_t bytes);
-    ///< Increment frames and bytes totals for egress
 
+    /**
+     * \brief Add a latency value for ingress
+     * \param latency in milliseconds
+     */
     void addIngressLatency(uint64_t latency);
-    ///< Add a latency value for ingress
 
+    /**
+     * \brief Add a latency value for egress
+     * \param latency in milliseconds
+     */
     void addEgressLatency(uint64_t latency);
-    ///< Add a latency value for egress
 
+    /**
+     * \brief Get the hostname for the endpoint
+     * \param endpoint ip address
+     */
     std::string hostname(const boost::asio::ip::tcp::endpoint &endpoint) const;
-    ///< Get the hostname for the endpoint
 
     // ACCESSORS
+    /**
+     * \return the egress endpoints
+     */
     inline EndpointPair getEgress() const;
-    ///< Get the egress endpoints
 
+    /**
+     * \return the ingress endpoints
+     */
     inline EndpointPair getIngress() const;
-    ///< Get the ingress endpoints
 
+    /**
+     * \return the virtual host
+     */
     inline const std::string &getVirtualHost() const;
 
+    /**
+     * \return the state(paused/unpaused) of the virtual host
+     */
     inline bool getPaused() const;
 
+    /**
+     * \return session identifier
+     */
     inline uint64_t id() const;
 
+    /**
+     * \brief Get values of all the maintained metrics
+     */
     void getTotals(uint64_t *ingressPackets,
                    uint64_t *ingressFrames,
                    uint64_t *ingressBytes,
@@ -135,6 +194,9 @@ class SessionState {
                    uint64_t *egressLatencyTotalMs,
                    uint64_t *egressLatencyCount) const;
 
+    /**
+     * \return whether session is disconnected and type of disconnection
+     */
     inline DisconnectType getDisconnectType() const;
 };
 

@@ -35,6 +35,11 @@ class Session;
 class EventSource;
 class HostnameMapper;
 
+/**
+ * \brief Sockets are accept()'ed in this component. For each incoming
+ * connection, it creates a Session object, and stores it in a threadsafe
+ * collection. It is the primary thread, where event loop runs.
+ */
 class Server {
     using SessionPtr = std::shared_ptr<Session>;
 
@@ -62,47 +67,86 @@ class Server {
     ~Server();
 
     // MANIPULATORS
-
+    /**
+     * \brief Run the server event loop
+     */
     int run();
-    ///< Run the server event loop
 
+    /**
+     * \brief Stop the server event loop
+     */
     void stop();
-    ///< Stop the server event loop
 
+    /**
+     * \brief Start listening on the given port, no op if the server is already
+     * listening on the specified port.
+     * \param port to start listening on
+     * \param secure to set the socket into secure (using TLS) or unsecure
+     * (plaintext)
+     */
     void startListening(int port, bool secure);
-    ///< Start listening on the given port, no op if the server is already
-    ///< listening on the specified port.
 
+    /**
+     * \brief Stop listening on the server's port, no op if the server is not
+     * already listening.
+     * \param port to stop listening on
+     */
     void stopListening(int port);
-    ///< Stop listening on the server's port, no op if the server is not
-    ///< already listening.
 
+    /**
+     * \brief Stop listening on all the server's ports, no op if the server is
+     * not already listening. already listening.
+     */
     void stopAllListening();
-    ///< Stop listening on all the server's ports, no op if the server
-    ///< is not already listening.
 
+    /**
+     * \brief Remove the session given by its identifier
+     * \param identifier a unique session identifier
+     */
     void removeSession(uint64_t identifier);
-    ///< Remove the session given by its identifier
 
+    /**
+     * \brief Clear defunct sessions
+     */
     void clearDefunctSessions();
-    ///< Clear defunct sessions
 
+    /**
+     * \brief Set a different hostname mapper. Note that this does not update
+     * any hostname mappers that are currently set on any sessions.
+     * \param hostnameMapper to facilitate reverse lookups based on IP address
+     * to hostname
+     */
     void
     setHostnameMapper(const std::shared_ptr<HostnameMapper> &hostnameMapper);
-    ///< Set a different hostname mapper.  Note that this does not
-    ///< update any hostname mappers that are currently set on any
-    ///< sessions.
 
     // ACCESSORS
-
+    /**
+     * \brief Get a particular session for a specified ID
+     * \param identifier a unique session identifier
+     */
     std::shared_ptr<Session> getSession(uint64_t identifier);
 
+    /**
+     * \brief Visit all the sessions
+     * \param visitor callback function to be invoked with session shared
+     * pointer as an argument for each session
+     */
     void visitSessions(const std::function<void(const SessionPtr &)> &visitor);
 
+    /**
+     * \brief Print all the connections information for all the sessions
+     * \param os output stream object
+     */
     void printConnections(std::ostream &os);
 
+    /**
+     * \brief Return ingress (server) TLS context
+     */
     boost::asio::ssl::context &ingressTlsContext();
 
+    /**
+     * \brief Return egress (client) TLS context
+     */
     boost::asio::ssl::context &egressTlsContext();
 
   private:

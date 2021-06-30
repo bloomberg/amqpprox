@@ -25,6 +25,13 @@ class EventSource;
 class Server;
 class VhostState;
 
+/**
+ * \brief Subscribe to vhost connections to set new connections to be paused
+ * once the vhost is established late in the connection phase
+ * \param eventSource pointer to `EventSource`
+ * \param server pointer to `Server`
+ * \param vhostState pointer to `VhostState`
+ */
 EventSubscriptionHandle vhostEstablishedPauser(EventSource *eventSource,
                                                Server *     server,
                                                VhostState * vhostState);

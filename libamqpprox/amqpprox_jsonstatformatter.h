@@ -38,7 +38,7 @@ class JsonStatFormatter : public StatFormatter {
      *
      * \param os the output stream
      *
-     * \param connectionStats reference to the connectionStats
+     * \param connectionStats reference to the ConnectionStats
      */
     virtual void format(std::ostream &         os,
                         const ConnectionStats &connectionStats) override;
@@ -59,7 +59,7 @@ class JsonStatFormatter : public StatFormatter {
      *
      * \param os the output stream
      *
-     * \param statSnapshot reference to the connectionStats
+     * \param statSnapshot reference to the StatSnapshot
      */
     virtual void format(std::ostream &      os,
                         const StatSnapshot &statSnapshot) override;

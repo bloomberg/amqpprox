@@ -73,7 +73,7 @@ class SocketIntercept {
     void setSecure(bool secure);
 
     /**
-     * \brief Return if the socket is in secure mode
+     * \return if the socket is in secure mode
      */
     bool isSecure() const;
 
