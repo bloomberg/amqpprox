@@ -82,7 +82,7 @@ wants to do local-only testing.
 
 `amqpprox` is the core proxy executable. By default it starts up with no mapped
 vhosts/broker backends/listening ports/other configuration. `amqpprox_ctl` is
-used to provide configuration before telling it to begin listening.
+used to provide configuration before telling it to begin listening. See [amqpprox_ctl documentation](https://github.com/bloomberg/amqpprox/blob/main/docs/config.md).
 
 ### Start `amqpprox`
 ```
@@ -133,7 +133,7 @@ Usage: amqpprox_ctl <control_socket> ARGS
 
 ```
 $ amqpprox_ctl /tmp/amqpprox HELP
-BACKEND (ADD name datacenter host port [SEND-PROXY] [TLS] | DELETE name | PRINT) - Change backend servers
+BACKEND (ADD name datacenter host port [SEND-PROXY] [TLS] | ADD_DNS name datacenter address port [SEND-PROXY] [TLS] | DELETE name | PRINT) - Change backend servers
 CONN Print the connected sessions
 DATACENTER SET name | PRINT
 EXIT Exit the program gracefully.
@@ -143,9 +143,9 @@ LISTEN START port | START_SECURE port | STOP [port]
 LOG CONSOLE verbosity | FILE verbosity
 MAP (BACKEND vhost backend | FARM vhost name | UNMAP vhost | DEFAULT farmName | REMOVE_DEFAULT | PRINT) - Change mappings of resources to servers
 MAPHOSTNAME DNS - Set up mapping of IPs to hostnames
-SESSION id# (PAUSE|DISCONNECT_GRACEFUL|FORCE_DISCONNECT) - Control a particular session
+SESSION  id# (PAUSE|DISCONNECT_GRACEFUL|FORCE_DISCONNECT) - Control a particular session
 STAT (STOP SEND | SEND <host> <port> | (LISTEN (json|human) (overall|vhost=foo|backend=bar|source=baz|all|process|bufferpool)) - Output statistics
-TLS (INGRESS | EGRESS) (KEY_FILE file | CERT_CHAIN_FILE file | RSA_KEY_FILE file | TMP_DH_FILE file | CA_CERT_FILE file | VERIFY_MODE mode*)
+TLS (INGRESS | EGRESS) (KEY_FILE file | CERT_CHAIN_FILE file | RSA_KEY_FILE file | TMP_DH_FILE file | CA_CERT_FILE file | VERIFY_MODE mode* | CIPHERS (PRINT | SET ciphersuite(:ciphersuite)*))
 VHOST PAUSE vhost | UNPAUSE vhost | PRINT | BACKEND_DISCONNECT vhost | FORCE_DISCONNECT vhost
 ```
 
