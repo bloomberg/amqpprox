@@ -135,7 +135,7 @@ void Session::start()
     auto self(shared_from_this());
     auto handshake_cb = [this, self](const error_code &ec) {
         if (ec) {
-            handleSessionError("ssl", FlowType::INGRESS, ec, 0);
+            handleSessionError("ssl", FlowType::INGRESS, ec);
             return;
         }
 
@@ -322,7 +322,7 @@ void Session::attemptEndpointConnection(
                         d_sessionState.id()));
 
                 if (ec) {
-                    handleSessionError("ssl", FlowType::INGRESS, ec, 0);
+                    handleSessionError("ssl", FlowType::INGRESS, ec);
                     return;
                 }
 
@@ -347,11 +347,10 @@ void Session::attemptEndpointConnection(
                              "handshaking";
 
                 auto writeHandler =
-                    [this, self, hscb{std::move(handshake_cb)}](
-                        error_code ec, std::size_t length) {
+                    [this, self, hscb{std::move(handshake_cb)}](error_code ec,
+                                                                std::size_t) {
                         if (ec) {
-                            handleSessionError(
-                                "write", FlowType::INGRESS, ec, length);
+                            handleSessionError("write", FlowType::INGRESS, ec);
                             return;
                         }
 
@@ -485,8 +484,7 @@ void Session::handleWriteData(FlowType                  direction,
                               Buffer                    data)
 {
     auto self(shared_from_this());
-    auto writeHandler = [this, self, direction](error_code  ec,
-                                                std::size_t length) {
+    auto writeHandler = [this, self, direction](error_code ec, std::size_t) {
         BOOST_LOG_SCOPED_THREAD_ATTR(
             "Vhost",
             boost::log::attributes::constant<std::string>(
@@ -502,7 +500,7 @@ void Session::handleWriteData(FlowType                  direction,
         }
 
         if (ec) {
-            handleSessionError("write", direction, ec, length);
+            handleSessionError("write", direction, ec);
             return;
         }
 
@@ -536,7 +534,7 @@ void Session::readData(FlowType direction)
     auto self(shared_from_this());
     socket.async_read_some(
         boost::asio::null_buffers(),
-        [this, self, direction](error_code ec, std::size_t length) {
+        [this, self, direction](error_code ec, std::size_t) {
             BOOST_LOG_SCOPED_THREAD_ATTR(
                 "Vhost",
                 boost::log::attributes::constant<std::string>(
@@ -554,14 +552,14 @@ void Session::readData(FlowType direction)
             }
 
             if (ec) {
-                handleSessionError("read", direction, ec, length);
+                handleSessionError("read", direction, ec);
                 return;
             }
 
             std::size_t available = socket.available(ec);
 
             if (ec) {
-                handleSessionError("socket-available", direction, ec, length);
+                handleSessionError("socket-available", direction, ec);
                 return;
             }
 
@@ -602,7 +600,7 @@ void Session::readData(FlowType direction)
                 readData(direction);
             }
             else {
-                handleSessionError("read_some", direction, ec, readAmount);
+                handleSessionError("read_some", direction, ec);
                 return;
             }
         });
@@ -673,8 +671,7 @@ void Session::handleData(FlowType direction)
 
 void Session::handleSessionError(const char *              action,
                                  FlowType                  direction,
-                                 boost::system::error_code ec,
-                                 std::size_t               length)
+                                 boost::system::error_code ec)
 {
     if (d_connector.state() == Connector::State::CLOSED) {
         d_sessionState.setDisconnected(

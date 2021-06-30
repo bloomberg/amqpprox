@@ -162,8 +162,7 @@ class Session : public std::enable_shared_from_this<Session> {
 
     void handleSessionError(const char *              action,
                             FlowType                  direction,
-                            boost::system::error_code ec,
-                            std::size_t               length);
+                            boost::system::error_code ec);
     ///< Handle errors on an established connection
 
     void handleConnectionError(
