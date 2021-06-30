@@ -18,6 +18,7 @@
 #include <amqpprox_fieldtable.h>
 
 #include <iostream>
+#include <variant>
 
 namespace Bloomberg {
 namespace amqpprox {
@@ -68,15 +69,15 @@ std::ostream &operator<<(std::ostream &os, const FieldValue &value)
 {
     switch (value.d_type) {
     case 'F':
-        os << *boost::get<std::shared_ptr<FieldTable>>(value.d_value);
+        os << *std::get<std::shared_ptr<FieldTable>>(value.d_value);
         break;
     case 'S':
         os << "\"";
-        boost::apply_visitor(FieldValuePrinter(os), value.d_value);
+        std::visit(FieldValuePrinter(os), value.d_value);
         os << "\"";
         break;
     default:
-        boost::apply_visitor(FieldValuePrinter(os), value.d_value);
+        std::visit(FieldValuePrinter(os), value.d_value);
         break;
     }
     return os;

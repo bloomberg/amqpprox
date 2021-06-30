@@ -16,10 +16,9 @@
 #ifndef BLOOMBERG_AMQPPROX_FIELDVALUE
 #define BLOOMBERG_AMQPPROX_FIELDVALUE
 
-#include <boost/variant.hpp>
-
 #include <iosfwd>
 #include <memory>
+#include <variant>
 #include <vector>
 
 namespace Bloomberg {
@@ -32,13 +31,13 @@ class FieldTable;
  * https://www.rabbitmq.com/amqp-0-9-1-errata.html
  */
 class FieldValue {
-    boost::variant<std::string,
-                   uint64_t,
-                   int64_t,
-                   bool,
-                   std::vector<uint8_t>,
-                   std::vector<FieldValue>,
-                   std::shared_ptr<FieldTable>>
+    std::variant<std::string,
+                 uint64_t,
+                 int64_t,
+                 bool,
+                 std::vector<uint8_t>,
+                 std::vector<FieldValue>,
+                 std::shared_ptr<FieldTable>>
          d_value;
     char d_type;
 
@@ -134,13 +133,13 @@ inline char FieldValue::type() const
 template <typename T>
 T FieldValue::value()
 {
-    return boost::get<T>(d_value);
+    return std::get<T>(d_value);
 }
 
 template <typename T>
 T FieldValue::value() const
 {
-    return boost::get<T>(d_value);
+    return std::get<T>(d_value);
 }
 
 std::ostream &operator<<(std::ostream &os, const FieldValue &value);
@@ -155,7 +154,7 @@ inline bool operator!=(const FieldValue &lhs, const FieldValue &rhs)
     return !(lhs == rhs);
 }
 
-class FieldValuePrinter : public boost::static_visitor<std::ostream &> {
+class FieldValuePrinter {
     std::ostream &d_printStream;
 
   public:
