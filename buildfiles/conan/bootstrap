@@ -8,7 +8,7 @@ if [ "$(uname)" == 'Linux' ]; then
     if [[ $gcc_build_opts == *"--with-default-libstdcxx-abi=gcc4-compatible"* ]]; then
         CONANOPTS="--build missing -s compiler.libcxx=libstdc++"
     else
-        CONANOPTS="--build missing -s compiler.libcxx=libstdc++11"
+        CONANOPTS="--build missing -s compiler.libcxx=libstdc++17"
     fi
 elif [ "$(uname)" == 'Darwin' ]; then
     CONANOPTS="--build missing -s compiler.libcxx=libc++"
