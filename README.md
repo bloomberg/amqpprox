@@ -6,12 +6,16 @@ AMQP 0.9.1 compliant message queue broker such as RabbitMQ.
 ## Menu
 
 - [Rationale](#rationale)
-- [Quick start](#quick-start)
+- [Documentation](#documentation)
+- [Features](#features)
+- [Getting Started](#getting-started)
 - [Building](#building)
 - [Installation](#installation)
-- [Code of Conduct](#code-of-conduct)
 - [Contributions](#contributions)
 - [License](#license)
+- [Future Ideas and Direction](#future-ideas-and-direction)
+- [Code of Conduct](#code-of-conduct)
+- [Security Vulnerability Reporting](#security-vulnerability-reporting)
 
 ## Rationale
 
@@ -50,17 +54,11 @@ talk](https://www.youtube.com/watch?v=tTh1nIKEOU4) at RabbitMQ Summit 2019.
 - [X] Statistics about each interaction
 - [X] Able to easily test client failover by severing connections on demand
 
-## Future Ideas and Direction
 
-- [ ] Introducing `SO_REUSEPORT` to scale up on one host
-- [ ] Traffic throttling/shaping per vhost/session/connection
-- [ ] Automatic connection teardown/moving when an IP endpoint leaves the farm
-- [ ] Be able to capture or trace more selectively
-- [ ] Utilise io_uring for more efficient asynchronous networking
+## Getting Started
+### Quick Start 
 
-## Getting Started (Simplest configuration)
-
-Assuming you have a RabbitMQ broker already running on `localhost` port
+After [Building](#building) & assuming you have a RabbitMQ broker already running on `localhost` port
 `5672`, to first see amqpprox running you can run it in a most simple proxying
 mode:
 
@@ -80,9 +78,9 @@ you can interact with it fully through the `amqpprox_ctl` interface.
 This mode is designed for simple use cases where a user is using only one vhost or
 wants to do local-only testing.
 
-## Getting Started Combining `amqpprox` & `amqpprox_ctl`
+### Getting Started With `amqpprox_ctl` commands
 
-`amqpprox` is the core proxy executable. It by default starts up with no mapped
+`amqpprox` is the core proxy executable. By default it starts up with no mapped
 vhosts/broker backends/listening ports/other configuration. `amqpprox_ctl` is
 used to provide configuration before telling it to begin listening.
 
@@ -235,6 +233,14 @@ Before sending a [Pull Request](../../pulls), please make sure you read our
 ## License
 
 Please read the [LICENSE](./LICENSE) file.
+
+## Future Ideas and Direction
+
+- [ ] Introducing `SO_REUSEPORT` to scale up on one host
+- [ ] Traffic throttling/shaping per vhost/session/connection
+- [ ] Automatic connection teardown/moving when an IP endpoint leaves the farm
+- [ ] Be able to capture or trace more selectively
+- [ ] Utilise io_uring for more efficient asynchronous networking
 
 ## Code of Conduct
 
