@@ -212,6 +212,9 @@ By default the build doesn't contain debug symbols, for Debug one can make use o
 `CMAKE_EXTRA_ARGS='-DCMAKE_BUILD_TYPE=Debug'` environment, for Release optimisations 
 one can set this to `CMAKE_EXTRA_ARGS='-DCMAKE_BUILD_TYPE=Release'` 
 
+We can also generate doxygen documentation for C++ classes.
+- `make docs`: This command will run doxygen, which is currently configured to dump generated files into `generated-docs/`.
+
 ## Installation
 
 At present we do not provide any pre-built releases and we expect users to
@@ -231,7 +234,7 @@ Before sending a [Pull Request](../../pulls), please make sure you read our
 
 ## License
 
-Please read the [LICENSE](LICENSE) file.
+Please read the [LICENSE](./LICENSE) file.
 
 ## Code of Conduct
 
