@@ -40,6 +40,9 @@ docker-init:
 docker-build:
 	$(DOCKER_RUN) bash -c 'make'
 
+docker-clean:
+	$(DOCKER_RUN) bash -c 'make clean'
+
 docker-shell:
 	docker run --privileged $(DOCKER_ARGS) bash
 
