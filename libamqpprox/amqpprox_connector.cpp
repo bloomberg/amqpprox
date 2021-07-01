@@ -46,10 +46,6 @@ std::ostream &streamOutMethod(std::ostream &os, const Method &method)
         return os << "Open";
     case methods::OpenOk::methodType():
         return os << "OpenOk";
-    case methods::Secure::methodType():
-        return os << "Secure";
-    case methods::SecureOk::methodType():
-        return os << "SecureOk";
     case methods::Start::methodType():
         return os << "Start";
     case methods::StartOk::methodType():
@@ -281,7 +277,6 @@ void Connector::receive(const Method &method, FlowType direction)
         }
     }; break;
     case State::AWAITING_PROTOCOL_HEADER:
-    case State::SECURE_SENT:
     case State::EXPECTING_CLOSE:
     case State::ERROR:
     case State::CLOSED:
