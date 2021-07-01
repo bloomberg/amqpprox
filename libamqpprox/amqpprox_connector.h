@@ -44,7 +44,6 @@ class Connector {
     enum class State {
         AWAITING_PROTOCOL_HEADER,
         START_SENT,
-        SECURE_SENT,
         TUNE_SENT,
         AWAITING_OPEN,
         AWAITING_CONNECTION,
