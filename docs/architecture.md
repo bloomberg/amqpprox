@@ -8,7 +8,7 @@ amqpprox codebase.
 ## Dependencies
 
 amqpprox is designed to be lightweight in its build and runtime dependencies,
-relying only on C++11, boost and cmake. For testing, Google Test and Google Mock
+relying only on C++17, boost and cmake. For testing, Google Test and Google Mock
 are required, but are downloaded by cmake in the standalone build.
 
 Integration testing requires RabbitMQ, node and npm access, though it is most
