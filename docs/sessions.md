@@ -72,6 +72,10 @@ The following partition policies are supported:
 * **datacenter-affinity**: Backends with the same datacenter property as the
   proxy instance will be partitioned higher than those with a different value.
 
+Is it possible to create custom partition policies by implementing the
+`PartitionPolicy` interface. See `AffinityPartitionPolicy` for an example.
+Policies are designed to be compoundable, i.e. the output partitions of one policy can be input into the next, they are applied in series. 
+
 #### Backend Selectors
 
 When starting a connection, a specific backend must be chosen from the 
@@ -98,3 +102,7 @@ The following backend selectors are supported:
   in the partition will be attempted, followed by the backend from the second-
   partition that has least recently had a connection attempt, and so on for all
   partitions.
+
+Is it possible to create custom backend selectors by implementing the
+`BackendSelector` interface. The implementation must adhere to the requirements
+described above. See `RobinBackendSelector` for an example.
