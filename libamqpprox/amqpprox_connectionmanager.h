@@ -27,9 +27,9 @@ namespace amqpprox {
 class Backend;
 class BackendSelector;
 
-/*
- * A `ConnectionManager` represents an ongoing attempt to open an outgoing
- * connection for a given `Session`.
+/**
+ * \brief Represents an ongoing attempt to open an outgoing connection for a
+ * given `Session`.
  *
  * An instance of `ConnectionManager` is created when a `Session` instance
  * attempts to open a connection to a broker on behalf of a client of the
@@ -64,10 +64,6 @@ class ConnectionManager {
      */
     ConnectionManager(std::shared_ptr<BackendSet> backendSet,
                       BackendSelector *           backendSelector);
-    ///< Create a `ConnectionManager` instance backed by the specified
-    ///< `backendSet` and `backendSelector`.
-    ///< The `Marker` value of the specified `backendSet` will be
-    ///< snapshotted at construction time.
 
     // ACCESSORS
     /**

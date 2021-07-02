@@ -29,9 +29,10 @@ class VhostState;
 
 /**
  * \brief Control command to perform certain operations on a particular
- * vhost, implements the ControlCommand interface. Particular vhost will be
- * identified based on vhost name. Permitted operations are pause, unpause,
- * backend disconnect and force disconnect.
+ * vhost, implements the ControlCommand interface.
+ *
+ * Particular vhost will be identified based on vhost name. Permitted
+ * operations are pause, unpause, backend disconnect and force disconnect.
  */
 class VhostControlCommand : public ControlCommand {
     VhostState *d_vhostState_p;  // HELD NOT OWNED

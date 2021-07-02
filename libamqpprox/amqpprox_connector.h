@@ -39,8 +39,24 @@ class BufferPool;
 class EventSource;
 class SessionState;
 
+/**
+ * \brief Works as a bridge between client and broker. It also holds logic to
+ * perform complete synthesize handshake from client end to server end in
+ * specific way.
+ *
+ * It does the handshake with the client and get through to the point of
+ * knowing which virtual host the connection is for. Once the virtual host is
+ * known the `ConnectionSelector` is invoked to determine where to make the
+ * egress connection. This is resolved using boost ASIO, and the same Connector
+ * object is used to do the egress handshaking with the broker. Once the
+ * `OpenOk` message has been passed to the connector the Session is fully
+ * established and all future reads and writes are passed through unchanged.
+ */
 class Connector {
   public:
+    /**
+     * \brief Represents connection status
+     */
     enum class State {
         AWAITING_PROTOCOL_HEADER,
         START_SENT,
@@ -93,19 +109,74 @@ class Connector {
               BufferPool *     bufferPool,
               std::string_view localHostname);
 
+    /**
+     * \return state of the connection
+     */
     inline State state() const;
-    void         receive(const Buffer &buffer);
-    void         receive(const Method &method, FlowType direction);
+
+    /**
+     * \brief This method mainly receive AMQP protocol header buffer. And after
+     * receiving, it sends the AMQP method Start to clients
+     */
+    void receive(const Buffer &buffer);
+
+    /**
+     * \brief Receive decoded AMQP method from `PacketProcessor` with the data
+     * flow direction (ingress/egress). This method is responsible for
+     * synthesize handshake. And change the state of the connection
+     * accordingly.
+     * \param method an AMQP connection method
+     * \param direction specifies direction of the data flow (ingress/egress)
+     */
+    void receive(const Method &method, FlowType direction);
+
+    /**
+     * \brief Set connection creation handler
+     */
     void setConnectionCreationHandler(const std::function<void()> &handler);
+
+    /**
+     * \brief Set connection creation handler
+     */
     void setConnectionReadyHandler(const std::function<void()> &handler);
 
+    /**
+     * \brief Send AMQP connection Close method with OK status to client/server
+     * based on specified direction
+     * \param sendToIngressSide true for communicating with client and false
+     * for communicating with server
+     */
     void synthesizeClose(bool sendToIngressSide);
+
+    /**
+     * \brief Send AMQP connection Close method with ERROR status to
+     * client/server based on specified direction
+     * \param sendToIngressSide true for communicating with client and false
+     * for communicating with server
+     */
     void synthesizeCloseError(bool sendToIngressSide);
+
+    /**
+     * \brief Synthesize AMQP protocol header buffer, which will eventually be
+     * sent to server(broker).
+     */
     void synthesizeProtocolHeader();
+
+    /**
+     * \brief Synthesize AMQP proxy protocol header buffer, which will
+     * eventually be sent to server(broker).
+     */
     void synthesizeProxyProtocolHeader(const std::string &proxyProtocolHeader);
 
+    /**
+     * \return current buffer
+     */
     Buffer outBuffer();
-    bool   sendToIngressSide();
+
+    /**
+     * \return the current direction of the data flow (ingree/egress)
+     */
+    bool sendToIngressSide();
 };
 
 inline Connector::State Connector::state() const

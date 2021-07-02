@@ -155,6 +155,9 @@ inline bool operator!=(const FieldValue &lhs, const FieldValue &rhs)
     return !(lhs == rhs);
 }
 
+/**
+ * \brief Helper class to print AMQP field types on output stream
+ */
 class FieldValuePrinter : public boost::static_visitor<std::ostream &> {
     std::ostream &d_printStream;
 

@@ -23,7 +23,8 @@
 namespace Bloomberg {
 namespace amqpprox {
 
-/* \brief Source of a pool of buffers of a particular size
+/**
+ * \brief Source of a pool of buffers of a particular size
  *
  * This class provides access to a pool of buffers of a fixed size,
  * parameterized in the constructor. This class is NOT thread safe in general,

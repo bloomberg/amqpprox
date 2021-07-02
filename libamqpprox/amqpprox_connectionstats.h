@@ -121,7 +121,6 @@ class ConnectionStats {
      * \return The metrics for which distributions are published
      */
     static const std::vector<std::string> &distributionMetrics()
-    ///< Return all distribution metric types
     {
         return s_distributionMetrics;
     }

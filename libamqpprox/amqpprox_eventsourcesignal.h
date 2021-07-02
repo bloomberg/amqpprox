@@ -25,7 +25,7 @@ namespace Bloomberg {
 namespace amqpprox {
 
 /**
- *  \brief Base class for desubscription
+ * \brief Base class for desubscription
  *
  * This breaks the circular dependency between the subscription handle and the
  * signal object.
@@ -35,9 +35,11 @@ class EventSourceSignalBase
   public:
     virtual ~EventSourceSignalBase() = 0;
 
+    /**
+     * \brief Desubscribe the `id` provided, if the `id` is not already
+     * ubscribed this is a no-op.
+     */
     virtual void desubscribe(uint64_t id) = 0;
-    ///< Desubscribe the `id` provided, if the `id` is not already
-    ///< subscribed this is a no-op.
 };
 
 /**
@@ -98,7 +100,7 @@ class EventSubscriptionHandle {
 };
 
 /**
- *  \brief Signal that emits callbacks to all the current subscribers
+ * \brief Signal that emits callbacks to all the current subscribers
  */
 template <typename... ARGS>
 class EventSourceSignal : public EventSourceSignalBase {

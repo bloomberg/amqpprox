@@ -32,7 +32,7 @@ class Control;
 class Server;
 
 /**
- * Class for monitoring CPU usage
+ * \brief Class for monitoring CPU usage
  */
 class CpuMonitor {
     double                  d_currentCpuUser;
@@ -45,8 +45,8 @@ class CpuMonitor {
   public:
     // TYPES
     /**
-     * Tuple encoding the ratio of user cpu time versus wall time for the first
-     * value, and system cpu time versus wall time for the second.
+     * \brief Tuple encoding the ratio of user cpu time versus wall time for
+     * the first value, and system cpu time versus wall time for the second.
      */
     using UserSystemUsage = std::tuple<double, double>;
 

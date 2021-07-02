@@ -24,7 +24,7 @@ namespace amqpprox {
 namespace Reply {
 
 /**
- * \brief Represents rely codes per AMQP 0.9.1 specification.
+ * \brief Represents reply codes per AMQP 0.9.1 specification.
  * https://www.rabbitmq.com/amqp-0-9-1-reference.html#domain.reply-code
  */
 struct Codes {

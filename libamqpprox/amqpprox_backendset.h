@@ -23,6 +23,15 @@
 namespace Bloomberg {
 namespace amqpprox {
 
+/**
+ * \brief Represents all the available `Backend` instances that can be used for
+ * particular session.
+ *
+ * It partitions the available backends into priority-ordered groups. That is,
+ * items in the first partition will all be equally preferred to all items in
+ * the second partition, which will all be preferred over those in the third,
+ * and so on.
+ */
 class BackendSet {
   public:
     // CLASS TYPES

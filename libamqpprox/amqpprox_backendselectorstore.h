@@ -25,6 +25,9 @@
 namespace Bloomberg {
 namespace amqpprox {
 
+/**
+ * \brief Store for different types of `BackendSelector`
+ */
 class BackendSelectorStore {
   private:
     // DATA
