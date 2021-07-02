@@ -217,7 +217,7 @@ We can also generate doxygen documentation for C++ classes.
 
 At present we do not provide any pre-built releases and we expect users to
 build from source. If you are interested in having a pre-built release for your
-preferred package management system, please open an issue letting us know.
+preferred package management system, please open an [issue](../../issues/new/choose) letting us know.
 
 ## Contributions
 
@@ -225,7 +225,7 @@ We :heart: contributions.
 
 Have you had a good experience with amqpprox? Why not share some love and contribute code, or just let us know about any issues you had with it?
 
-We welcome issue reports [here](../../issues); be sure to choose the proper issue template for your issue, so that we can be sure you're providing the necessary information.
+We welcome issue reports [here](../../issues/new/choose); be sure to choose the proper issue template for your issue, so that we can be sure you're providing the necessary information.
 
 Before sending a [Pull Request](../../pulls), please make sure you read our
 [Contribution Guidelines](https://github.com/bloomberg/.github/blob/master/CONTRIBUTING.md).
