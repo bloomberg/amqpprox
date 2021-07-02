@@ -29,10 +29,11 @@ class FieldTable;
 class FieldValue;
 
 /**
- * \brief Helper class to encode/decode AMQP 0.9.1 data types. These types are
- * used in AMQP methods framing. Note this is not 'pure' AMQP 0-9-1 aiming for
- * the same compatibility as the rabbitmq server implementation see
- * https://www.rabbitmq.com/amqp-0-9-1-errata.html
+ * \brief Helper class to encode/decode AMQP 0.9.1 data types.
+ *
+ * These types are used in AMQP methods framing. Note this is not 'pure' AMQP
+ * 0-9-1 aiming for the same compatibility as the rabbitmq server
+ * implementation see: https://www.rabbitmq.com/amqp-0-9-1-errata.html and
  * https://github.com/rabbitmq/rabbitmq-server/blob/master/deps/rabbit_common/src/rabbit_binary_parser.erl
  */
 class Types {

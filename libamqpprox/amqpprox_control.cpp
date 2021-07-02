@@ -29,7 +29,8 @@ using namespace boost::system;
 namespace Bloomberg {
 namespace amqpprox {
 
-/* \brief Helper class for encapsulating a UNIX Domain Socket connection for
+/**
+ * \brief Helper class for encapsulating a UNIX Domain Socket connection for
  * the control channel.
  *
  * This component holds open a socket between the amqpprox_ctl program and the

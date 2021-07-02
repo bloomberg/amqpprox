@@ -26,6 +26,14 @@ class BackendStore;
 class FarmStore;
 class PartitionPolicyStore;
 
+/**
+ * \brief Control command to configure farm, implements the ControlCommand
+ * interface.
+ *
+ * A farm represents a set of backends that a vhost can be mapped to. A client
+ * connecting to such vhost will be connected to one of the farm's backends
+ * chosen by the configured backend selector.
+ */
 class FarmControlCommand : public ControlCommand {
   private:
     // DATA

@@ -23,9 +23,11 @@ namespace amqpprox {
 
 /**
  * \brief Control command to perform certain operations on a particular
- * session, implements the ControlCommand interface. Particular session will be
- * identified based on provided ID. Permitted operations are pause, disconnect
- * gracefully and disconnect forcefully for specified session.
+ * session, implements the ControlCommand interface.
+ *
+ * Particular session will be identified based on provided ID. Permitted
+ * operations are pause, disconnect gracefully and disconnect forcefully for
+ * specified session.
  */
 class SessionControlCommand : public ControlCommand {
   public:

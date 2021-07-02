@@ -8,6 +8,9 @@
 namespace Bloomberg {
 namespace amqpprox {
 
+/**
+ * \brief Represents global constants used by different classes
+ */
 class Constants {
   public:
     static constexpr const char *protocolHeader()
