@@ -23,7 +23,7 @@ Commonly people use HAProxy software acting as a load balancer to spread load
 between multiple machines within a serving cluster and handle failures
 gracefully. With amqpprox we built a similar proxy, except tailored
 specifically for the AMQP 0.9.1 protocol. This brings benefits which cannot
-be achieved by a layer 4 proxying alone.
+be achieved with layer 4 proxying alone.
 
 This proxy and how we use it was first publicly outlined in [this
 talk](https://www.youtube.com/watch?v=tTh1nIKEOU4) at RabbitMQ Summit 2019.
@@ -32,8 +32,8 @@ talk](https://www.youtube.com/watch?v=tTh1nIKEOU4) at RabbitMQ Summit 2019.
 
 1. We can redirect different virtual hosts to different broker clusters
 2. We are able to understand/log AMQP 0.9.1 sessions passing through the proxy
-3. We can alter the which brokers are connected to, in order to optimise
-   network/datacenter cross-traffic.
+3. We can alter which brokers are connected to, in order to optimise network/datacenter
+   cross-traffic.
 4. We can get detailed statistics without relying on the RabbitMQ broker itself
 5. We can easily have clients test connection failovers locally
 
@@ -58,9 +58,9 @@ talk](https://www.youtube.com/watch?v=tTh1nIKEOU4) at RabbitMQ Summit 2019.
 ## Getting Started
 ### Quick Start 
 
-After [Building](#building) & assuming you have a RabbitMQ broker already running on `localhost` port
-`5672`, to first see amqpprox running you can run it in a most simple proxying
-mode:
+This guide assumes you have amqpprox [building](#building), and a RabbitMQ broker running on `locahost:5672`.
+
+`amqpprox` can be started with a few command line arguments to start in a simple one mapping mode:
 
 ```
 $ amqpprox --consoleVerbosity 5 --destinationDNS localhost --destinationPort 5672 --listenPort 5673
@@ -70,7 +70,7 @@ TRACE: Clean up finished with no sessions to clean up
 ...<snip>...
 ```
 
-You can then connect your RabbitMQ client via `localhost:5673` and the proxy
+You can then connect your RabbitMQ client via `localhost:5673` and `amqpprox`
 will proxy all connections into `5673` to the running broker on `5672`. Until
 you make a connection you won't see much other than periodic cleanup trace, but
 you can interact with it fully through the `amqpprox_ctl` interface.
