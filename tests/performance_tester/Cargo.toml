@@ -1,0 +1,25 @@
+[package]
+name = "amqpprox_perf_tester"
+version = "0.1.0"
+authors = ["Alaric <anightingale@bloomberg.net>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1.15.0", features = ["full"] }
+tokio-util = { version = "0.6", features = ["codec"] }
+
+# The latest amq-protocol is 7.0.0 but somewhere along the way the interface
+# became incompatible with tokio-codec as we're using it
+amq-protocol = { version = "4.2.2", features = ["rustls"], default_features=false }
+anyhow = "1.0"
+thiserror = "1.0"
+clap = { version = "3.0.7", features = ["derive"] }
+env_logger = "0.8"
+log = "0.4"
+bytes = "1.0"
+futures = "0.3"
+rustls-pemfile = "0.2.1"
+tokio-rustls = "0.23.1"
+amiquip = { version = "0.4", default-features = false }

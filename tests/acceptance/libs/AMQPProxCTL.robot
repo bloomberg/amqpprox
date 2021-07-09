@@ -222,8 +222,8 @@ AMQPProxCTL VHOST force_disconnect
 AMQPProxCTL send command
     [Arguments]   @{arguments}
     ${SOURCE_PATH}=       Get Environment Variable   SOURCE_PATH
-    ${BUILD_PATH}=       Get Environment Variable   BUILD_PATH
-    ${result}=  Run Process  ${BUILD_PATH}/amqpprox_ctl
+    ${AMQPPROX_BIN_DIR}=  Get Environment Variable   AMQPPROX_BIN_DIR
+    ${result}=  Run Process  ${AMQPPROX_BIN_DIR}/amqpprox_ctl
     ...                      /tmp/amqpprox
     ...                      @{arguments}
     ...                      shell=yes

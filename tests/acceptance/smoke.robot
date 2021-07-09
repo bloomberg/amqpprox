@@ -29,14 +29,14 @@ Smoke suite setup
     ${SMOKE_PATH}=        Get Environment Variable   SMOKE_PATH
     ${WAIT_TIME}=         Get Environment Variable   WAIT_TIME
     ${LOG_CONSOLE}=       Get Environment Variable   LOG_CONSOLE
-    ${BUILD_PATH}=       Get Environment Variable   BUILD_PATH
+    ${AMQPPROX_BIN_DIR}=  Get Environment Variable   AMQPPROX_BIN_DIR
     Set suite variable    ${ROBOT_SOURCE_DIR}
     Set suite variable    ${BINARY_PATH}
     Set suite variable    ${SOURCE_PATH}
     Set suite variable    ${SMOKE_PATH}
     Set suite variable    ${WAIT_TIME}
     Set suite variable    ${LOG_CONSOLE}
-    Set suite variable    ${BUILD_PATH}
+    Set suite variable    ${AMQPPROX_BIN_DIR}
 
 
 *** Test Cases ***
@@ -69,8 +69,8 @@ Smoke Test
     ...  console=${LOG_CONSOLE}
     ${result} =  Run Process  node
     ...                       ${SMOKE_PATH}/index.js
-    ...                       ${BUILD_PATH}/amqpprox
-    ...                       ${BUILD_PATH}/amqpprox_ctl
+    ...                       ${AMQPPROX_BIN_DIR}/amqpprox
+    ...                       ${AMQPPROX_BIN_DIR}/amqpprox_ctl
     ...                       ${WAIT_TIME}
     ...                       stdout=STDOUT
     ...                       stderr=STDOUT

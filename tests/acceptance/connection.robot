@@ -36,14 +36,14 @@ Smoke suite setup
     ${SMOKE_PATH}=        Get Environment Variable   SMOKE_PATH
     ${WAIT_TIME}=         Get Environment Variable   WAIT_TIME
     ${LOG_CONSOLE}=       Get Environment Variable   LOG_CONSOLE
-    ${BUILD_PATH}=       Get Environment Variable   BUILD_PATH
+    ${AMQPPROX_BIN_DIR}=       Get Environment Variable   AMQPPROX_BIN_DIR
     Set suite variable    ${ROBOT_SOURCE_DIR}
     Set suite variable    ${BINARY_PATH}
     Set suite variable    ${SOURCE_PATH}
     Set suite variable    ${SMOKE_PATH}
     Set suite variable    ${WAIT_TIME}
     Set suite variable    ${LOG_CONSOLE}
-    Set suite variable    ${BUILD_PATH}
+    Set suite variable    ${AMQPPROX_BIN_DIR}
 
 Connection Test Setup
     Log  ""  console=yes

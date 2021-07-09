@@ -22,6 +22,10 @@ init:
 clean:
 	cd $(BUILDDIR) && make clean
 
+integration-tests:
+	python3.8 -mpytest -s tests/performance_tester/integration-tests.py
+	./tests/acceptance/run.sh
+
 DOCKER_IMAGE ?= amqpprox
 DOCKER_BUILDDIR ?= build/docker-$(DOCKER_IMAGE)
 DOCKER_ARGS ?= $(DOCKER_EXTRA_ARGS) -v $(CUR_DIR):/source -v $(CUR_DIR)/$(DOCKER_BUILDDIR):/build -it $(DOCKER_IMAGE)
@@ -50,7 +54,7 @@ docker-integration-tests: BUILD_FLAVOUR ?= conan
 docker-integration-tests: BUILD_DOCKERFILE ?= buildfiles/$(BUILD_FLAVOUR)/integration.Dockerfile
 docker-integration-tests:
 	docker build -t $(DOCKER_IMAGE) -f $(BUILD_DOCKERFILE) .
-	docker run $(DOCKER_IMAGE)
+	docker run $(DOCKER_IMAGE) make integration-tests
 
 docs:
 	doxygen Doxygen.config
