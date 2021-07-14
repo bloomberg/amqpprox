@@ -236,6 +236,7 @@ Please read the [LICENSE](./LICENSE) file.
 
 ## Future Ideas and Direction
 
+- [ ] Support for RabbitMQ Stream binary protocol
 - [ ] Introducing `SO_REUSEPORT` to scale up on one host
 - [ ] Traffic throttling/shaping per vhost/session/connection
 - [ ] Automatic connection teardown/moving when an IP endpoint leaves the farm
