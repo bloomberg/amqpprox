@@ -26,7 +26,9 @@ specifically for the AMQP 0.9.1 protocol. This brings benefits which cannot
 be achieved with layer 4 proxying alone.
 
 This proxy and how we use it was first publicly outlined in [this
-talk](https://www.youtube.com/watch?v=tTh1nIKEOU4) at RabbitMQ Summit 2019.
+talk](https://www.youtube.com/watch?v=tTh1nIKEOU4) at RabbitMQ Summit 2019, then
+released & introduced in detail in [this talk](https://www.youtube.com/watch?v=b2hQ8glQyhs)
+at RabbitMQ Summit 2021.
 
 ### Key Advantages
 
