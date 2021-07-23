@@ -32,7 +32,13 @@ jobs:
     
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-
+      
+      # Format
+      - name: Clang Format
+        uses: jidicula/clang-format-action@v3.4.0
+        with:
+          clang-format-version: '11'
+      
       # Build Steps
       - name: Setup
         run: make setup
@@ -53,3 +59,5 @@ jobs:
       # Run integration tests
       - name: Integration tests
         run: make docker-integration-tests
+      
+
