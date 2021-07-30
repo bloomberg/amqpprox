@@ -120,6 +120,15 @@ class Server {
     void
     setHostnameMapper(const std::shared_ptr<HostnameMapper> &hostnameMapper);
 
+    /**
+     * \brief Set a different AuthIntercept mechanism. Note that this does not
+     * update any AuthIntercept mechanism that are currently set on any
+     * sessions.
+     * \param authIntercept to authenticate connecting clients
+     */
+    void setAuthIntercept(
+        const std::shared_ptr<AuthInterceptInterface> &authIntercept);
+
     // ACCESSORS
     /**
      * \brief Get a particular session for a specified ID
@@ -149,6 +158,21 @@ class Server {
      * \brief Return egress (client) TLS context
      */
     boost::asio::ssl::context &egressTlsContext();
+
+    /**
+     * \return the boost::asio io service object
+     */
+    boost::asio::io_service &ioService();
+
+    /**
+     * \return the current AuthIntercept mechanism applied on each session
+     */
+    std::shared_ptr<AuthInterceptInterface> getAuthIntercept() const;
+
+    /**
+     * \return the DNS resolver pointer, being used for each sessions
+     */
+    DNSResolver *getDNSResolverPtr();
 
   private:
     void doAccept(int port, bool secure);

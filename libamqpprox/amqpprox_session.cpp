@@ -16,8 +16,6 @@
 #include <amqpprox_session.h>
 
 #include <amqpprox_authinterceptinterface.h>
-#include <amqpprox_authrequestdata.h>
-#include <amqpprox_authresponsedata.h>
 #include <amqpprox_backend.h>
 #include <amqpprox_bufferhandle.h>
 #include <amqpprox_bufferpool.h>
@@ -37,12 +35,16 @@
 #include <amqpprox_packetprocessor.h>
 #include <amqpprox_proxyprotocolheaderv1.h>
 #include <amqpprox_tlsutil.h>
+#include <authrequest.pb.h>
+#include <authresponse.pb.h>
+#include <sasl.pb.h>
 
 #include <boost/system/error_code.hpp>
 
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include <string_view>
 #include <utility>
 
@@ -413,24 +415,22 @@ void Session::establishConnection()
 
     auto self(shared_from_this());
     auto authResponseCb = [this, self, connectionManager](
-                              const AuthResponseData &authResponseData) {
-        if (authResponseData.getAuthResult() ==
-            AuthResponseData::AuthResult::DENY) {
+                              const authproto::AuthResponse
+                                  &authResponseData) {
+        if (authResponseData.result() == authproto::AuthResponse::DENY) {
             LOG_ERROR << "Disconnecting unauthenticated/unauthorized client, "
                          "reason: "
-                      << authResponseData.getReason();
+                      << authResponseData.reason();
             disconnectUnauthClient(d_connector.getClientProperties());
             return;
         }
-        else if (authResponseData.getAuthResult() ==
-                 AuthResponseData::AuthResult::ALLOW) {
+        else if (authResponseData.result() == authproto::AuthResponse::ALLOW) {
             LOG_TRACE << "Authenticated/Authorized client, reason: "
-                      << authResponseData.getReason();
-            if (!authResponseData.getAuthMechanism().empty() &&
-                !authResponseData.getCredentials().empty()) {
-                d_connector.setAuthMechanismCredentials(
-                    authResponseData.getAuthMechanism(),
-                    authResponseData.getCredentials());
+                      << authResponseData.reason();
+            if (authResponseData.has_authdata()) {
+                authproto::SASL sasl = authResponseData.authdata();
+                d_connector.setAuthMechanismCredentials(sasl.authmechanism(),
+                                                        sasl.credentials());
             }
             attemptConnection(connectionManager);
         }
@@ -438,20 +438,24 @@ void Session::establishConnection()
             LOG_FATAL << "Not able to authn/authz client. Disconnecting "
                          "client. Invalid response values from auth gate "
                          "service, isAllowed: "
-                      << static_cast<int>(authResponseData.getAuthResult())
-                      << ", reason: " << authResponseData.getReason();
+                      << static_cast<int>(authResponseData.result())
+                      << ", reason: " << authResponseData.reason();
             disconnectUnauthClient(d_connector.getClientProperties());
             return;
         }
     };
-    const std::pair<std::string_view, std::string_view> credentials =
+    const std::pair<const std::string, const std::string> sasl =
         d_connector.getAuthMechanismCredentials();
 
-    d_authIntercept->authenticate(
-        AuthRequestData(d_sessionState.getVirtualHost(),
-                        credentials.first,
-                        credentials.second),
-        authResponseCb);
+    // Initialize auth request data
+    authproto::AuthRequest authRequestData;
+    authRequestData.set_vhostname(d_sessionState.getVirtualHost());
+    authproto::SASL *saslPtr = authRequestData.mutable_authdata();
+    saslPtr->set_authmechanism(sasl.first);
+    saslPtr->set_credentials(sasl.second);
+
+    // Authenticate connecting clients
+    d_authIntercept->authenticate(authRequestData, authResponseCb);
 }
 
 void Session::print(std::ostream &os)

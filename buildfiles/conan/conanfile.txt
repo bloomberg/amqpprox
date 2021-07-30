@@ -2,6 +2,7 @@
 boost/1.76.0
 openssl/1.1.1k
 gtest/1.10.0
+protobuf/3.17.1
 
 [generators]
 cmake

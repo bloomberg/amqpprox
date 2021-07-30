@@ -14,23 +14,13 @@
 ** limitations under the License.
 */
 
-#include <amqpprox_authresponsedata.h>
+syntax = "proto3";
 
-#include <string_view>
+import "sasl.proto";
 
-namespace Bloomberg {
-namespace amqpprox {
+package Bloomberg.amqpprox.authproto;
 
-AuthResponseData::AuthResponseData(const AuthResult &authResult,
-                                   std::string_view  reason,
-                                   std::string_view  authMechanism,
-                                   std::string_view  credentials)
-: d_authResult(authResult)
-, d_reason(reason)
-, d_authMechanism(authMechanism)
-, d_credentials(credentials)
-{
-}
-
-}
+message AuthRequest {
+    string vhostName = 1;
+    SASL authData = 2;
 }

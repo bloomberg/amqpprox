@@ -42,6 +42,7 @@
 #include <amqpprox_affinitypartitionpolicy.h>
 
 // Control commands
+#include <amqpprox_authcontrolcommand.h>
 #include <amqpprox_backendcontrolcommand.h>
 #include <amqpprox_connectionscontrolcommand.h>
 #include <amqpprox_datacentercontrolcommand.h>
@@ -76,7 +77,6 @@ This program supports the following options to allow running multiple instances 
 Although most configuration is injected by the amqpprox_ctl program, the logging directories and the control UNIX domain socket are specified on this program, to facilitate safely running multiple instances of amqpprox on a single host.
 )helptext";
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -234,7 +234,8 @@ int main(int argc, char *argv[])
         CommandPtr(new LoggingControlCommand),
         CommandPtr(new StatControlCommand(&eventSource)),
         CommandPtr(new MapHostnameControlCommand()),
-        CommandPtr(new TlsControlCommand)};
+        CommandPtr(new TlsControlCommand),
+        CommandPtr(new AuthControlCommand)};
 
     for (auto &&command : commands) {
         control.addControlCommand(std::move(command));

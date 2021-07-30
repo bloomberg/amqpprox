@@ -14,6 +14,7 @@
 
 ```
 $ amqpprox_ctl /tmp/amqpprox HELP
+AUTH (SERVICE hostname port target | ALWAYS_ALLOW | PRINT) - Change authentication mechanism for connecting clients
 BACKEND (ADD name datacenter host port [SEND-PROXY] [TLS] | ADD_DNS name datacenter address port [SEND-PROXY] [TLS] | DELETE name | PRINT) - Change backend servers
 CONN Print the connected sessions
 DATACENTER SET name | PRINT
@@ -29,6 +30,24 @@ STAT (STOP SEND | SEND <host> <port> | (LISTEN (json|human) (overall|vhost=foo|b
 TLS (INGRESS | EGRESS) (KEY_FILE file | CERT_CHAIN_FILE file | RSA_KEY_FILE file | TMP_DH_FILE file | CA_CERT_FILE file | VERIFY_MODE mode* | CIPHERS (PRINT | SET ciphersuite(:ciphersuite)*))
 ```
 
+
+## AUTH commands
+
+The command represents authentication mechanism for connecting clients. By default all the clients will be allowed to connect to broker without any authentication. With the help of this command, one can set up an external HTTP auth service to authenticate clients, before allowing them to start communicating with broker. The schema structure for the HTTP auth service is defined [here](../authproto)
+
+#### AUTH SERVICE hostname port target
+
+Configures the external HTTP auth service to authenticate connecting clients.
+
+For example: `AUTH SERVICE localhost 1234 /auth?tier=dev` will trigger queries to http://localhost:1234/auth?tier=dev when a client connects.
+
+#### AUTH ALWAYS_ALLOW
+
+Stops authentication for connecting clients. So all clients will be allowed to connect to broker.
+
+#### AUTH PRINT
+
+Prints information about current configured auth mechanism.
 
 ## BACKEND commands
 

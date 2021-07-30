@@ -17,7 +17,6 @@
 #define BLOOMBERG_AMQPPROX_DEFAULTAUTHINTERCEPT
 
 #include <amqpprox_authinterceptinterface.h>
-#include <amqpprox_authrequestdata.h>
 
 #include <iostream>
 
@@ -25,6 +24,10 @@
 
 namespace Bloomberg {
 namespace amqpprox {
+
+namespace authproto {
+class AuthRequest;
+}
 
 /**
  * \brief Performs authn/authz operations for incoming clients, implements the
@@ -45,7 +48,7 @@ class DefaultAuthIntercept : public AuthInterceptInterface {
      * \param authRequestData auth request data payload
      * \param responseCb Callbak function with response values
      */
-    virtual void authenticate(const AuthRequestData    authRequestData,
+    virtual void authenticate(const authproto::AuthRequest authRequestData,
                               const ReceiveResponseCb &responseCb) override;
 
     // ACCESSORS

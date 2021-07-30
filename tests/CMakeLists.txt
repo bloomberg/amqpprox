@@ -37,9 +37,12 @@ add_executable(amqpprox_tests
     amqpprox_statsnapshot.t.cpp
     amqpprox_types.t.cpp
     amqpprox_vhoststate.t.cpp
-    amqpprox_defaultauthintercept.t.cpp)
+    amqpprox_defaultauthintercept.t.cpp
+    amqpprox_httpauthintercept.t.cpp)
 
+target_include_directories(amqpprox_tests PRIVATE ${PROTO_HDR_PATH})
 target_link_libraries(amqpprox_tests LINK_PUBLIC
+    authproto
     libamqpprox
     amqpprox_testapparatus
     gtest

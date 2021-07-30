@@ -433,7 +433,7 @@ const FieldTable Connector::getClientProperties() const
     return d_startOk.properties();
 }
 
-const std::pair<std::string_view, std::string_view>
+const std::pair<const std::string, const std::string>
 Connector::getAuthMechanismCredentials() const
 {
     return std::make_pair(d_startOk.mechanism(), d_startOk.response());
