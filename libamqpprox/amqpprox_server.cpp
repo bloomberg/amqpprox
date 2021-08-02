@@ -20,12 +20,15 @@
 #include <amqpprox_eventsource.h>
 #include <amqpprox_hostnamemapper.h>
 #include <amqpprox_logging.h>
+#include <amqpprox_maybesecuresocketadaptor.h>
 #include <amqpprox_session.h>
 #include <amqpprox_tlsutil.h>
 
+#include <boost/asio/ssl/context.hpp>
 #include <openssl/opensslv.h>
 
 #include <iostream>
+#include <memory>
 
 namespace Bloomberg {
 namespace amqpprox {
@@ -61,7 +64,6 @@ Server::Server(ConnectionSelector *selector,
 : d_ioService()
 , d_ingressTlsContext(boost::asio::ssl::context::tlsv12)
 , d_egressTlsContext(boost::asio::ssl::context::tlsv12)
-, d_socket(d_ioService, d_ingressTlsContext, false)
 , d_timer(d_ioService, boost::posix_time::time_duration(0, 0, 10, 0))
 , d_sessions()
 , d_deletingSessions()
@@ -194,18 +196,22 @@ void Server::doAccept(int port, bool secure)
         return;
     }
 
-    d_socket.refreshSocketContext();
+    std::shared_ptr<MaybeSecureSocketAdaptor> incomingSocket =
+        std::make_shared<MaybeSecureSocketAdaptor>(
+            d_ioService, d_ingressTlsContext, false);
+
     it->second.async_accept(
-        d_socket.socket(), [this, port, secure](error_code ec) {
+        incomingSocket->socket(),
+        [this, port, secure, incomingSocket](error_code ec) {
             if (!ec) {
-                d_socket.setSecure(secure);
+                incomingSocket->setSecure(secure);
 
                 MaybeSecureSocketAdaptor clientSocket(
                     d_ioService, d_egressTlsContext, false);
 
                 auto session =
                     std::make_shared<Session>(d_ioService,
-                                              std::move(d_socket),
+                                              std::move(*incomingSocket),
                                               std::move(clientSocket),
                                               d_connectionSelector_p,
                                               d_eventSource_p,
