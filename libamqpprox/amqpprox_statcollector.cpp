@@ -127,6 +127,11 @@ void StatCollector::collect(const SessionState &session)
         if (session.getPaused()) {
             statsObject.statsValue("pausedConnectionCount") += 1;
         }
+
+        // Maintains total denied connections because of auth failure
+        if (session.getAuthDeniedConnection()) {
+            statsObject.statsValue("authDeniedConnectionCount") += 1;
+        }
     };
 
     addStats(vhostStats);

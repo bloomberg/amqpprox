@@ -298,9 +298,19 @@ void Connector::synthesizeCloseError(bool sendToIngressSide)
     synthesizeMessage<Reply::CloseOkExpected>(d_close, sendToIngressSide);
 }
 
+void Connector::synthesizeCloseAuthError(bool sendToIngressSide)
+{
+    synthesizeMessage<Reply::CloseAuthDeny>(d_close, sendToIngressSide);
+}
+
 Buffer Connector::outBuffer()
 {
     return d_buffer;
+}
+
+void Connector::resetOutBuffer()
+{
+    d_buffer = Buffer();
 }
 
 bool Connector::sendToIngressSide()
@@ -416,6 +426,24 @@ void Connector::synthesizeProxyProtocolHeader(
         Buffer(proxyProtocolHeader.data(), proxyProtocolHeader.size()));
 
     d_buffer = tempBuffer.currentData();
+}
+
+const FieldTable Connector::getClientProperties() const
+{
+    return d_startOk.properties();
+}
+
+const std::pair<std::string_view, std::string_view>
+Connector::getAuthMechanismCredentials() const
+{
+    return std::make_pair(d_startOk.mechanism(), d_startOk.response());
+}
+
+void Connector::setAuthMechanismCredentials(std::string_view authMechanism,
+                                            std::string_view credentials)
+{
+    d_startOk.setAuthMechanism(authMechanism);
+    d_startOk.setCredentials(credentials);
 }
 
 }

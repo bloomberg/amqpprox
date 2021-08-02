@@ -28,6 +28,8 @@ void JsonStatFormatter::format(std::ostream &os, const ConnectionStats &stats)
        << stats.statsValue("pausedConnectionCount") << ", "
        << "\"activeConnectionCount\": "
        << stats.statsValue("activeConnectionCount") << ", "
+       << "\"authDeniedConnectionCount\": "
+       << stats.statsValue("authDeniedConnectionCount") << ", "
        << "\"removedConnectionGraceful\": "
        << stats.statsValue("removedConnectionGraceful") << ", "
        << "\"removedConnectionBrokerSnapped\": "

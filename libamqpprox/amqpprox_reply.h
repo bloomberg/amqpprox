@@ -55,6 +55,12 @@ struct OK {
     constexpr static const char *const TEXT = "OK";
 };
 
+struct CloseAuthDeny {
+    constexpr static const uint16_t    CODE = Codes::access_refused;
+    constexpr static const char *const TEXT =
+        "ERROR: Not authorized by amqpprox proxy";
+};
+
 struct CloseOkExpected {
     constexpr static const uint16_t    CODE = Codes::channel_error;
     constexpr static const char *const TEXT = "ERROR: Expected CloseOk reply";

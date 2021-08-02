@@ -15,6 +15,9 @@
 */
 #include <amqpprox_session.h>
 
+#include <amqpprox_authinterceptinterface.h>
+#include <amqpprox_authrequestdata.h>
+#include <amqpprox_authresponsedata.h>
 #include <amqpprox_backend.h>
 #include <amqpprox_bufferhandle.h>
 #include <amqpprox_bufferpool.h>
@@ -23,6 +26,8 @@
 #include <amqpprox_constants.h>
 #include <amqpprox_dnsresolver.h>
 #include <amqpprox_eventsource.h>
+#include <amqpprox_fieldtable.h>
+#include <amqpprox_fieldvalue.h>
 #include <amqpprox_flowtype.h>
 #include <amqpprox_frame.h>
 #include <amqpprox_logging.h>
@@ -39,6 +44,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string_view>
+#include <utility>
 
 namespace Bloomberg {
 namespace amqpprox {
@@ -71,7 +77,8 @@ Session::Session(boost::asio::io_service &              ioservice,
                  BufferPool *                           bufferPool,
                  DNSResolver *                          dnsResolver,
                  const std::shared_ptr<HostnameMapper> &hostnameMapper,
-                 std::string_view                       localHostname)
+                 std::string_view                       localHostname,
+                 const std::shared_ptr<AuthInterceptInterface> &authIntercept)
 : d_ioService(ioservice)
 , d_serverSocket(std::move(serverSocket))
 , d_clientSocket(std::move(clientSocket))
@@ -96,6 +103,7 @@ Session::Session(boost::asio::io_service &              ioservice,
 , d_egressStartedAt()
 , d_resolvedEndpoints()
 , d_resolvedEndpointsIndex(0)
+, d_authIntercept(authIntercept)
 {
     boost::system::error_code ec;
     d_serverSocket.setDefaultOptions(ec);
@@ -403,7 +411,47 @@ void Session::establishConnection()
         return;
     }
 
-    attemptConnection(connectionManager);
+    auto self(shared_from_this());
+    auto authResponseCb = [this, self, connectionManager](
+                              const AuthResponseData &authResponseData) {
+        if (authResponseData.getAuthResult() ==
+            AuthResponseData::AuthResult::DENY) {
+            LOG_ERROR << "Disconnecting unauthenticated/unauthorized client, "
+                         "reason: "
+                      << authResponseData.getReason();
+            disconnectUnauthClient(d_connector.getClientProperties());
+            return;
+        }
+        else if (authResponseData.getAuthResult() ==
+                 AuthResponseData::AuthResult::ALLOW) {
+            LOG_TRACE << "Authenticated/Authorized client, reason: "
+                      << authResponseData.getReason();
+            if (!authResponseData.getAuthMechanism().empty() &&
+                !authResponseData.getCredentials().empty()) {
+                d_connector.setAuthMechanismCredentials(
+                    authResponseData.getAuthMechanism(),
+                    authResponseData.getCredentials());
+            }
+            attemptConnection(connectionManager);
+        }
+        else {
+            LOG_FATAL << "Not able to authn/authz client. Disconnecting "
+                         "client. Invalid response values from auth gate "
+                         "service, isAllowed: "
+                      << static_cast<int>(authResponseData.getAuthResult())
+                      << ", reason: " << authResponseData.getReason();
+            disconnectUnauthClient(d_connector.getClientProperties());
+            return;
+        }
+    };
+    const std::pair<std::string_view, std::string_view> credentials =
+        d_connector.getAuthMechanismCredentials();
+
+    d_authIntercept->authenticate(
+        AuthRequestData(d_sessionState.getVirtualHost(),
+                        credentials.first,
+                        credentials.second),
+        authResponseCb);
 }
 
 void Session::print(std::ostream &os)
@@ -422,6 +470,27 @@ void Session::pause()
     if (!d_sessionState.getPaused()) {
         d_sessionState.setPaused(true);
     }
+}
+
+void Session::disconnectUnauthClient(const FieldTable &clientProperties)
+{
+    d_sessionState.setAuthDeniedConnection(true);
+    std::shared_ptr<FieldTable> capabilitiesTable;
+    FieldValue                  fv('F', capabilitiesTable);
+    if (clientProperties.findFieldValue(&fv, Constants::capabilities()) &&
+        fv.type() == 'F') {
+        capabilitiesTable = fv.value<std::shared_ptr<FieldTable>>();
+        if (capabilitiesTable->findFieldValue(
+                &fv, Constants::authenticationFailureClose()) &&
+            fv.type() == 't') {
+            bool authenticationFailureClose = fv.value<bool>();
+            if (authenticationFailureClose) {
+                d_connector.synthesizeCloseAuthError(true);
+                sendSyntheticData();
+            }
+        }
+    }
+    disconnect(true);
 }
 
 void Session::disconnect(bool forcible)
@@ -520,7 +589,8 @@ void Session::handleWriteData(FlowType                  direction,
         readData(direction);
     };
 
-    LOG_TRACE << "Write of " << data.available() << " bytes";
+    LOG_TRACE << "Write of " << data.available() << " bytes"
+              << " " << direction;
     boost::asio::async_write(writeSocket,
                              boost::asio::buffer(data.ptr(), data.available()),
                              writeHandler);
@@ -612,9 +682,12 @@ void Session::sendSyntheticData()
     if (outBuffer.size()) {
         auto &writeSocket =
             d_connector.sendToIngressSide() ? d_serverSocket : d_clientSocket;
-        handleWriteData(FlowType::EGRESS, writeSocket, outBuffer);
+        handleWriteData(d_connector.sendToIngressSide() ? FlowType::INGRESS
+                                                        : FlowType::EGRESS,
+                        writeSocket,
+                        outBuffer);
+        d_connector.resetOutBuffer();
     }
-
     if (d_connector.state() == Connector::State::ERROR) {
         disconnect(true);
     }
@@ -773,11 +846,6 @@ void Session::performDisconnectBoth()
         LOG_WARN << "Socket close failed: client=" << clientCloseEc
                  << ", server=" << serverCloseEc;
     }
-}
-
-boost::asio::io_service &Session::ioService()
-{
-    return d_ioService;
 }
 
 }

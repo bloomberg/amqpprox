@@ -16,6 +16,7 @@
 #include <amqpprox_server.h>
 
 #include <amqpprox_bufferpool.h>
+#include <amqpprox_defaultauthintercept.h>
 #include <amqpprox_eventsource.h>
 #include <amqpprox_hostnamemapper.h>
 #include <amqpprox_logging.h>
@@ -72,6 +73,7 @@ Server::Server(ConnectionSelector *selector,
 , d_mutex()
 , d_hostnameMapper()
 , d_localHostname(boost::asio::ip::host_name())
+, d_authIntercept(std::make_shared<DefaultAuthIntercept>(d_ioService))
 {
     d_dnsResolver.setCacheTimeout(1000);
     d_dnsResolver.startCleanupTimer();
@@ -210,7 +212,8 @@ void Server::doAccept(int port, bool secure)
                                               d_bufferPool_p,
                                               &d_dnsResolver,
                                               d_hostnameMapper,
-                                              d_localHostname);
+                                              d_localHostname,
+                                              d_authIntercept);
 
                 {
                     std::lock_guard<std::mutex> lg(d_mutex);

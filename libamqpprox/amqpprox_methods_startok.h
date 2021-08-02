@@ -21,6 +21,7 @@
 #include <boost/endian/arithmetic.hpp>
 #include <iosfwd>
 #include <string>
+#include <string_view>
 
 namespace Bloomberg {
 namespace amqpprox {
@@ -62,6 +63,24 @@ class StartOk {
     constexpr inline static int classType() { return 10; }
 
     constexpr inline static int methodType() { return 11; }
+
+    /**
+     * \brief Set specified AMQP client properties
+     * \param clientProperties AMQP client properties
+     */
+    void setClientProperties(const FieldTable &clientProperties);
+
+    /**
+     * \brief Set specified AMQP authMechanism
+     * \param authMechanism AMQP authentication mechanism
+     */
+    void setAuthMechanism(std::string_view authMechanism);
+
+    /**
+     * \brief Set specified AMQP response credentials
+     * \param credentials AMQP opaque credential data
+     */
+    void setCredentials(std::string_view credentials);
 };
 
 std::ostream &operator<<(std::ostream &os, const StartOk &okMethod);
