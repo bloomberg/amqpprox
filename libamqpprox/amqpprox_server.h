@@ -19,9 +19,9 @@
 #include <amqpprox_authinterceptinterface.h>
 #include <amqpprox_connectionselector.h>
 #include <amqpprox_dnsresolver.h>
-#include <amqpprox_maybesecuresocketadaptor.h>
 
 #include <boost/asio.hpp>
+#include <boost/asio/ssl/context.hpp>
 
 #include <iosfwd>
 #include <mutex>
@@ -47,7 +47,6 @@ class Server {
     boost::asio::io_service                  d_ioService;
     boost::asio::ssl::context                d_ingressTlsContext;
     boost::asio::ssl::context                d_egressTlsContext;
-    MaybeSecureSocketAdaptor                 d_socket;
     boost::asio::deadline_timer              d_timer;
     std::unordered_map<uint64_t, SessionPtr> d_sessions;
     std::unordered_set<SessionPtr>           d_deletingSessions;
