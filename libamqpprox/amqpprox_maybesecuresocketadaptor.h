@@ -40,8 +40,6 @@ class MaybeSecureSocketAdaptor {
 
     boost::asio::io_service &                              d_ioService;
     std::optional<std::reference_wrapper<SocketIntercept>> d_intercept;
-    std::optional<std::reference_wrapper<boost::asio::ssl::context>>
-                                 d_sslContext;
     std::unique_ptr<stream_type> d_socket;
     bool                         d_secured;
     bool                         d_handshook;
@@ -55,7 +53,6 @@ class MaybeSecureSocketAdaptor {
                              bool                     secured)
     : d_ioService(ioService)
     , d_intercept(intercept)
-    , d_sslContext()
     , d_socket()
     , d_secured(secured)
     , d_handshook(false)
@@ -68,7 +65,6 @@ class MaybeSecureSocketAdaptor {
                              bool                       secured)
     : d_ioService(ioService)
     , d_intercept()
-    , d_sslContext(context)
     , d_socket(std::make_unique<stream_type>(ioService, context))
     , d_secured(secured)
     , d_handshook(false)
@@ -78,20 +74,11 @@ class MaybeSecureSocketAdaptor {
     MaybeSecureSocketAdaptor(MaybeSecureSocketAdaptor &&src)
     : d_ioService(src.d_ioService)
     , d_intercept(src.d_intercept)
-    , d_sslContext(src.d_sslContext)
     , d_socket(std::move(src.d_socket))
     , d_secured(src.d_secured)
     , d_handshook(src.d_handshook)
     {
-        // Here we want a default stream to be left behind rather than a null
-        // unique pointer
-        if (d_sslContext.has_value()) {
-            src.d_socket = std::make_unique<stream_type>(
-                d_ioService, d_sslContext.value().get());
-        }
-        else {
-            src.d_socket = std::unique_ptr<stream_type>();
-        }
+        src.d_socket = std::unique_ptr<stream_type>();
         src.d_secured   = false;
         src.d_handshook = false;
     }
@@ -145,28 +132,6 @@ class MaybeSecureSocketAdaptor {
             LOG_TRACE << "Setting keepalive on socket returned ec: " << ec;
             return;
         }
-    }
-
-    void refreshSocketContext()
-    {
-        if (BOOST_UNLIKELY(d_intercept.has_value())) {
-            d_intercept.value().get().refreshSocketContext();
-            return;
-        }
-
-        // Unfortunately Boost has an implied but undocumented restriction that
-        // the socket gets initialised with the values of the context at its
-        // initialisation time, and changes to the context are not reflected in
-        // the sockets initialised from it. As we retain the reference to the
-        // context, and want to enable configuration via the control channel at
-        // any time, we provide this refreshSocketContext call to be called
-        // just prior to any accept(). This means the latest context values
-        // will be applied to new connections, note that we could have left the
-        // context with a nullptr to save one construction, but it seems safer
-        // to initialise with a valid context which may or may not be out of
-        // date. Especially when constructing it for the egress socket.
-        d_socket = std::make_unique<stream_type>(d_ioService,
-                                                 d_sslContext.value().get());
     }
 
     // Methods for compatibility with boost ssl stream / TCP stream
