@@ -198,14 +198,12 @@ void Server::doAccept(int port, bool secure)
 
     std::shared_ptr<MaybeSecureSocketAdaptor> incomingSocket =
         std::make_shared<MaybeSecureSocketAdaptor>(
-            d_ioService, d_ingressTlsContext, false);
+            d_ioService, d_ingressTlsContext, secure);
 
     it->second.async_accept(
         incomingSocket->socket(),
         [this, port, secure, incomingSocket](error_code ec) {
             if (!ec) {
-                incomingSocket->setSecure(secure);
-
                 MaybeSecureSocketAdaptor clientSocket(
                     d_ioService, d_egressTlsContext, false);
 
