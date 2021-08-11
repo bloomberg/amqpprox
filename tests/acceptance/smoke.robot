@@ -69,8 +69,8 @@ Smoke Test
     ...  console=${LOG_CONSOLE}
     ${result} =  Run Process  node
     ...                       ${SMOKE_PATH}/index.js
-    ...                       ${BUILD_PATH}/amqpprox/amqpprox
-    ...                       ${BUILD_PATH}/amqpprox_ctl/amqpprox_ctl
+    ...                       ${BUILD_PATH}/amqpprox
+    ...                       ${BUILD_PATH}/amqpprox_ctl
     ...                       ${WAIT_TIME}
     ...                       stdout=STDOUT
     ...                       stderr=STDOUT
