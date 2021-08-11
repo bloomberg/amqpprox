@@ -21,7 +21,7 @@ AMQPProx start
     Create Directory  /tmp/logs/amqpprox
     ${SOURCE_PATH}=       Get Environment Variable   SOURCE_PATH
     ${BUILD_PATH}=       Get Environment Variable   BUILD_PATH
-    ${result}=  Start Process  ${BUILD_PATH}/amqpprox/amqpprox --cleanupIntervalMs 10 --controlSocket /tmp/amqpprox --logDirectory /tmp/logs/amqpprox
+    ${result}=  Start Process  ${BUILD_PATH}/amqpprox --cleanupIntervalMs 10 --controlSocket /tmp/amqpprox --logDirectory /tmp/logs/amqpprox
     ...                      shell=yes
     [Return]    ${result}
 

@@ -16,7 +16,7 @@
 
 export BINARY_PATH=${ROBOT_BINARY_DIR:=/usr/bin}
 export SOURCE_PATH=${SOURCE_PATH:=/source}
-export BUILD_PATH=${BUILD_PATH:=/build}
+export BUILD_PATH=${BUILD_PATH:=/build/bin}
 export ACCEPTANCE_PATH=${ACCEPTANCE_PATH:=/source/tests/acceptance}
 export SMOKE_PATH=${SMOKE_PATH:=/source/tests/acceptance/integration}
 export WAIT_TIME=${WAIT_TIME:=30}

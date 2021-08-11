@@ -46,7 +46,13 @@ docker-clean:
 docker-shell:
 	docker run --privileged $(DOCKER_ARGS) bash
 
+docker-integration-tests: BUILD_FLAVOUR ?= conan
+docker-integration-tests: BUILD_DOCKERFILE ?= buildfiles/$(BUILD_FLAVOUR)/integration.Dockerfile
+docker-integration-tests:
+	docker build -t $(DOCKER_IMAGE) -f $(BUILD_DOCKERFILE) .
+	docker run $(DOCKER_IMAGE)
+
 docs:
 	doxygen Doxygen.config
 
-.PHONY: test build setup init all clean docker-setup docker-init docker-build docker-shell docs
+.PHONY: test build setup init all clean docker-setup docker-init docker-build docker-shell docker-integration-tests docs

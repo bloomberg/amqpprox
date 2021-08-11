@@ -71,6 +71,7 @@ Start rabbitmq process
     ...  console=${LOG_CONSOLE}
     Should Exist  ${configfile}.config
     ${result}=  Start Process  ${BINARY_PATH}/rabbitmq-server
+    ...            env:RABBITMQ_LOGS=/tmp/logs/${nodename}.log
     ...            env:RABBITMQ_LOG_BASE=/tmp/logs
     ...            env:RABBITMQ_PID_FILE=${pid_file}
     ...            env:RABBITMQ_NODENAME=${nodename}
