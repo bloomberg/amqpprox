@@ -40,7 +40,7 @@ Smoke suite setup
 
 
 *** Test Cases ***
- Smoke Test
+Smoke Test
     Log  ""  console=yes
     Make config directory
     Configure plugins
