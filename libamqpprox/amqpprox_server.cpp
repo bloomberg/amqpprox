@@ -270,6 +270,13 @@ void Server::setHostnameMapper(
     d_hostnameMapper = hostnameMapper;
 }
 
+void Server::setAuthIntercept(
+    const std::shared_ptr<AuthInterceptInterface> &authIntercept)
+{
+    std::lock_guard<std::mutex> lg(d_mutex);
+    d_authIntercept = authIntercept;
+}
+
 std::shared_ptr<Session> Server::getSession(uint64_t identifier)
 {
     std::lock_guard<std::mutex> lg(d_mutex);
@@ -317,6 +324,21 @@ boost::asio::ssl::context &Server::ingressTlsContext()
 boost::asio::ssl::context &Server::egressTlsContext()
 {
     return d_egressTlsContext;
+}
+
+boost::asio::io_service &Server::ioService()
+{
+    return d_ioService;
+}
+
+std::shared_ptr<AuthInterceptInterface> Server::getAuthIntercept() const
+{
+    return d_authIntercept;
+}
+
+DNSResolver *Server::getDNSResolverPtr()
+{
+    return &d_dnsResolver;
 }
 
 }  // namespace amqpprox

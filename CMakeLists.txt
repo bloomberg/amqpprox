@@ -19,6 +19,9 @@ include("${BUILD_FLAVOUR_DIR}/main.pre.cmake")
 # Find threads
 find_package(Threads)
 
+# Proto files to serialize/deserialize auth request/response data
+add_subdirectory(authproto)
+
 # Main library
 add_subdirectory(libamqpprox)
 

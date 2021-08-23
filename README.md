@@ -135,6 +135,7 @@ Usage: amqpprox_ctl <control_socket> ARGS
 
 ```
 $ amqpprox_ctl /tmp/amqpprox HELP
+AUTH (SERVICE hostname port target | ALWAYS_ALLOW | PRINT) - Change authentication mechanism for connecting clients
 BACKEND (ADD name datacenter host port [SEND-PROXY] [TLS] | ADD_DNS name datacenter address port [SEND-PROXY] [TLS] | DELETE name | PRINT) - Change backend servers
 CONN Print the connected sessions
 DATACENTER SET name | PRINT

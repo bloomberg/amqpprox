@@ -39,8 +39,6 @@
 #define SOCKET_TESTING 1
 
 #include <amqpprox_authinterceptinterface.h>
-#include <amqpprox_authrequestdata.h>
-#include <amqpprox_authresponsedata.h>
 #include <amqpprox_backendset.h>
 #include <amqpprox_bufferpool.h>
 #include <amqpprox_connectionmanager.h>
@@ -62,6 +60,8 @@
 #include <amqpprox_socketintercept.h>
 #include <amqpprox_socketintercepttestadaptor.h>
 #include <amqpprox_testsocketstate.h>
+#include <authrequest.pb.h>
+#include <authresponse.pb.h>
 
 #include <boost/asio/error.hpp>
 #include <boost/asio/io_service.hpp>
@@ -114,7 +114,7 @@ struct AuthInterceptInterfaceMock : public AuthInterceptInterface {
 
     MOCK_CONST_METHOD1(print, void(std::ostream &));
     MOCK_METHOD2(authenticate,
-                 void(const AuthRequestData,
+                 void(const authproto::AuthRequest,
                       const AuthInterceptInterface::ReceiveResponseCb &));
 };
 
@@ -1297,12 +1297,14 @@ TEST_F(SessionTest, Authorized_Client_Test)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
 
-    std::string      modifiedMechanism   = "TEST_MECHANISM";
-    std::string      modifiedCredentials = "credentials";
-    AuthResponseData authResponseData(AuthResponseData::AuthResult::ALLOW,
-                                      "Authorized test client",
-                                      modifiedMechanism,
-                                      modifiedCredentials);
+    std::string             modifiedMechanism   = "TEST_MECHANISM";
+    std::string             modifiedCredentials = "credentials";
+    authproto::AuthResponse authResponseData;
+    authResponseData.set_result(authproto::AuthResponse::ALLOW);
+    authResponseData.set_reason("Authorized test client");
+    authproto::SASL *saslPtr = authResponseData.mutable_authdata();
+    saslPtr->set_authmechanism(modifiedMechanism);
+    saslPtr->set_credentials(modifiedCredentials);
     EXPECT_CALL(*d_mockAuthIntercept, authenticate(_, _))
         .WillOnce(InvokeArgument<1>(authResponseData));
 
@@ -1388,8 +1390,9 @@ TEST_F(
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
 
-    AuthResponseData authResponseData(AuthResponseData::AuthResult::DENY,
-                                      "Unauthorized test client");
+    authproto::AuthResponse authResponseData;
+    authResponseData.set_result(authproto::AuthResponse::DENY);
+    authResponseData.set_reason("Unauthorized test client");
     EXPECT_CALL(*d_mockAuthIntercept, authenticate(_, _))
         .WillOnce(InvokeArgument<1>(authResponseData));
 
@@ -1440,8 +1443,9 @@ TEST_F(SessionTest,
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
 
-    AuthResponseData authResponseData(AuthResponseData::AuthResult::DENY,
-                                      "Unauthorized test client");
+    authproto::AuthResponse authResponseData;
+    authResponseData.set_result(authproto::AuthResponse::DENY);
+    authResponseData.set_reason("Unauthorized test client");
     EXPECT_CALL(*d_mockAuthIntercept, authenticate(_, _))
         .WillOnce(InvokeArgument<1>(authResponseData));
 

@@ -16,9 +16,6 @@
 #ifndef BLOOMBERG_AMQPPROX_AUTHINTERCEPTINTERFACE
 #define BLOOMBERG_AMQPPROX_AUTHINTERCEPTINTERFACE
 
-#include <amqpprox_authrequestdata.h>
-#include <amqpprox_authresponsedata.h>
-
 #include <functional>
 #include <iostream>
 
@@ -26,6 +23,11 @@
 
 namespace Bloomberg {
 namespace amqpprox {
+
+namespace authproto {
+class AuthRequest;
+class AuthResponse;
+}
 
 /**
  * \brief Provide a pure virtual interface for authn/authz operations
@@ -39,7 +41,8 @@ class AuthInterceptInterface {
      * \brief Callback function to return response allow/deny with reason after
      * authenticating client connection.
      */
-    typedef std::function<void(const AuthResponseData &)> ReceiveResponseCb;
+    typedef std::function<void(const authproto::AuthResponse &)>
+        ReceiveResponseCb;
 
     // CREATORS
     explicit AuthInterceptInterface(boost::asio::io_service &ioService);
@@ -54,8 +57,8 @@ class AuthInterceptInterface {
      * \param authRequestData auth request data payload
      * \param responseCb Callbak function with response values
      */
-    virtual void authenticate(const AuthRequestData    authRequestData,
-                              const ReceiveResponseCb &responseCb) = 0;
+    virtual void authenticate(const authproto::AuthRequest authRequestData,
+                              const ReceiveResponseCb &    responseCb) = 0;
 
     // ACCESSORS
     /**

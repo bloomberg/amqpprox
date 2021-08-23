@@ -207,7 +207,7 @@ class Connector {
      * information from that method fields.
      * \return pair of AMQP authentication mechanism, AMQP response field
      */
-    const std::pair<std::string_view, std::string_view>
+    const std::pair<const std::string, const std::string>
     getAuthMechanismCredentials() const;
 
     /**

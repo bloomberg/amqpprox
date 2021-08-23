@@ -17,8 +17,8 @@
 #include <amqpprox_defaultauthintercept.h>
 
 #include <amqpprox_authinterceptinterface.h>
-#include <amqpprox_authrequestdata.h>
-#include <amqpprox_authresponsedata.h>
+#include <authrequest.pb.h>
+#include <authresponse.pb.h>
 
 #include <iostream>
 
@@ -32,13 +32,13 @@ DefaultAuthIntercept::DefaultAuthIntercept(boost::asio::io_service &ioService)
 {
 }
 
-void DefaultAuthIntercept::authenticate(const AuthRequestData,
+void DefaultAuthIntercept::authenticate(const authproto::AuthRequest,
                                         const ReceiveResponseCb &responseCb)
 {
     auto cb = [responseCb] {
-        AuthResponseData authResponseData(
-            AuthResponseData::AuthResult::ALLOW,
-            "Default route auth used - always allow");
+        authproto::AuthResponse authResponseData;
+        authResponseData.set_result(authproto::AuthResponse::ALLOW);
+        authResponseData.set_reason("Default route auth used - always allow");
         responseCb(authResponseData);
     };
     boost::asio::post(d_ioService, cb);
@@ -47,7 +47,7 @@ void DefaultAuthIntercept::authenticate(const AuthRequestData,
 void DefaultAuthIntercept::print(std::ostream &os) const
 {
     os << "All connections are authorised to route to any vhost. No auth "
-          "service requests are made.\n";
+          "service requests will be made.\n";
 }
 
 }

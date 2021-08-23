@@ -16,8 +16,8 @@
 
 #include <amqpprox_defaultauthintercept.h>
 
-#include <amqpprox_authrequestdata.h>
-#include <amqpprox_authresponsedata.h>
+#include <authrequest.pb.h>
+#include <authresponse.pb.h>
 
 #include <gmock/gmock.h>
 
@@ -25,9 +25,8 @@
 
 #include <boost/asio.hpp>
 
-using Bloomberg::amqpprox::AuthInterceptInterface;
-using Bloomberg::amqpprox::AuthRequestData;
-using Bloomberg::amqpprox::AuthResponseData;
+using namespace Bloomberg;
+using namespace amqpprox;
 using Bloomberg::amqpprox::DefaultAuthIntercept;
 
 TEST(DefaultAuthIntercept, Breathing)
@@ -41,13 +40,12 @@ TEST(DefaultAuthIntercept, Authenticate)
 {
     boost::asio::io_service ioService;
     DefaultAuthIntercept    defaultAuth(ioService);
-    auto responseCb = [](const AuthResponseData &authResponseData) {
-        ASSERT_EQ(authResponseData.getAuthResult(),
-                  AuthResponseData::AuthResult::ALLOW);
-        ASSERT_EQ(authResponseData.getReason(),
+    auto responseCb = [](const authproto::AuthResponse &authResponseData) {
+        ASSERT_EQ(authResponseData.result(), authproto::AuthResponse::ALLOW);
+        ASSERT_EQ(authResponseData.reason(),
                   "Default route auth used - always allow");
     };
-    defaultAuth.authenticate(AuthRequestData(), responseCb);
+    defaultAuth.authenticate(authproto::AuthRequest(), responseCb);
     ioService.run();
 }
 
@@ -60,5 +58,5 @@ TEST(DefaultAuthIntercept, Print)
     defaultAuth.print(oss);
     EXPECT_EQ(oss.str(),
               "All connections are authorised to route to any vhost. No auth "
-              "service requests are made.\n");
+              "service requests will be made.\n");
 }
