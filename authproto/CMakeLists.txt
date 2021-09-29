@@ -1,3 +1,5 @@
+set(Protobuf_USE_STATIC_LIBS ON)
+
 include(FindProtobuf)
 find_package(Protobuf REQUIRED)
 
