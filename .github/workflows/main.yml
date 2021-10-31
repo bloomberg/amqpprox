@@ -3,7 +3,7 @@ name: CI
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ dockerjob ]
+    branches: [ main ]
     tags: [v*]
   pull_request:
     branches: [ main ]
@@ -72,7 +72,6 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          #push: ${{ github.event_name != 'pull_request' }}
-          push: false
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
