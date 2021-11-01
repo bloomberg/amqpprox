@@ -30,8 +30,6 @@
 #include <amqpprox_frame.h>
 #include <amqpprox_logging.h>
 #include <amqpprox_method.h>
-#include <amqpprox_methods_start.h>
-#include <amqpprox_methods_startok.h>
 #include <amqpprox_packetprocessor.h>
 #include <amqpprox_proxyprotocolheaderv1.h>
 #include <amqpprox_tlsutil.h>
@@ -114,8 +112,6 @@ Session::Session(boost::asio::io_service &              ioservice,
         LOG_ERROR << "Setting options onto listening socket failed with: "
                   << ec;
     }
-
-    d_sessionState.setIngressSecured(this->isSecureServerSocket());
 }
 
 Session::~Session()
@@ -156,6 +152,7 @@ void Session::start()
     };
     d_serverSocket.async_handshake(boost::asio::ssl::stream_base::server,
                                    handshake_cb);
+    d_sessionState.setIngressSecured(this->isSecureServerSocket());
 }
 
 void Session::attemptConnection(
@@ -433,6 +430,10 @@ void Session::establishConnection()
                 authproto::SASL sasl = authResponseData.authdata();
                 d_connector.setAuthMechanismCredentials(sasl.authmechanism(),
                                                         sasl.credentials());
+                if (!authResponseData.reason().empty()) {
+                    d_connector.setAuthReasonAsClientProperties(
+                        authResponseData.reason());
+                }
             }
             attemptConnection(connectionManager);
         }

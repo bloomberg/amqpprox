@@ -21,6 +21,7 @@
 #include <amqpprox_constants.h>
 #include <amqpprox_eventsource.h>
 #include <amqpprox_fieldtable.h>
+#include <amqpprox_fieldvalue.h>
 #include <amqpprox_flowtype.h>
 #include <amqpprox_frame.h>
 #include <amqpprox_logging.h>
@@ -445,6 +446,12 @@ void Connector::setAuthMechanismCredentials(std::string_view authMechanism,
 {
     d_startOk.setAuthMechanism(authMechanism);
     d_startOk.setCredentials(credentials);
+}
+
+void Connector::setAuthReasonAsClientProperties(std::string_view reason)
+{
+    d_startOk.properties().pushField("amqpprox_auth",
+                                     FieldValue('S', std::string(reason)));
 }
 
 }
