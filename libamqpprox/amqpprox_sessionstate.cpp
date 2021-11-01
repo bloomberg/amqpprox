@@ -45,6 +45,7 @@ SessionState::SessionState(
 , d_egressLatencyCount(0)
 , d_paused(false)
 , d_authDeniedConnection(false)
+, d_ingressSecured(false)
 , d_virtualHost()
 , d_disconnectedStatus(DisconnectType::NOT_DISCONNECTED)
 , d_id(s_nextId++)  // This isn't a race because this is only on one thread
@@ -109,6 +110,11 @@ void SessionState::setPaused(bool paused)
 void SessionState::setAuthDeniedConnection(bool authDenied)
 {
     d_authDeniedConnection = authDenied;
+}
+
+void SessionState::setIngressSecured(bool secured)
+{
+    d_ingressSecured = secured;
 }
 
 void SessionState::setDisconnected(SessionState::DisconnectType disconnect)

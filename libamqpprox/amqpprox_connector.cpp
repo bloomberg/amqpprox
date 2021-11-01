@@ -188,7 +188,8 @@ void Connector::receive(const Method &method, FlowType direction)
             clientEndpoint.port(),
             d_localHostname,
             inboundListenPort,
-            outboundLocalPort);
+            outboundLocalPort,
+            d_sessionState_p->getIngressSecured());
 
         sendResponse(d_startOk, false);
         d_state = State::STARTOK_SENT;

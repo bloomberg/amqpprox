@@ -17,7 +17,6 @@
 
 #include <amqpprox_server.h>
 #include <amqpprox_session.h>
-#include <amqpprox_sessionstate.h>
 #include <amqpprox_vhoststate.h>
 
 #include <sstream>

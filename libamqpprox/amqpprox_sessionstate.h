@@ -60,6 +60,7 @@ class SessionState {
     std::atomic<uint64_t>           d_egressLatencyTotal;
     std::atomic<bool>               d_paused;
     std::atomic<bool>               d_authDeniedConnection;
+    std::atomic<bool>               d_ingressSecured;
     std::string                     d_virtualHost;
     DisconnectType                  d_disconnectedStatus;
     uint64_t                        d_id;
@@ -114,6 +115,13 @@ class SessionState {
      * failure
      */
     void setAuthDeniedConnection(bool authDenied);
+
+    /**
+     * \brief Set the ingress secured connection flag
+     * \param secured flag to specify the ingress connection is secured (TLS
+     * enabled)
+     */
+    void setIngressSecured(bool secured);
 
     /**
      * \brief Set session as disconnected, along with which type of disconnect
@@ -190,6 +198,12 @@ class SessionState {
     inline bool getAuthDeniedConnection() const;
 
     /**
+     * \return the state of the ingress connection, whether it is secured (TLS
+     * enabled)
+     */
+    inline bool getIngressSecured() const;
+
+    /**
      * \return session identifier
      */
     inline uint64_t id() const;
@@ -240,6 +254,11 @@ inline bool SessionState::getPaused() const
 inline bool SessionState::getAuthDeniedConnection() const
 {
     return d_authDeniedConnection;
+}
+
+inline bool SessionState::getIngressSecured() const
+{
+    return d_ingressSecured;
 }
 
 inline uint64_t SessionState::id() const

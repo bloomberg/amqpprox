@@ -114,6 +114,8 @@ Session::Session(boost::asio::io_service &              ioservice,
         LOG_ERROR << "Setting options onto listening socket failed with: "
                   << ec;
     }
+
+    d_sessionState.setIngressSecured(this->isSecureServerSocket());
 }
 
 Session::~Session()

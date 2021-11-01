@@ -64,13 +64,16 @@ class ConnectorUtil {
      * \param localHostname Local hostname
      * \param inboundListenPort Inbound listen port
      * \param outboundListenPort Outbound listen port
+     * \param isIngressSecured Represents ingress connection is secured (TLS
+     * enabled)
      */
     static void injectProxyClientIdent(methods::StartOk * startOk,
                                        const std::string &clientHostname,
                                        int                clientRemotePort,
                                        std::string_view   localHostname,
                                        int                inboundListenPort,
-                                       int                outboundLocalPort);
+                                       int                outboundLocalPort,
+                                       bool               isIngressSecured);
 };
 
 }

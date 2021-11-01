@@ -346,7 +346,8 @@ void SessionTest::testSetupProxySendsStartOk(
                                  injectedClientPort,
                                  injectedProxyHost,
                                  injectedProxyInboundPort,
-                                 injectedProxyOutboundPort);
+                                 injectedProxyOutboundPort,
+                                 false);
 
                              EXPECT_EQ(data[0], Data(encode(startOk)));
                          });

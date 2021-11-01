@@ -82,11 +82,15 @@ void ConnectorUtil::injectProxyClientIdent(methods::StartOk * startOk,
                                            const std::string &clientHostname,
                                            int                clientRemotePort,
                                            std::string_view   localHostname,
-                                           int inboundListenPort,
-                                           int outboundLocalPort)
+                                           int  inboundListenPort,
+                                           int  outboundLocalPort,
+                                           bool isIngressSecured)
 {
     std::stringstream remoteClient;
     remoteClient << clientHostname << ":" << clientRemotePort;
+    if (isIngressSecured) {
+        remoteClient << " TLS";
+    }
     startOk->properties().pushField("amqpprox_client",
                                     FieldValue('S', remoteClient.str()));
 
