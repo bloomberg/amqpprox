@@ -223,7 +223,8 @@ class Connector {
     /**
      * \brief Set the reason/detail for allowing clients to connect to amqpprox
      * proxy, if external auth service is used.
-     * \param reason reason for allowing connection
+     * \param reason for allowing connection. The reason field is returned by
+     * external configured auth service inside AuthResponse protobuf response.
      */
     void setAuthReasonAsClientProperties(std::string_view reason);
 };
