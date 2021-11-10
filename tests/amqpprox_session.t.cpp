@@ -346,7 +346,8 @@ void SessionTest::testSetupProxySendsStartOk(
                                  injectedClientPort,
                                  injectedProxyHost,
                                  injectedProxyInboundPort,
-                                 injectedProxyOutboundPort);
+                                 injectedProxyOutboundPort,
+                                 false);
 
                              EXPECT_EQ(data[0], Data(encode(startOk)));
                          });
@@ -1299,9 +1300,10 @@ TEST_F(SessionTest, Authorized_Client_Test)
 
     std::string             modifiedMechanism   = "TEST_MECHANISM";
     std::string             modifiedCredentials = "credentials";
+    std::string             reason              = "Authorized test client";
     authproto::AuthResponse authResponseData;
     authResponseData.set_result(authproto::AuthResponse::ALLOW);
-    authResponseData.set_reason("Authorized test client");
+    authResponseData.set_reason(reason);
     authproto::SASL *saslPtr = authResponseData.mutable_authdata();
     saslPtr->set_authmechanism(modifiedMechanism);
     saslPtr->set_credentials(modifiedCredentials);
@@ -1341,6 +1343,8 @@ TEST_F(SessionTest, Authorized_Client_Test)
     methods::StartOk overriddenStartOk = clientStartOk();
     overriddenStartOk.setAuthMechanism(modifiedMechanism);
     overriddenStartOk.setCredentials(modifiedCredentials);
+    overriddenStartOk.properties().pushField("amqpprox_auth",
+                                             FieldValue('S', reason));
     testSetupProxySendsStartOk(
         7, "host1", 2345, LOCAL_HOSTNAME, 1234, 32000, overriddenStartOk);
     testSetupProxyOpen(8);

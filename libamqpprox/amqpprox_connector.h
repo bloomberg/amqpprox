@@ -213,11 +213,20 @@ class Connector {
     /**
      * \brief Set different authentication mechanism and credentials for AMQP
      * START-OK connection method, which will be sent to server for
-     * authentication and authorization \param authMechanism of AMQP
-     * authentication mechanism \param credentials data for AMQP response field
+     * authentication and authorization
+     * \param authMechanism of AMQP authentication mechanism
+     * \param credentials data for AMQP response field
      */
     void setAuthMechanismCredentials(std::string_view authMechanism,
                                      std::string_view credentials);
+
+    /**
+     * \brief Set the reason/detail for allowing clients to connect to amqpprox
+     * proxy, if external auth service is used.
+     * \param reason for allowing connection. The reason field is returned by
+     * external configured auth service inside AuthResponse protobuf response.
+     */
+    void setAuthReasonAsClientProperties(std::string_view reason);
 };
 
 inline Connector::State Connector::state() const
