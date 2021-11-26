@@ -30,16 +30,14 @@ namespace amqpprox {
  * \brief Represents Backend store
  */
 class BackendStore {
-    std::unordered_map<std::string, Backend>               d_backends;
-    std::map<std::pair<std::string, int>, const Backend *> d_backendAddresses;
-    mutable std::mutex                                     d_mutex;
+    std::unordered_map<std::string, Backend> d_backends;
+    mutable std::mutex                       d_mutex;
 
   public:
     BackendStore();
     int insert(const Backend &backend);
     int remove(const std::string &name);
 
-    const Backend *lookup(const std::string &ip, int port) const;
     const Backend *lookup(const std::string &name) const;
     void           print(std::ostream &os) const;
 };
