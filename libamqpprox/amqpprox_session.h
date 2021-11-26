@@ -128,8 +128,10 @@ class Session : public std::enable_shared_from_this<Session> {
      * https://www.rabbitmq.com/auth-notification.html
      * \param clientProperties will be used to find the client
      * 'authentication_failure_close' capability value
+     * \param reason custom reason/message for unauthorized client
      */
-    void disconnectUnauthClient(const FieldTable &clientProperties);
+    void disconnectUnauthClient(const FieldTable &clientProperties,
+                                std::string_view  reason);
 
     /**
      * \brief Disconnect the session from the backend, but leave the client

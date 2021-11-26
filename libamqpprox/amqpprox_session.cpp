@@ -32,6 +32,7 @@
 #include <amqpprox_method.h>
 #include <amqpprox_packetprocessor.h>
 #include <amqpprox_proxyprotocolheaderv1.h>
+#include <amqpprox_reply.h>
 #include <amqpprox_tlsutil.h>
 #include <authrequest.pb.h>
 #include <authresponse.pb.h>
@@ -420,7 +421,8 @@ void Session::establishConnection()
             LOG_ERROR << "Disconnecting unauthenticated/unauthorized client, "
                          "reason: "
                       << authResponseData.reason();
-            disconnectUnauthClient(d_connector.getClientProperties());
+            disconnectUnauthClient(d_connector.getClientProperties(),
+                                   authResponseData.reason());
             return;
         }
         else if (authResponseData.result() == authproto::AuthResponse::ALLOW) {
@@ -443,7 +445,8 @@ void Session::establishConnection()
                          "service, isAllowed: "
                       << static_cast<int>(authResponseData.result())
                       << ", reason: " << authResponseData.reason();
-            disconnectUnauthClient(d_connector.getClientProperties());
+            disconnectUnauthClient(d_connector.getClientProperties(),
+                                   authResponseData.reason());
             return;
         }
     };
@@ -479,7 +482,8 @@ void Session::pause()
     }
 }
 
-void Session::disconnectUnauthClient(const FieldTable &clientProperties)
+void Session::disconnectUnauthClient(const FieldTable &clientProperties,
+                                     std::string_view  reason)
 {
     d_sessionState.setAuthDeniedConnection(true);
     std::shared_ptr<FieldTable> capabilitiesTable;
@@ -492,7 +496,8 @@ void Session::disconnectUnauthClient(const FieldTable &clientProperties)
             fv.type() == 't') {
             bool authenticationFailureClose = fv.value<bool>();
             if (authenticationFailureClose) {
-                d_connector.synthesizeCloseAuthError(true);
+                d_connector.synthesizeCustomCloseError(
+                    true, Reply::Codes::access_refused, reason);
                 sendSyntheticData();
             }
         }
