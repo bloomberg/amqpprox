@@ -264,8 +264,8 @@ void SessionTest::testSetupUnauthClientOpenWithShutdown(
     d_serverState.pushItem(idx, Data(encode(clientTuneOk())));
     d_serverState.pushItem(idx, Data(encode(clientOpen())));
     methods::Close closeMethod = methods::Close();
-    closeMethod.setReply(Reply::CloseAuthDeny::CODE,
-                         Reply::CloseAuthDeny::TEXT);
+    closeMethod.setReply(Reply::Codes::access_refused,
+                         "Unauthorized test client");
     d_serverState.expect(
         idx,
         [this, closeMethod, authenticationFailureClose](const auto &items) {
@@ -1788,6 +1788,6 @@ methods::CloseOk SessionTest::closeOk()
 methods::Close SessionTest::close()
 {
     auto result = methods::Close();
-    result.setReply(Reply::OK::CODE, Reply::OK::TEXT);
+    result.setReply(Reply::Codes::reply_success, "OK");
     return result;
 }

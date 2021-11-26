@@ -29,6 +29,7 @@
 #include <amqpprox_methods_startok.h>
 #include <amqpprox_methods_tune.h>
 #include <amqpprox_methods_tuneok.h>
+#include <amqpprox_reply.h>
 
 #include <functional>
 #include <string_view>
@@ -101,9 +102,10 @@ class Connector {
     template <typename T>
     void sendResponse(const T &response, bool sendToIngressSide);
 
-    template <typename TReply, typename TMethod>
-    inline void synthesizeMessage(TMethod &replyMethod,
-                                  bool     sendToIngressSide);
+    inline void synthesizeMessage(methods::Close & replyMethod,
+                                  bool             sendToIngressSide,
+                                  uint64_t         code,
+                                  std::string_view text);
 
   public:
     Connector(SessionState *   sessionState,
@@ -159,12 +161,16 @@ class Connector {
     void synthesizeCloseError(bool sendToIngressSide);
 
     /**
-     * \brief Send AMQP connection Close method with ERROR status to
-     * client/server based on specified direction
+     * \brief Send AMQP connection Close method with custom ERROR code and text
+     * to client/server based on specified direction
      * \param sendToIngressSide true for communicating with client and false
      * for communicating with server
+     * \param code custom error code
+     * \param text custom error text
      */
-    void synthesizeCloseAuthError(bool sendToIngressSide);
+    void synthesizeCustomCloseError(bool             sendToIngressSide,
+                                    uint16_t         code,
+                                    std::string_view text);
 
     /**
      * \brief Synthesize AMQP protocol header buffer, which will eventually be

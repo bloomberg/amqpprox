@@ -292,17 +292,23 @@ void Connector::synthesizeClose(bool sendToIngressSide)
 {
     d_state = sendToIngressSide ? State::CLIENT_CLOSE_SENT
                                 : State::SERVER_CLOSE_SENT;
-    synthesizeMessage<Reply::OK>(d_close, sendToIngressSide);
+    synthesizeMessage(
+        d_close, sendToIngressSide, Reply::Codes::reply_success, "OK");
 }
 
 void Connector::synthesizeCloseError(bool sendToIngressSide)
 {
-    synthesizeMessage<Reply::CloseOkExpected>(d_close, sendToIngressSide);
+    synthesizeMessage(d_close,
+                      sendToIngressSide,
+                      Reply::Codes::channel_error,
+                      "ERROR: Expected CloseOk reply");
 }
 
-void Connector::synthesizeCloseAuthError(bool sendToIngressSide)
+void Connector::synthesizeCustomCloseError(bool             sendToIngressSide,
+                                           uint16_t         code,
+                                           std::string_view text)
 {
-    synthesizeMessage<Reply::CloseAuthDeny>(d_close, sendToIngressSide);
+    synthesizeMessage(d_close, sendToIngressSide, code, text);
 }
 
 Buffer Connector::outBuffer()
@@ -387,12 +393,13 @@ void Connector::sendResponse(const T &response, bool sendToIngressSide)
     }
 }
 
-template <typename TReply, typename TMethod>
-inline void Connector::synthesizeMessage(TMethod &replyMethod,
-                                         bool     sendToIngressSide)
+void Connector::synthesizeMessage(methods::Close & replyMethod,
+                                  bool             sendToIngressSide,
+                                  uint64_t         code,
+                                  std::string_view text)
 {
     d_buffer = Buffer();  // forget inbound buffer
-    replyMethod.setReply(TReply::CODE, TReply::TEXT);
+    replyMethod.setReply(code, std::string(text));
     sendResponse(replyMethod, sendToIngressSide);
 }
 
