@@ -69,29 +69,6 @@ TEST(BackendStore, Lookup_Items_By_Name)
     EXPECT_EQ(*b2, backend2);
 }
 
-TEST(BackendStore, Lookup_Items_By_Address)
-{
-    BackendStore store;
-    Backend backend1(
-        "backend1", "dc1", "backend1.bloomberg.com", "127.0.0.1", 5672, true);
-    Backend backend2(
-        "backend2", "dc2", "backend2.bloomberg.com", "127.0.0.2", 5672, true);
-
-    EXPECT_EQ(store.insert(backend1), 0);
-    EXPECT_EQ(store.insert(backend2), 0);
-
-    // Non existing still fails
-    EXPECT_EQ(store.lookup("backend3"), nullptr);
-
-    auto b1 = store.lookup("127.0.0.1", 5672);
-    auto b2 = store.lookup("127.0.0.2", 5672);
-
-    ASSERT_NE(b1, nullptr);
-    ASSERT_NE(b2, nullptr);
-    EXPECT_EQ(*b1, backend1);
-    EXPECT_EQ(*b2, backend2);
-}
-
 TEST(BackendStore, CollidingItems) {
     BackendStore store;
     Backend backend1(

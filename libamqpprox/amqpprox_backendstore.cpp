@@ -22,24 +22,20 @@ namespace amqpprox {
 
 BackendStore::BackendStore()
 : d_backends()
-, d_backendAddresses()
 {
 }
 
 int BackendStore::insert(const Backend &backend)
 {
     auto namedBackend = lookup(backend.name());
-    auto addrBackend  = lookup(backend.ip(), backend.port());
 
-    if (namedBackend || addrBackend) {
+    if (namedBackend) {
         return 1;
     }
 
     std::lock_guard<std::mutex> lg(d_mutex);
     d_backends.insert(std::make_pair(backend.name(), backend));
     auto addrKey = std::make_pair(backend.ip(), backend.port());
-    d_backendAddresses.insert(
-        std::make_pair(addrKey, &d_backends[backend.name()]));
     return 0;
 }
 
@@ -52,22 +48,8 @@ int BackendStore::remove(const std::string &name)
 
     std::lock_guard<std::mutex> lg(d_mutex);
     auto addrKey = std::make_pair(backend->ip(), backend->port());
-    d_backendAddresses.erase(addrKey);
     d_backends.erase(name);
     return 0;
-}
-
-const Backend *BackendStore::lookup(const std::string &ip, int port) const
-{
-    std::lock_guard<std::mutex> lg(d_mutex);
-    auto                        addrKey = std::make_pair(ip, port);
-    auto                        it      = d_backendAddresses.find(addrKey);
-    if (it == d_backendAddresses.end()) {
-        return nullptr;
-    }
-    else {
-        return it->second;
-    }
 }
 
 const Backend *BackendStore::lookup(const std::string &name) const
