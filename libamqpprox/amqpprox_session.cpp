@@ -70,13 +70,13 @@ namespace amqpprox {
 using namespace boost::asio::ip;
 using namespace boost::system;
 
-Session::Session(boost::asio::io_service &              ioservice,
-                 MaybeSecureSocketAdaptor &&            serverSocket,
-                 MaybeSecureSocketAdaptor &&            clientSocket,
-                 ConnectionSelector *                   connectionSelector,
-                 EventSource *                          eventSource,
-                 BufferPool *                           bufferPool,
-                 DNSResolver *                          dnsResolver,
+Session::Session(boost::asio::io_service               &ioservice,
+                 MaybeSecureSocketAdaptor             &&serverSocket,
+                 MaybeSecureSocketAdaptor             &&clientSocket,
+                 ConnectionSelector                    *connectionSelector,
+                 EventSource                           *eventSource,
+                 BufferPool                            *bufferPool,
+                 DNSResolver                           *dnsResolver,
                  const std::shared_ptr<HostnameMapper> &hostnameMapper,
                  std::string_view                       localHostname,
                  const std::shared_ptr<AuthInterceptInterface> &authIntercept)
@@ -184,7 +184,7 @@ void Session::attemptConnection(
     using endpointType = boost::asio::ip::tcp::endpoint;
     auto self(shared_from_this());
     auto callback = [this, self, connectionManager](
-                        const error_code &        ec,
+                        const error_code         &ec,
                         std::vector<endpointType> endpoints) {
         BOOST_LOG_SCOPED_THREAD_ATTR(
             "Vhost",
@@ -682,6 +682,11 @@ void Session::readData(FlowType direction)
                 readData(direction);
             }
             else {
+                if (readAmount > 0) {
+                    LOG_TRACE << "read_some returned data and error. Data "
+                                 "discarded from "
+                              << direction << " to close sockets";
+                }
                 handleSessionError("read_some", direction, ec);
                 return;
             }
@@ -754,7 +759,7 @@ void Session::handleData(FlowType direction)
     }
 }
 
-void Session::handleSessionError(const char *              action,
+void Session::handleSessionError(const char               *action,
                                  FlowType                  direction,
                                  boost::system::error_code ec)
 {
@@ -818,7 +823,7 @@ void Session::handleSessionError(const char *              action,
 }
 
 void Session::handleConnectionError(
-    const char *                              action,
+    const char                               *action,
     boost::system::error_code                 ec,
     const std::shared_ptr<ConnectionManager> &connectionManager)
 {
