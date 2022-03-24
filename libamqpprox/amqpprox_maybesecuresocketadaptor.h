@@ -19,6 +19,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/ssl/stream.hpp>
 #include <boost/asio/ssl/stream_base.hpp>
+#include <openssl/ssl.h>
 
 #include <amqpprox_logging.h>
 #include <amqpprox_socketintercept.h>
@@ -38,29 +39,33 @@ class MaybeSecureSocketAdaptor {
     using endpoint    = boost::asio::ip::tcp::endpoint;
     using handshake_type = boost::asio::ssl::stream_base::handshake_type;
 
-    boost::asio::io_service &                              d_ioService;
+    boost::asio::io_service                               &d_ioService;
     std::optional<std::reference_wrapper<SocketIntercept>> d_intercept;
-    std::unique_ptr<stream_type> d_socket;
-    bool                         d_secured;
-    bool                         d_handshook;
+    std::unique_ptr<stream_type>                           d_socket;
+    bool                                                   d_secured;
+    bool                                                   d_handshook;
+    char                                                   d_smallBuffer;
+    bool                                                   d_smallBufferSet;
 
   public:
     typedef typename stream_type::executor_type executor_type;
 
 #ifdef SOCKET_TESTING
     MaybeSecureSocketAdaptor(boost::asio::io_service &ioService,
-                             SocketIntercept &        intercept,
+                             SocketIntercept         &intercept,
                              bool                     secured)
     : d_ioService(ioService)
     , d_intercept(intercept)
     , d_socket()
     , d_secured(secured)
     , d_handshook(false)
+    , d_smallBuffer(0)
+    , d_smallBufferSet(false)
     {
     }
 #endif
 
-    MaybeSecureSocketAdaptor(boost::asio::io_service &  ioService,
+    MaybeSecureSocketAdaptor(boost::asio::io_service   &ioService,
                              boost::asio::ssl::context &context,
                              bool                       secured)
     : d_ioService(ioService)
@@ -68,6 +73,8 @@ class MaybeSecureSocketAdaptor {
     , d_socket(std::make_unique<stream_type>(ioService, context))
     , d_secured(secured)
     , d_handshook(false)
+    , d_smallBuffer(0)
+    , d_smallBufferSet(false)
     {
     }
 
@@ -77,10 +84,14 @@ class MaybeSecureSocketAdaptor {
     , d_socket(std::move(src.d_socket))
     , d_secured(src.d_secured)
     , d_handshook(src.d_handshook)
+    , d_smallBuffer(src.d_smallBuffer)
+    , d_smallBufferSet(src.d_smallBufferSet)
     {
-        src.d_socket = std::unique_ptr<stream_type>();
-        src.d_secured   = false;
-        src.d_handshook = false;
+        src.d_socket         = std::unique_ptr<stream_type>();
+        src.d_secured        = false;
+        src.d_handshook      = false;
+        src.d_smallBuffer    = 0;
+        src.d_smallBufferSet = false;
     }
 
     boost::asio::ip::tcp::socket &socket() { return d_socket->next_layer(); }
@@ -182,13 +193,24 @@ class MaybeSecureSocketAdaptor {
         d_socket->next_layer().close(ec);
     }
 
+    /**
+     * Indicates the number of bytes immediately readable out of the socket
+     * For TLS connections this references the number of bytes which are
+     * immediately available for reading from the current fully-read record
+     */
     std::size_t available(boost::system::error_code &ec)
     {
         if (BOOST_UNLIKELY(d_intercept.has_value())) {
             return d_intercept.value().get().available(ec);
         }
 
-        return d_socket->next_layer().available(ec);
+        if (d_secured) {
+            return (d_smallBufferSet ? 1 : 0) +
+                   SSL_pending(d_socket->native_handle());
+        }
+        else {
+            return d_socket->next_layer().available(ec);
+        }
     }
 
     template <typename ConnectHandler>
@@ -247,13 +269,33 @@ class MaybeSecureSocketAdaptor {
 
     template <typename MutableBufferSequence>
     std::size_t read_some(const MutableBufferSequence &buffers,
-                          boost::system::error_code &  ec)
+                          boost::system::error_code   &ec)
     {
         if (BOOST_UNLIKELY(d_intercept.has_value())) {
             return d_intercept.value().get().read_some(buffers, ec);
         }
 
         if (isSecure()) {
+            // Ensure we read the small-buffer-workaround if it has been used
+            if (d_smallBufferSet && buffers.size() >= 1) {
+                ((char *)buffers.data())[0] = d_smallBuffer;
+                d_smallBufferSet            = false;
+
+                MutableBufferSequence replacement(buffers);
+                replacement += 1;
+
+                size_t result = d_socket->read_some(replacement, ec);
+
+                if (ec && result == 0) {
+                    ec = boost::system::error_code();
+                    // Pretend read_some succeeded this time around because
+                    // there's one byte left over.
+                    return 1;
+                }
+
+                return 1 + result;
+            }
+
             return d_socket->read_some(buffers, ec);
         }
         else {
@@ -261,21 +303,56 @@ class MaybeSecureSocketAdaptor {
         }
     }
 
-    template <typename MutableBufferSequence, typename ReadHandler>
+    /**
+     * This async_read_some specialisation is required due to
+     * https://github.com/chriskohlhoff/asio/issues/1015
+     *
+     * For TLS sockets we need to ensure we call this method with a buffer size
+     * of at least one byte. This is handled by passing in a small buffer (1
+     * byte). This byte is then passed back via `read_some`. The presense of
+     * this byte is also represented in the return value of `available`.
+     */
+    template <typename ReadHandler>
     BOOST_ASIO_INITFN_RESULT_TYPE(ReadHandler,
                                   void(boost::system::error_code, std::size_t))
-    async_read_some(const MutableBufferSequence &buffers,
+    async_read_some(const boost::asio::null_buffers &null_buffer,
                     BOOST_ASIO_MOVE_ARG(ReadHandler) handler)
     {
         if (BOOST_UNLIKELY(d_intercept.has_value())) {
-            return d_intercept.value().get().async_read_some(buffers, handler);
+            return d_intercept.value().get().async_read_some(null_buffer,
+                                                             handler);
         }
 
         if (isSecure()) {
-            return d_socket->async_read_some(buffers, handler);
+            if (d_smallBufferSet) {
+                // The reader missed a byte - invoke ssl
+                // async_read_some(zero-sized-buffer) so the handler is
+                // immediately invoked to collect this missing byte. This
+                // codepath wasn't hit during testing, but it's left here for
+                // completeness
+                LOG_DEBUG << "Invoked async_read_some again before reading "
+                             "data. Immediately invoking handler";
+
+                return d_socket->async_read_some(
+                    boost::asio::buffer(&d_smallBuffer, 0), handler);
+            }
+
+            // async_read_some with a one byte buffer to ensure we are only
+            // called with useful progress
+            return d_socket->async_read_some(
+                boost::asio::buffer(&d_smallBuffer, sizeof(d_smallBuffer)),
+                [this, handler](boost::system::error_code ec,
+                                std::size_t               length) {
+                    if (length != 0) {
+                        d_smallBufferSet = true;
+                    }
+
+                    handler(ec, length);
+                });
         }
         else {
-            return d_socket->next_layer().async_read_some(buffers, handler);
+            return d_socket->next_layer().async_read_some(null_buffer,
+                                                          handler);
         }
     }
 };
