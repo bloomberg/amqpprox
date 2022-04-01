@@ -33,7 +33,7 @@ pub(crate) fn run_sync_client(
 
     let mut count = 0;
     loop {
-        if count > num_messages {
+        if count >= num_messages {
             break;
         }
         exchange.publish(Publish::new(&arr, routing_key))?;
