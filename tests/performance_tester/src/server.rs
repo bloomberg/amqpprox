@@ -36,6 +36,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpListener;
+use tokio::net::TcpSocket;
 use tokio_rustls::rustls::{self, Certificate, PrivateKey};
 use tokio_rustls::TlsAcceptor;
 use AMQPFrame::Method;
@@ -198,11 +199,19 @@ pub async fn process_connection<
     while let Some(frame) = framed.next().await {
         log::trace!("Received: {:?}", &frame);
         match frame {
-            Ok(Method(channel, AMQPClass::Channel(channelmsg))) => {
+            Ok(Method(channel, AMQPClass::Channel(channel::AMQPMethod::Open(channelmsg)))) => {
                 log::debug!("Set up channel: {} {:?}", channel, channelmsg);
                 let channelok_method = channel::AMQPMethod::OpenOk(channel::OpenOk {});
                 let channelok = Method(channel, AMQPClass::Channel(channelok_method));
                 framed.send(channelok).await?;
+            }
+            Ok(Method(channel, AMQPClass::Channel(channel::AMQPMethod::Close(_channelmsg)))) => {
+                log::debug!("Received channel close");
+                let closeok = Method(
+                    channel,
+                    AMQPClass::Channel(channel::AMQPMethod::CloseOk(channel::CloseOk {})),
+                );
+                framed.send(closeok).await?;
             }
             Ok(Method(0, AMQPClass::Connection(connection::AMQPMethod::Close(closemsg)))) => {
                 log::info!("Closing connection requested: {:?}", closemsg);
@@ -234,9 +243,13 @@ pub fn create_tls_acceptor(cert_chain: &Path, key: &Path) -> Result<TlsAcceptor>
 }
 
 pub async fn run_tls_server(address: SocketAddr, acceptor: TlsAcceptor) -> Result<()> {
-
     log::info!("Listening on {:?}", &address);
-    let listener = TcpListener::bind(address).await?;
+
+    let socket = TcpSocket::new_v4()?;
+    socket.set_reuseaddr(true)?;
+    socket.bind(address)?;
+
+    let listener = socket.listen(1024)?;
 
     loop {
         let (socket, peer) = listener.accept().await?;
