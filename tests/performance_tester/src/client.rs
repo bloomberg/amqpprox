@@ -41,7 +41,7 @@ pub(crate) fn run_sync_client(
         count += 1;
     }
 
-    connection.close()?;
+    let _ = connection.close();
 
     Ok(())
 }
