@@ -95,9 +95,7 @@ fn main() -> Result<()> {
             {
                 println!("Starting TLS dummy amqp server");
                 let acceptor = server::create_tls_acceptor(&listen_cert, &listen_key).unwrap();
-                tokio::spawn(async move {
-                    server::run_tls_server(address, acceptor).await
-                })
+                tokio::spawn(async move { server::run_tls_server(address, acceptor).await })
             } else {
                 println!("Starting non-TLS dummy amqp server");
                 tokio::spawn(async move { server::run_server(address).await })
@@ -115,7 +113,12 @@ fn main() -> Result<()> {
                 let routing_key = opts.routing_key.clone();
 
                 let handle = tokio::task::spawn_blocking(move || {
-                    crate::client::run_sync_client(address, message_size, num_messages, &routing_key)
+                    crate::client::run_sync_client(
+                        address,
+                        message_size,
+                        num_messages,
+                        &routing_key,
+                    )
                 });
                 handles.push(handle);
             }
@@ -173,7 +176,9 @@ async fn wait_for_addr(addr: SocketAddr, timeout_total: Duration) -> Result<()> 
             }
         }
 
-        let target = start.checked_add(timeout_step).ok_or(anyhow::anyhow!("Timeout add overflowed"))?;
+        let target = start
+            .checked_add(timeout_step)
+            .ok_or(anyhow::anyhow!("Timeout add overflowed"))?;
         if let Some(sleep_time) = target.checked_duration_since(Instant::now()) {
             tokio::time::sleep(sleep_time).await;
         }
