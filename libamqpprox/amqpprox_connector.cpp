@@ -195,9 +195,10 @@ void Connector::receive(const Method &method, FlowType direction)
         sendResponse(d_startOk, false);
         d_state = State::STARTOK_SENT;
     } break;
+    // Acting as a client
     case State::STARTOK_SENT: {
         decodeMethod(&d_receivedTune, method, methodPayload);
-        LOG_TRACE << "Tune: " << d_receivedStart;
+        LOG_TRACE << "Server Tune: " << d_receivedTune;
 
         sendResponse(d_tuneOk, false);
         sendResponse(d_open, false);
