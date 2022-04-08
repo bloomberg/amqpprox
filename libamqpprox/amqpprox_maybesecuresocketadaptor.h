@@ -24,6 +24,8 @@
 #include <amqpprox_logging.h>
 #include <amqpprox_socketintercept.h>
 
+#include <functional>
+
 namespace Bloomberg {
 namespace amqpprox {
 
@@ -39,7 +41,7 @@ class MaybeSecureSocketAdaptor {
     using endpoint    = boost::asio::ip::tcp::endpoint;
     using handshake_type = boost::asio::ssl::stream_base::handshake_type;
 
-    boost::asio::io_service                               &d_ioService;
+    boost::asio::io_service &                              d_ioService;
     std::optional<std::reference_wrapper<SocketIntercept>> d_intercept;
     std::unique_ptr<stream_type>                           d_socket;
     bool                                                   d_secured;
@@ -52,7 +54,7 @@ class MaybeSecureSocketAdaptor {
 
 #ifdef SOCKET_TESTING
     MaybeSecureSocketAdaptor(boost::asio::io_service &ioService,
-                             SocketIntercept         &intercept,
+                             SocketIntercept &        intercept,
                              bool                     secured)
     : d_ioService(ioService)
     , d_intercept(intercept)
@@ -65,7 +67,7 @@ class MaybeSecureSocketAdaptor {
     }
 #endif
 
-    MaybeSecureSocketAdaptor(boost::asio::io_service   &ioService,
+    MaybeSecureSocketAdaptor(boost::asio::io_service &  ioService,
                              boost::asio::ssl::context &context,
                              bool                       secured)
     : d_ioService(ioService)
@@ -165,24 +167,6 @@ class MaybeSecureSocketAdaptor {
         return d_socket->next_layer().local_endpoint(ec);
     }
 
-    void shutdown(boost::system::error_code &ec)
-    {
-        if (BOOST_UNLIKELY(d_intercept.has_value())) {
-            d_intercept.value().get().shutdown(ec);
-            return;
-        }
-
-        if (isSecure()) {
-            d_socket->shutdown(ec);
-
-            // If the TLS shutdown fails we still want to shutdown and close
-            // the socket so we fall through
-        }
-
-        d_socket->next_layer().shutdown(
-            boost::asio::ip::tcp::socket::shutdown_both, ec);
-    }
-
     void close(boost::system::error_code &ec)
     {
         if (BOOST_UNLIKELY(d_intercept.has_value())) {
@@ -248,6 +232,36 @@ class MaybeSecureSocketAdaptor {
         }
     }
 
+    template <typename ShutdownHandler>
+    BOOST_ASIO_INITFN_RESULT_TYPE(ShutdownHandler,
+                                  void(boost::system::error_code))
+    async_shutdown(BOOST_ASIO_MOVE_ARG(ShutdownHandler) handler)
+    {
+        if (BOOST_UNLIKELY(d_intercept.has_value())) {
+            return d_intercept.value().get().async_shutdown(handler);
+        }
+
+        if (d_secured) {
+            boost::system::error_code ec;
+            d_socket->next_layer().shutdown(
+                boost::asio::ip::tcp::socket::shutdown_receive, ec);
+            if (ec) {
+                LOG_DEBUG
+                    << "Error shutting down receive direction for socket ec: "
+                    << ec;
+            }
+            return d_socket->async_shutdown(handler);
+        }
+        else {
+            // regular socket doesn't have async_shutdown, so just call the
+            // handler directly
+            boost::system::error_code ec;
+            d_socket->next_layer().shutdown(
+                boost::asio::ip::tcp::socket::shutdown_both, ec);
+            handler(ec);
+        }
+    }
+
     template <typename ConstBufferSequence, typename WriteHandler>
     BOOST_ASIO_INITFN_RESULT_TYPE(WriteHandler,
                                   void(boost::system::error_code, std::size_t))
@@ -269,7 +283,7 @@ class MaybeSecureSocketAdaptor {
 
     template <typename MutableBufferSequence>
     std::size_t read_some(const MutableBufferSequence &buffers,
-                          boost::system::error_code   &ec)
+                          boost::system::error_code &  ec)
     {
         if (BOOST_UNLIKELY(d_intercept.has_value())) {
             return d_intercept.value().get().read_some(buffers, ec);
@@ -356,7 +370,6 @@ class MaybeSecureSocketAdaptor {
         }
     }
 };
-
 }
 }
 
