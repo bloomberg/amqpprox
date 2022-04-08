@@ -61,11 +61,6 @@ SocketInterceptTestAdaptor::local_endpoint(boost::system::error_code &ec)
     return d_state.currentState().d_local;
 }
 
-void SocketInterceptTestAdaptor::shutdown(boost::system::error_code &ec)
-{
-    d_state.recordCallCheck("shutdown", ec);
-}
-
 void SocketInterceptTestAdaptor::close(boost::system::error_code &ec)
 {
     d_state.recordCallCheck("close", ec);
@@ -87,6 +82,16 @@ SocketInterceptTestAdaptor::available(boost::system::error_code &ec)
     }
 
     throw std::runtime_error("No item available");
+}
+
+void SocketInterceptTestAdaptor::async_shutdown(AsyncShutdownHandler handler)
+{
+    d_state.recordCall("async_shutdown");
+    boost::system::error_code ec;
+    if (d_state.currentState().d_secure) {
+        ec = boost::asio::ssl::error::stream_truncated;
+    }
+    handler(ec);
 }
 
 void SocketInterceptTestAdaptor::async_connect(const endpoint &peer_endpoint,

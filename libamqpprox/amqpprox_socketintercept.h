@@ -43,6 +43,8 @@ class SocketIntercept {
         std::function<void(boost::system::error_code, std::size_t)>;
     using AsyncHandshakeHandler =
         std::function<void(boost::system::error_code)>;
+    using AsyncShutdownHandler =
+        std::function<void(boost::system::error_code)>;
     using AsyncConnectHandler = std::function<void(boost::system::error_code)>;
 
     SocketInterceptInterface &d_impl;
@@ -101,12 +103,6 @@ class SocketIntercept {
     endpoint local_endpoint(boost::system::error_code &ec);
 
     /**
-     * \brief Shutdown the socket for read and write.
-     * \param ec The error code set by the operation, only changed on error.
-     */
-    void shutdown(boost::system::error_code &ec);
-
-    /**
      * \brief Close the socket
      * \param ec The error code set by the operation, only changed on error.
      */
@@ -156,6 +152,19 @@ class SocketIntercept {
                     BOOST_ASIO_MOVE_ARG(HandshakeHandler) handler)
     {
         d_impl.async_handshake(type, handler);
+    }
+
+    /**
+     * \brief Initiate shutdown for it will only be truly asynchronous for TLS
+     * as TLS needs to write close_notify as part of shutdown
+     * \param handler The completion handler to invoke on success/error
+     */
+    template <typename ShutdownHandler>
+    BOOST_ASIO_INITFN_RESULT_TYPE(ShutdownHandler,
+                                  void(boost::system::error_code))
+    async_shutdown(BOOST_ASIO_MOVE_ARG(ShutdownHandler) handler)
+    {
+        d_impl.async_shutdown(handler);
     }
 
     /**

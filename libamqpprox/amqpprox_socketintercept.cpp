@@ -47,11 +47,6 @@ SocketIntercept::local_endpoint(boost::system::error_code &ec)
     return d_impl.local_endpoint(ec);
 }
 
-void SocketIntercept::shutdown(boost::system::error_code &ec)
-{
-    d_impl.shutdown(ec);
-}
-
 void SocketIntercept::close(boost::system::error_code &ec)
 {
     d_impl.close(ec);

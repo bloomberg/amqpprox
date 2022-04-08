@@ -67,6 +67,8 @@ class SocketInterceptTestAdaptor : public SocketInterceptInterface {
     using AsyncHandshakeHandler =
         std::function<void(boost::system::error_code)>;
     using AsyncConnectHandler = std::function<void(boost::system::error_code)>;
+    using AsyncShutdownHandler =
+        std::function<void(boost::system::error_code)>;
 
     // CREATORS
     /**
@@ -84,13 +86,13 @@ class SocketInterceptTestAdaptor : public SocketInterceptInterface {
 
     virtual endpoint local_endpoint(boost::system::error_code &ec) override;
 
-    virtual void shutdown(boost::system::error_code &ec) override;
-
     virtual void close(boost::system::error_code &ec) override;
 
     virtual void setDefaultOptions(boost::system::error_code &ec) override;
 
     virtual std::size_t available(boost::system::error_code &ec) override;
+
+    virtual void async_shutdown(AsyncShutdownHandler handler) override;
 
     virtual void async_connect(const endpoint &    peer_endpoint,
                                AsyncConnectHandler handler) override;

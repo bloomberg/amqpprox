@@ -40,6 +40,8 @@ class SocketInterceptInterface {
         std::function<void(boost::system::error_code, std::size_t)>;
     using AsyncHandshakeHandler =
         std::function<void(boost::system::error_code)>;
+    using AsyncShutdownHandler =
+        std::function<void(boost::system::error_code)>;
     using AsyncConnectHandler = std::function<void(boost::system::error_code)>;
 
     /**
@@ -83,12 +85,6 @@ class SocketInterceptInterface {
     virtual endpoint local_endpoint(boost::system::error_code &ec) = 0;
 
     /**
-     * \brief Shutdown the socket for read and write.
-     * \param ec The error code set by the operation, only changed on error.
-     */
-    virtual void shutdown(boost::system::error_code &ec) = 0;
-
-    /**
      * \brief Close the socket
      * \param ec The error code set by the operation, only changed on error.
      */
@@ -130,6 +126,14 @@ class SocketInterceptInterface {
      */
     virtual void async_handshake(handshake_type        type,
                                  AsyncHandshakeHandler handler) = 0;
+
+    /**
+     * \brief Initiate shutdown
+     *
+     *
+     * \param handler The completion handler to invoke on success/error
+     */
+    virtual void async_shutdown(AsyncShutdownHandler handler) = 0;
 
     /**
      * \brief Write some data onto the socket

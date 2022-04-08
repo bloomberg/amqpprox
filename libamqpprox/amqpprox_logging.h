@@ -37,6 +37,7 @@
 #define LOG_WARN BOOST_LOG_SEV(Logging::get(), Logging::AMQPPROX_LOG_WARN)
 #define LOG_ERROR BOOST_LOG_SEV(Logging::get(), Logging::AMQPPROX_LOG_ERROR)
 #define LOG_FATAL BOOST_LOG_SEV(Logging::get(), Logging::AMQPPROX_LOG_FATAL)
+#define LOG_SEV(sev) BOOST_LOG_SEV(Logging::get(), sev)
 
 namespace Bloomberg {
 namespace amqpprox {

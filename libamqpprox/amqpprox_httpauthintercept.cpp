@@ -262,6 +262,7 @@ void HttpAuthIntercept::onRead(
     // Gracefully close the socket
     stream->socket().shutdown(tcp::socket::shutdown_both, ec);
 
+    // TODO shouldn't we also call stream->socket().close()?
     // not_connected happens sometimes so don't bother reporting it.
     if (ec && ec != beast::errc::not_connected) {
         const std::string errorMsg =

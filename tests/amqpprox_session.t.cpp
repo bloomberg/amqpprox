@@ -302,11 +302,13 @@ void SessionTest::testSetupUnauthClientOpenWithShutdown(
                 ASSERT_EQ(data.size(), 1);
                 EXPECT_EQ(data[0], Data(encode(closeMethod)));
             }
-            EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+            EXPECT_THAT(items,
+                        Contains(VariantWith<Call>(Call("async_shutdown"))));
             EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
         });
     d_clientState.expect(idx, [this](const auto &items) {
-        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+        EXPECT_THAT(items,
+                    Contains(VariantWith<Call>(Call("async_shutdown"))));
         EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
     });
 }
@@ -316,7 +318,8 @@ void SessionTest::testSetupClientOpenWithoutTune(int idx)
     // Client  ------Open-------->  Proxy                         Broker
     d_serverState.pushItem(idx, Data(encode(clientOpen())));
     d_clientState.expect(idx, [this](const auto &items) {
-        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+        EXPECT_THAT(items,
+                    Contains(VariantWith<Call>(Call("async_shutdown"))));
     });
 }
 
@@ -386,10 +389,12 @@ void SessionTest::testSetupProxyOutOfOrderOpen(int idx)
     // Client                       Proxy  <--------OpenOk------ Broker
     d_clientState.pushItem(idx, Data(encode(serverOpenOk())));
     d_clientState.expect(idx, [this](const auto &items) {
-        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+        EXPECT_THAT(items,
+                    Contains(VariantWith<Call>(Call("async_shutdown"))));
     });
     d_serverState.expect(idx, [this](const auto &items) {
-        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+        EXPECT_THAT(items,
+                    Contains(VariantWith<Call>(Call("async_shutdown"))));
     });
 }
 
@@ -404,11 +409,13 @@ void SessionTest::testSetupProxyForwardsBrokerClose(int idx)
         auto data = filterVariant<Data>(items);
         ASSERT_EQ(data.size(), 1);
         EXPECT_EQ(data[0], Data(encode(receivedClose)));
-        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+        EXPECT_THAT(items,
+                    Contains(VariantWith<Call>(Call("async_shutdown"))));
         EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
     });
     d_clientState.expect(idx, [this](const auto &items) {
-        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+        EXPECT_THAT(items,
+                    Contains(VariantWith<Call>(Call("async_shutdown"))));
         EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
     });
 }
@@ -501,11 +508,13 @@ void SessionTest::testSetupBrokerRespondsCloseOk(int idx)
     // before we get to close ourselves.
     d_clientState.pushItem(idx, Data(encode(closeOk())));
     d_clientState.expect(idx, [this](const auto &items) {
-        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+        EXPECT_THAT(items,
+                    Contains(VariantWith<Call>(Call("async_shutdown"))));
         EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
     });
     d_serverState.expect(idx, [this](const auto &items) {
-        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+        EXPECT_THAT(items,
+                    Contains(VariantWith<Call>(Call("async_shutdown"))));
         EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
     });
 }
@@ -1240,11 +1249,13 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Backend_Disconnect)
                            Func([&session] { session->backendDisconnect(); }));
 
     d_clientState.expect(12, [this](const auto &items) {
-        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+        EXPECT_THAT(items,
+                    Contains(VariantWith<Call>(Call("async_shutdown"))));
         EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
     });
     d_serverState.expect(12, [this](const auto &items) {
-        EXPECT_THAT(items, Not(Contains(VariantWith<Call>(Call("shutdown")))));
+        EXPECT_THAT(items,
+                    Not(Contains(VariantWith<Call>(Call("async_shutdown")))));
         EXPECT_THAT(items, Not(Contains(VariantWith<Call>(Call("close")))));
     });
 

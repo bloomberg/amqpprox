@@ -72,26 +72,51 @@ using namespace boost::asio::ip;
 using namespace boost::system;
 
 namespace {
-void logException(const std::string_view error,
-                  const SessionState    &sessionState,
-                  FlowType               direction)
+
+class ConnectionSummary {
+    const SessionState &s;
+
+  public:
+    explicit ConnectionSummary(const Session &session)
+    : s(session.state())
+    {
+    }
+    explicit ConnectionSummary(const SessionState &state)
+    : s(state)
+    {
+    }
+    std::ostream &print(std::ostream &os) const
+    {
+        return os << s.hostname(s.getIngress().second) << ":"
+                  << s.getIngress().second.port() << "->"
+                  << s.hostname(s.getEgress().second)
+                  << s.getEgress().second.port();
+    }
+};
+
+std::ostream &operator<<(std::ostream &os, const ConnectionSummary &cs)
 {
-    LOG_ERROR << "Received exception: " << error << " conn="
-              << sessionState.hostname(sessionState.getIngress().second) << ":"
-              << sessionState.getIngress().second.port() << "->"
-              << sessionState.hostname(sessionState.getEgress().second) << ":"
-              << sessionState.getEgress().second.port()
-              << " direction=" << direction;
-}
+    return cs.print(os);
 }
 
-Session::Session(boost::asio::io_service               &ioservice,
-                 MaybeSecureSocketAdaptor             &&serverSocket,
-                 MaybeSecureSocketAdaptor             &&clientSocket,
-                 ConnectionSelector                    *connectionSelector,
-                 EventSource                           *eventSource,
-                 BufferPool                            *bufferPool,
-                 DNSResolver                           *dnsResolver,
+void logException(const std::string_view error,
+                  const SessionState &   sessionState,
+                  FlowType               direction)
+{
+    LOG_ERROR << "Received exception: " << error
+              << " conn=" << ConnectionSummary(sessionState)
+              << " direction=" << direction;
+}
+
+}
+
+Session::Session(boost::asio::io_service &              ioservice,
+                 MaybeSecureSocketAdaptor &&            serverSocket,
+                 MaybeSecureSocketAdaptor &&            clientSocket,
+                 ConnectionSelector *                   connectionSelector,
+                 EventSource *                          eventSource,
+                 BufferPool *                           bufferPool,
+                 DNSResolver *                          dnsResolver,
                  const std::shared_ptr<HostnameMapper> &hostnameMapper,
                  std::string_view                       localHostname,
                  const std::shared_ptr<AuthInterceptInterface> &authIntercept)
@@ -199,7 +224,7 @@ void Session::attemptConnection(
     using endpointType = boost::asio::ip::tcp::endpoint;
     auto self(shared_from_this());
     auto callback = [this, self, connectionManager](
-                        const error_code         &ec,
+                        const error_code &        ec,
                         std::vector<endpointType> endpoints) {
         BOOST_LOG_SCOPED_THREAD_ATTR(
             "Vhost",
@@ -557,21 +582,18 @@ void Session::backendDisconnect()
             "ConnID",
             boost::log::attributes::constant<uint64_t>(d_sessionState.id()));
 
-        boost::system::error_code shutdownEc;
-        d_clientSocket.shutdown(shutdownEc);
-
-        if (shutdownEc) {
-            LOG_WARN << "Backend Disconnect shutdown failed rc: "
-                     << shutdownEc;
-            // Fall through: we still want to attempt to close the socket
-        }
-
-        boost::system::error_code closeEc;
-        d_clientSocket.close(closeEc);
-
-        if (closeEc) {
-            LOG_WARN << "Backend Disconnect close failed rc: " << closeEc;
-        }
+        d_clientSocket.async_shutdown([this, self](error_code shutdownEc) {
+            if (shutdownEc) {
+                LOG_INFO << "Backend Disconnect shutdown failed rc: "
+                         << shutdownEc;
+                // Fall through: we still want to attempt to close the socket
+            }
+            boost::system::error_code closeEc;
+            d_clientSocket.close(closeEc);
+            if (closeEc) {
+                LOG_WARN << "Backend Disconnect close failed rc: " << closeEc;
+            }
+        });
     });
 }
 
@@ -783,7 +805,7 @@ void Session::handleData(FlowType direction)
     }
 }
 
-void Session::handleSessionError(const char               *action,
+void Session::handleSessionError(const char *              action,
                                  FlowType                  direction,
                                  boost::system::error_code ec)
 {
@@ -799,11 +821,8 @@ void Session::handleSessionError(const char               *action,
                     "Sending Close to server. "
                     "Action:"
                  << action << " received error_code=" << ec << " "
-                 << TlsUtil::augmentTlsError(ec) << " conn="
-                 << d_sessionState.hostname(d_sessionState.getIngress().second)
-                 << ":" << d_sessionState.getIngress().second.port() << "->"
-                 << d_sessionState.hostname(d_sessionState.getEgress().second)
-                 << ":" << d_sessionState.getEgress().second.port()
+                 << TlsUtil::augmentTlsError(ec)
+                 << " conn=" << ConnectionSummary(*this)
                  << " direction=" << direction;
 
         d_connector.synthesizeClose(false);
@@ -827,13 +846,18 @@ void Session::handleSessionError(const char               *action,
 
     if (ec != boost::asio::error::operation_aborted) {
         // TODO notify EventSource
-        LOG_WARN << action << " received error_code=" << ec << " "
-                 << TlsUtil::augmentTlsError(ec) << " conn="
-                 << d_sessionState.hostname(d_sessionState.getIngress().second)
-                 << ":" << d_sessionState.getIngress().second.port() << "->"
-                 << d_sessionState.hostname(d_sessionState.getEgress().second)
-                 << ":" << d_sessionState.getEgress().second.port()
-                 << " direction=" << direction;
+
+        if (ec == boost::asio::ssl::error::stream_truncated) {
+            LOG_DEBUG << "TLS session truncated on close: conn="
+                      << ConnectionSummary(*this)
+                      << " direction=" << direction;
+        }
+        else {
+            LOG_WARN << action << "received error_code=" << ec << " "
+                     << TlsUtil::augmentTlsError(ec)
+                     << " conn=" << ConnectionSummary(*this)
+                     << " direction=" << direction;
+        }
 
         boost::system::error_code clientCloseEc, serverCloseEc;
         d_clientSocket.close(clientCloseEc);
@@ -847,7 +871,7 @@ void Session::handleSessionError(const char               *action,
 }
 
 void Session::handleConnectionError(
-    const char                               *action,
+    const char *                              action,
     boost::system::error_code                 ec,
     const std::shared_ptr<ConnectionManager> &connectionManager)
 {
@@ -858,35 +882,37 @@ void Session::handleConnectionError(
     }
 
     LOG_WARN << action << " received connecting to '" << name
-             << "' error_code=" << TlsUtil::augmentTlsError(ec) << " conn="
-             << d_sessionState.hostname(d_sessionState.getIngress().second)
-             << ":" << d_sessionState.getIngress().second.port() << "->"
-             << d_sessionState.hostname(d_sessionState.getEgress().second)
-             << ":" << d_sessionState.getIngress().second.port();
+             << "' error_code=" << TlsUtil::augmentTlsError(ec)
+             << " conn=" << ConnectionSummary(*this);
 
     attemptResolvedConnection(connectionManager);
 }
 
 void Session::performDisconnectBoth()
 {
-    boost::system::error_code clientShutdownEc, serverShutdownEc;
-    d_clientSocket.shutdown(clientShutdownEc);
-    d_serverSocket.shutdown(serverShutdownEc);
-
-    if (clientShutdownEc || serverShutdownEc) {
-        LOG_WARN << "Socket shutdown failed: client=" << clientShutdownEc
-                 << ", server=" << serverShutdownEc
-                 << ", continuing to close anyway";
-    }
-
-    boost::system::error_code clientCloseEc, serverCloseEc;
-    d_clientSocket.close(clientCloseEc);
-    d_serverSocket.close(serverCloseEc);
-
-    if (clientCloseEc || serverCloseEc) {
-        LOG_WARN << "Socket close failed: client=" << clientCloseEc
-                 << ", server=" << serverCloseEc;
-    }
+    auto self(shared_from_this());
+    d_clientSocket.async_shutdown([this, self](error_code shutdownEc) {
+        if (shutdownEc) {
+            LOG_INFO << "Client shutdown failed rc: " << shutdownEc;
+            // Fall through: we still want to attempt to close the socket
+        }
+        boost::system::error_code closeEc;
+        d_clientSocket.close(closeEc);
+        if (closeEc) {
+            LOG_INFO << "Client close failed rc: " << closeEc;
+        }
+    });
+    d_serverSocket.async_shutdown([this, self](error_code shutdownEc) {
+        if (shutdownEc) {
+            LOG_INFO << "Server shutdown failed rc: " << shutdownEc;
+            // Fall through: we still want to attempt to close the socket
+        }
+        boost::system::error_code closeEc;
+        d_serverSocket.close(closeEc);
+        if (closeEc) {
+            LOG_INFO << "Server close failed rc: " << closeEc;
+        }
+    });
 }
 
 }
