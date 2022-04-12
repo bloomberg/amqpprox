@@ -195,6 +195,7 @@ class SessionTest : public ::testing::Test {
         const methods::StartOk &overriddenStartOk = methods::StartOk());
     void testSetupProxyOpen(int idx);
     void testSetupProxyOutOfOrderOpen(int idx);
+    void testSetupProxyForwardsBrokerClose(int idx);
     void testSetupProxyPassOpenOkThrough(int idx);
     void testSetupBrokerSendsHeartbeat(int idx);
     void testSetupClientSendsHeartbeat(int idx);
@@ -202,12 +203,39 @@ class SessionTest : public ::testing::Test {
     void testSetupClientSendsCloseOk(int idx);
     void testSetupBrokerRespondsCloseOk(int idx);
     void testSetupHandlersCleanedUp(int idx);
+
+    void testSetupHostnameMapperForServerClientBase(
+        TestSocketState::State &serverState,
+        TestSocketState::State &clientState);
 };
 
 template <typename TYPE>
 std::vector<TYPE> filterVariant(const std::vector<Item> &items);
 
 Data coalesce(std::initializer_list<Data> input);
+
+void SessionTest::testSetupHostnameMapperForServerClientBase(
+    TestSocketState::State &base,
+    TestSocketState::State &clientBase)
+{
+    EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
+        .WillRepeatedly(Return(std::string("host1")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 1234)))
+        .WillRepeatedly(Return(std::string("host0")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 32000)))
+        .WillRepeatedly(Return(std::string("host0")));
+    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("3.4.5.6", 5672)))
+        .WillRepeatedly(Return(std::string("host2")));
+
+    base.d_local  = makeEndpoint("1.2.3.4", 1234);
+    base.d_remote = makeEndpoint("2.3.4.5", 2345);
+    base.d_secure = false;
+
+    clientBase.d_local  = makeEndpoint("1.2.3.4", 32000);
+    clientBase.d_remote = makeEndpoint("3.4.5.6", 5672);
+    clientBase.d_secure = false;
+}
 
 void SessionTest::testSetupServerHandshake(int idx)
 {
@@ -362,6 +390,26 @@ void SessionTest::testSetupProxyOutOfOrderOpen(int idx)
     });
     d_serverState.expect(idx, [this](const auto &items) {
         EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+    });
+}
+
+void SessionTest::testSetupProxyForwardsBrokerClose(int idx)
+{
+    // Client  <--------Close-----  Proxy  <--------Close------  Broker
+    methods::Close receivedClose;
+    receivedClose.setReply(123, "Broker is closing the connection");
+    d_clientState.pushItem(idx, Data(encode(receivedClose)));
+
+    d_serverState.expect(idx, [this, receivedClose](const auto &items) {
+        auto data = filterVariant<Data>(items);
+        ASSERT_EQ(data.size(), 1);
+        EXPECT_EQ(data[0], Data(encode(receivedClose)));
+        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
+    });
+    d_clientState.expect(idx, [this](const auto &items) {
+        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("shutdown"))));
+        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
     });
 }
 
@@ -536,25 +584,8 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Disconnect)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
 
-    EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
-        .WillRepeatedly(Return(std::string("host1")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 1234)))
-        .WillRepeatedly(Return(std::string("host0")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 32000)))
-        .WillRepeatedly(Return(std::string("host0")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("3.4.5.6", 5672)))
-        .WillRepeatedly(Return(std::string("host2")));
-
-    TestSocketState::State base;
-    base.d_local  = makeEndpoint("1.2.3.4", 1234);
-    base.d_remote = makeEndpoint("2.3.4.5", 2345);
-    base.d_secure = false;
-
-    TestSocketState::State clientBase;
-    clientBase.d_local  = makeEndpoint("1.2.3.4", 32000);
-    clientBase.d_remote = makeEndpoint("3.4.5.6", 5672);
-    clientBase.d_secure = false;
+    TestSocketState::State base, clientBase;
+    testSetupHostnameMapperForServerClientBase(base, clientBase);
 
     // Initialise the state
     d_serverState.pushItem(0, base);
@@ -659,25 +690,8 @@ TEST_F(SessionTest, BadServerHandshake)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
 
-    EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
-        .WillRepeatedly(Return(std::string("host1")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 1234)))
-        .WillRepeatedly(Return(std::string("host0")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 32000)))
-        .WillRepeatedly(Return(std::string("host0")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("3.4.5.6", 5672)))
-        .WillRepeatedly(Return(std::string("host2")));
-
-    TestSocketState::State base;
-    base.d_local  = makeEndpoint("1.2.3.4", 1234);
-    base.d_remote = makeEndpoint("2.3.4.5", 2345);
-    base.d_secure = false;
-
-    TestSocketState::State clientBase;
-    clientBase.d_local  = makeEndpoint("1.2.3.4", 32000);
-    clientBase.d_remote = makeEndpoint("3.4.5.6", 5672);
-    clientBase.d_secure = false;
+    TestSocketState::State base, clientBase;
+    testSetupHostnameMapperForServerClientBase(base, clientBase);
 
     // Initialise the state
     d_serverState.pushItem(0, base);
@@ -793,29 +807,12 @@ TEST_F(SessionTest, Connection_To_Proxy_Protocol)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(cm), Return(0)));
 
-    EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
-        .WillRepeatedly(Return(std::string("host1")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 1234)))
-        .WillRepeatedly(Return(std::string("host0")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 32000)))
-        .WillRepeatedly(Return(std::string("host0")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("3.4.5.6", 5672)))
-        .WillRepeatedly(Return(std::string("host2")));
-
     auto protocolHeader = std::vector<uint8_t>(
         Constants::protocolHeader(),
         Constants::protocolHeader() + Constants::protocolHeaderLength());
 
-    TestSocketState::State base;
-    base.d_local  = makeEndpoint("1.2.3.4", 1234);
-    base.d_remote = makeEndpoint("2.3.4.5", 2345);
-    base.d_secure = false;
-
-    TestSocketState::State clientBase;
-    clientBase.d_local  = makeEndpoint("1.2.3.4", 32000);
-    clientBase.d_remote = makeEndpoint("3.4.5.6", 5672);
-    clientBase.d_secure = false;
+    TestSocketState::State base, clientBase;
+    testSetupHostnameMapperForServerClientBase(base, clientBase);
 
     // Initialise the state
     d_serverState.pushItem(0, base);
@@ -1149,25 +1146,8 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Force_Disconnect)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
 
-    EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
-        .WillRepeatedly(Return(std::string("host1")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 1234)))
-        .WillRepeatedly(Return(std::string("host0")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 32000)))
-        .WillRepeatedly(Return(std::string("host0")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("3.4.5.6", 5672)))
-        .WillRepeatedly(Return(std::string("host2")));
-
-    TestSocketState::State base;
-    base.d_local  = makeEndpoint("1.2.3.4", 1234);
-    base.d_remote = makeEndpoint("2.3.4.5", 2345);
-    base.d_secure = false;
-
-    TestSocketState::State clientBase;
-    clientBase.d_local  = makeEndpoint("1.2.3.4", 32000);
-    clientBase.d_remote = makeEndpoint("3.4.5.6", 5672);
-    clientBase.d_secure = false;
+    TestSocketState::State base, clientBase;
+    testSetupHostnameMapperForServerClientBase(base, clientBase);
 
     // Initialise the state
     d_serverState.pushItem(0, base);
@@ -1221,25 +1201,8 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Backend_Disconnect)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
 
-    EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
-        .WillRepeatedly(Return(std::string("host1")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 1234)))
-        .WillRepeatedly(Return(std::string("host0")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 32000)))
-        .WillRepeatedly(Return(std::string("host0")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("3.4.5.6", 5672)))
-        .WillRepeatedly(Return(std::string("host2")));
-
-    TestSocketState::State base;
-    base.d_local  = makeEndpoint("1.2.3.4", 1234);
-    base.d_remote = makeEndpoint("2.3.4.5", 2345);
-    base.d_secure = false;
-
-    TestSocketState::State clientBase;
-    clientBase.d_local  = makeEndpoint("1.2.3.4", 32000);
-    clientBase.d_remote = makeEndpoint("3.4.5.6", 5672);
-    clientBase.d_secure = false;
+    TestSocketState::State base, clientBase;
+    testSetupHostnameMapperForServerClientBase(base, clientBase);
 
     // Initialise the state
     d_serverState.pushItem(0, base);
@@ -1310,25 +1273,8 @@ TEST_F(SessionTest, Authorized_Client_Test)
     EXPECT_CALL(*d_mockAuthIntercept, authenticate(_, _))
         .WillOnce(InvokeArgument<1>(authResponseData));
 
-    EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
-        .WillRepeatedly(Return(std::string("host1")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 1234)))
-        .WillRepeatedly(Return(std::string("host0")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 32000)))
-        .WillRepeatedly(Return(std::string("host0")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("3.4.5.6", 5672)))
-        .WillRepeatedly(Return(std::string("host2")));
-
-    TestSocketState::State base;
-    base.d_local  = makeEndpoint("1.2.3.4", 1234);
-    base.d_remote = makeEndpoint("2.3.4.5", 2345);
-    base.d_secure = false;
-
-    TestSocketState::State clientBase;
-    clientBase.d_local  = makeEndpoint("1.2.3.4", 32000);
-    clientBase.d_remote = makeEndpoint("3.4.5.6", 5672);
-    clientBase.d_secure = false;
+    TestSocketState::State base, clientBase;
+    testSetupHostnameMapperForServerClientBase(base, clientBase);
 
     // Initialise the state
     d_serverState.pushItem(0, base);
@@ -1502,30 +1448,77 @@ TEST_F(SessionTest,
     EXPECT_TRUE(session->finished());
 }
 
+TEST_F(SessionTest, Forward_Received_Close_Method_To_Client_During_Handshake)
+{
+    EXPECT_CALL(d_selector, acquireConnection(_, _))
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+
+    TestSocketState::State base, clientBase;
+    testSetupHostnameMapperForServerClientBase(base, clientBase);
+
+    // Initialise the state
+    d_serverState.pushItem(0, base);
+    driveTo(0);
+
+    testSetupServerHandshake(1);
+
+    // Read a protocol header from the client and reply with Start method
+    // Client  ----AMQP Header--->  Proxy                         Broker
+    // Client  <-----Start--------  Proxy                         Broker
+    testSetupClientSendsProtocolHeader(2);
+
+    // Client  ------StartOk----->  Proxy                         Broker
+    // Client  <-----Tune---------  Proxy                         Broker
+    testSetupClientStartOk(3);
+
+    // Client  ------TuneOk------>  Proxy                         Broker
+    // Client  ------Open-------->  Proxy                         Broker
+    testSetupClientOpen(4);
+
+    // Client                       Proxy  <----TCP CONNECT---->  Broker
+    testSetupProxyConnect(5, &clientBase);
+
+    // Client                       Proxy  <-----HANDSHAKE----->  Broker
+    // Client                       Proxy  -----AMQP Header---->  Broker
+    testSetupProxySendsProtocolHeader(6);
+
+    // Client                       Proxy  <-------Start--------  Broker
+    // Client                       Proxy  --------StartOk----->  Broker
+    testSetupProxySendsStartOk(7, "host1", 2345, LOCAL_HOSTNAME, 1234, 32000);
+
+    // This is the important part of the test - ensure that if the broker sends
+    // a Close during handshake, proxy pass this connection Close method to the
+    // client Client  <-------Close------- Proxy  <-------Close--------  Broker
+    testSetupProxyForwardsBrokerClose(8);
+
+    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioService,
+                                             std::move(serverSocket),
+                                             std::move(clientSocket),
+                                             &d_selector,
+                                             &d_eventSource,
+                                             &d_pool,
+                                             &d_dnsResolver,
+                                             d_mapper,
+                                             LOCAL_HOSTNAME,
+                                             d_authIntercept);
+
+    session->start();
+
+    // Run the tests through to completion
+    driveTo(9);
+
+    EXPECT_TRUE(session->finished());
+}
+
 TEST_F(SessionTest, Printing_Breathing_Test)
 {
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
 
-    EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
-        .WillRepeatedly(Return(std::string("host1")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 1234)))
-        .WillRepeatedly(Return(std::string("host0")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("1.2.3.4", 32000)))
-        .WillRepeatedly(Return(std::string("host0")));
-    EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("3.4.5.6", 5672)))
-        .WillRepeatedly(Return(std::string("host2")));
-
-    TestSocketState::State base;
-    base.d_local  = makeEndpoint("1.2.3.4", 1234);
-    base.d_remote = makeEndpoint("2.3.4.5", 2345);
-    base.d_secure = false;
-
-    TestSocketState::State clientBase;
-    clientBase.d_local  = makeEndpoint("1.2.3.4", 32000);
-    clientBase.d_remote = makeEndpoint("3.4.5.6", 5672);
-    clientBase.d_secure = false;
+    TestSocketState::State base, clientBase;
+    testSetupHostnameMapperForServerClientBase(base, clientBase);
 
     // Initialise the state
     d_serverState.pushItem(0, base);

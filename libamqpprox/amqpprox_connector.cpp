@@ -17,6 +17,7 @@
 
 #include <amqpprox_buffer.h>
 #include <amqpprox_bufferpool.h>
+#include <amqpprox_closeerror.h>
 #include <amqpprox_connectorutil.h>
 #include <amqpprox_constants.h>
 #include <amqpprox_eventsource.h>
@@ -60,13 +61,31 @@ std::ostream &streamOutMethod(std::ostream &os, const Method &method)
 }
 
 template <typename T>
-void decodeMethod(T *t, const Method &method, Buffer &buffer)
+void decodeMethod(T *           t,
+                  const Method &method,
+                  Buffer &      buffer,
+                  FlowType      direction)
 {
     if (method.methodType != T::methodType()) {
         std::ostringstream oss;
         oss << "Expected " << typeid(T).name() << ", got: ";
         streamOutMethod(oss, method);
-        throw std::runtime_error(oss.str());
+        if (method.methodType == methods::Close::methodType() &&
+            method.classType == methods::Close::classType() &&
+            direction == FlowType::EGRESS) {
+            methods::Close closeMethod;
+            if (!methods::Close::decode(&closeMethod, buffer)) {
+                oss << ". And Failed to decode received close method from "
+                       "server";
+                throw std::runtime_error(oss.str());
+            }
+            else {
+                throw CloseError(oss.str(), closeMethod);
+            }
+        }
+        else {
+            throw std::runtime_error(oss.str());
+        }
     }
 
     if (!T::decode(t, buffer)) {
@@ -146,7 +165,7 @@ void Connector::receive(const Method &method, FlowType direction)
     } break;
     // Acting as a server
     case State::START_SENT: {
-        decodeMethod(&d_startOk, method, methodPayload);
+        decodeMethod(&d_startOk, method, methodPayload, direction);
 
         LOG_TRACE << "StartOk: " << d_startOk;
 
@@ -154,7 +173,7 @@ void Connector::receive(const Method &method, FlowType direction)
         d_state = State::TUNE_SENT;
     } break;
     case State::TUNE_SENT: {
-        decodeMethod(&d_tuneOk, method, methodPayload);
+        decodeMethod(&d_tuneOk, method, methodPayload, direction);
 
         LOG_TRACE << "TuneOk: " << d_tuneOk;
 
@@ -162,7 +181,7 @@ void Connector::receive(const Method &method, FlowType direction)
     } break;
 
     case State::AWAITING_OPEN: {
-        decodeMethod(&d_open, method, methodPayload);
+        decodeMethod(&d_open, method, methodPayload, direction);
 
         d_sessionState_p->setVirtualHost(d_open.virtualHost());
         d_eventSource_p->connectionVhostEstablished().emit(
@@ -175,7 +194,7 @@ void Connector::receive(const Method &method, FlowType direction)
     } break;
     // Acting as a client
     case State::AWAITING_CONNECTION: {
-        decodeMethod(&d_receivedStart, method, methodPayload);
+        decodeMethod(&d_receivedStart, method, methodPayload, direction);
 
         LOG_TRACE << "Server Start: " << d_receivedStart;
 
@@ -197,7 +216,7 @@ void Connector::receive(const Method &method, FlowType direction)
     } break;
     // Acting as a client
     case State::STARTOK_SENT: {
-        decodeMethod(&d_receivedTune, method, methodPayload);
+        decodeMethod(&d_receivedTune, method, methodPayload, direction);
         LOG_TRACE << "Server Tune: " << d_receivedTune;
 
         sendResponse(d_tuneOk, false);
