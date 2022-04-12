@@ -84,7 +84,8 @@ add_library(libamqpprox STATIC
     amqpprox_authinterceptinterface.cpp
     amqpprox_defaultauthintercept.cpp
     amqpprox_httpauthintercept.cpp
-    amqpprox_authcontrolcommand.cpp)
+    amqpprox_authcontrolcommand.cpp
+    amqpprox_closeerror.cpp)
 
 target_include_directories(libamqpprox PRIVATE ${PROTO_HDR_PATH})
 target_link_libraries(libamqpprox LINK_PUBLIC authproto ${LIBAMQPPROX_LIBS})

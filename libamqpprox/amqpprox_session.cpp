@@ -19,6 +19,7 @@
 #include <amqpprox_backend.h>
 #include <amqpprox_bufferhandle.h>
 #include <amqpprox_bufferpool.h>
+#include <amqpprox_closeerror.h>
 #include <amqpprox_connectionmanager.h>
 #include <amqpprox_connectionselector.h>
 #include <amqpprox_constants.h>
@@ -69,6 +70,20 @@ namespace amqpprox {
 
 using namespace boost::asio::ip;
 using namespace boost::system;
+
+namespace {
+void logException(const std::string_view error,
+                  const SessionState    &sessionState,
+                  FlowType               direction)
+{
+    LOG_ERROR << "Received exception: " << error << " conn="
+              << sessionState.hostname(sessionState.getIngress().second) << ":"
+              << sessionState.getIngress().second.port() << "->"
+              << sessionState.hostname(sessionState.getEgress().second) << ":"
+              << sessionState.getEgress().second.port()
+              << " direction=" << direction;
+}
+}
 
 Session::Session(boost::asio::io_service               &ioservice,
                  MaybeSecureSocketAdaptor             &&serverSocket,
@@ -746,14 +761,23 @@ void Session::handleData(FlowType direction)
             disconnect(true);
         }
     }
+    catch (CloseError &error) {
+        methods::Close receivedClose = error.closeMethod();
+        // Send received Close method from server to client for better error
+        // handling
+        d_connector.synthesizeCustomCloseError(
+            true, receivedClose.replyCode(), receivedClose.replyString());
+        sendSyntheticData();
+
+        std::ostringstream oss;
+        oss << error.what()
+            << ", Received method from server: " << receivedClose;
+        logException(oss.str(), d_sessionState, direction);
+
+        disconnect(true);
+    }
     catch (std::runtime_error &error) {
-        LOG_ERROR << "Received exception: " << error.what() << " conn="
-                  << d_sessionState.hostname(
-                         d_sessionState.getIngress().second)
-                  << ":" << d_sessionState.getIngress().second.port() << "->"
-                  << d_sessionState.hostname(d_sessionState.getEgress().second)
-                  << ":" << d_sessionState.getEgress().second.port()
-                  << " direction=" << direction;
+        logException(error.what(), d_sessionState, direction);
 
         disconnect(true);
     }
