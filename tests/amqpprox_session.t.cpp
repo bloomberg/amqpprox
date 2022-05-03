@@ -1526,6 +1526,54 @@ TEST_F(SessionTest, Close_Connection_No_Broker_Mapping)
     EXPECT_TRUE(session->finished());
 }
 
+TEST_F(SessionTest, Close_Limited_Connection)
+{
+    EXPECT_CALL(d_selector, acquireConnection(_, _))
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm),
+                        Return(SessionState::ConnectionStatus::LIMIT)));
+
+    TestSocketState::State base, clientBase;
+    testSetupHostnameMapperForServerClientBase(base, clientBase);
+
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session =
+        makeSession(std::move(clientSocket), std::move(serverSocket));
+
+    // Initialise the state
+    d_serverState.pushItem(0, base);
+    driveTo(0);
+
+    testSetupServerHandshake(1);
+
+    // Read a protocol header from the client and reply with Start method
+    // Client  ----AMQP Header--->  Proxy                         Broker
+    // Client  <-----Start--------  Proxy                         Broker
+    testSetupClientSendsProtocolHeader(2);
+
+    // Client  ------StartOk----->  Proxy                         Broker
+    // Client  <-----Tune---------  Proxy                         Broker
+    testSetupClientStartOk(3);
+
+    // Client  ------TuneOk------>  Proxy                         Broker
+    // Client  ------Open-------->  Proxy                         Broker
+    // Client  <-----Close--------  Proxy                         Broker
+    std::shared_ptr<methods::Close> closeMethodPtr =
+        std::make_shared<methods::Close>();
+    std::string vhostName;
+    closeMethodPtr->setReply(Reply::Codes::resource_error,
+                             "The connection for " + vhostName +
+                                 ", is limited by proxy.");
+    testSetupClientOpenWithProxyClose(4, closeMethodPtr);
+
+    session->start();
+
+    // Run the tests through to completion
+    driveTo(5);
+
+    EXPECT_TRUE(session->finished());
+}
+
 TEST_F(SessionTest, Printing_Breathing_Test)
 {
     EXPECT_CALL(d_selector, acquireConnection(_, _))

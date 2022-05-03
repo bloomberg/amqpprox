@@ -85,6 +85,10 @@ add_library(libamqpprox STATIC
     amqpprox_defaultauthintercept.cpp
     amqpprox_httpauthintercept.cpp
     amqpprox_authcontrolcommand.cpp
+    amqpprox_connectionlimiterinterface.cpp
+    amqpprox_connectionlimitermanager.cpp
+    amqpprox_fixedwindowconnectionratelimiter.cpp
+    amqpprox_limitcontrolcommand.cpp
     amqpprox_closeerror.cpp)
 
 target_include_directories(libamqpprox PRIVATE ${PROTO_HDR_PATH})

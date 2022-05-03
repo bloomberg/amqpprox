@@ -132,6 +132,11 @@ void StatCollector::collect(const SessionState &session)
         if (session.getAuthDeniedConnection()) {
             statsObject.statsValue("authDeniedConnectionCount") += 1;
         }
+
+        // Maintains total limited connection count
+        if (session.getLimitedConnection()) {
+            statsObject.statsValue("limitedConnectionCount") += 1;
+        }
     };
 
     addStats(vhostStats);

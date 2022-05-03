@@ -16,6 +16,7 @@
 #include <amqpprox_server.h>
 
 #include <amqpprox_bufferpool.h>
+#include <amqpprox_connectionselectorinterface.h>
 #include <amqpprox_defaultauthintercept.h>
 #include <amqpprox_eventsource.h>
 #include <amqpprox_hostnamemapper.h>
@@ -58,9 +59,9 @@ void initTLS(boost::asio::ssl::context &context)
     TlsUtil::setupTlsLogging(context);
 }
 
-Server::Server(ConnectionSelector *selector,
-               EventSource        *eventSource,
-               BufferPool         *bufferPool)
+Server::Server(ConnectionSelectorInterface *selector,
+               EventSource                 *eventSource,
+               BufferPool                  *bufferPool)
 : d_ioContext()
 , d_ingressTlsContext(boost::asio::ssl::context::tlsv12)
 , d_egressTlsContext(boost::asio::ssl::context::tlsv12)

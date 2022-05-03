@@ -89,7 +89,8 @@ void StatsDPublisher::publish(const ConnectionStats &stats,
     static const std::vector<std::string> gaugeMetrics = {
         "pausedConnectionCount",
         "activeConnectionCount",
-        "authDeniedConnectionCount"};
+        "authDeniedConnectionCount",
+        "limitedConnectionCount"};
     for (auto &name : ConnectionStats::statsTypes()) {
         MetricType type = MetricType::COUNTER;
 

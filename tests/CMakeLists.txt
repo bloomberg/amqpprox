@@ -38,7 +38,10 @@ add_executable(amqpprox_tests
     amqpprox_types.t.cpp
     amqpprox_vhoststate.t.cpp
     amqpprox_defaultauthintercept.t.cpp
-    amqpprox_httpauthintercept.t.cpp)
+    amqpprox_httpauthintercept.t.cpp
+    amqpprox_fixedwindowconnectionratelimiter.t.cpp
+    amqpprox_connectionlimitermanager.t.cpp
+    )
 
 target_include_directories(amqpprox_tests PRIVATE ${PROTO_HDR_PATH})
 target_link_libraries(amqpprox_tests LINK_PUBLIC
