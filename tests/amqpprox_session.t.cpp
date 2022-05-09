@@ -171,6 +171,8 @@ class SessionTest : public ::testing::Test {
     methods::CloseOk closeOk();
     methods::Close   close();
 
+    void runConnectToClientOpen(TestSocketState::State *clientBase);
+    void runBrokerHandshake(TestSocketState::State *clientBase, int step);
     void runStandardConnect(TestSocketState::State *clientBase);
     void runStandardConnectWithDisconnect(TestSocketState::State *clientBase);
 
@@ -278,9 +280,6 @@ void SessionTest::testSetupClientOpen(int idx)
     // Client  ------Open-------->  Proxy                         Broker
     d_serverState.pushItem(idx, Data(encode(clientTuneOk())));
     d_serverState.pushItem(idx, Data(encode(clientOpen())));
-    d_clientState.expect(idx, [this](const auto &items) {
-        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("async_connect"))));
-    });
 }
 
 void SessionTest::testSetupUnauthClientOpenWithShutdown(
@@ -328,6 +327,9 @@ void SessionTest::testSetupProxyConnect(int                     idx,
                                         TestSocketState::State *clientBase)
 {
     // Client                       Proxy  <----TCP CONNECT---->  Broker
+    d_clientState.expect(idx, [this](const auto &items) {
+        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("async_connect"))));
+    });
     d_clientState.pushItem(idx, *clientBase);
     d_clientState.pushItem(idx, ConnectComplete());
     d_clientState.expect(idx, [](const auto &items) {
@@ -526,7 +528,7 @@ void SessionTest::testSetupHandlersCleanedUp(int idx)
     d_clientState.pushItem(idx, Data(boost::asio::error::operation_aborted));
 }
 
-void SessionTest::runStandardConnect(TestSocketState::State *clientBase)
+void SessionTest::runConnectToClientOpen(TestSocketState::State *clientBase)
 {
     // Perform the 'TLS' handshake (no-op for tests), will just invoke the
     // completion handler
@@ -544,22 +546,35 @@ void SessionTest::runStandardConnect(TestSocketState::State *clientBase)
     // Client  ------TuneOk------>  Proxy                         Broker
     // Client  ------Open-------->  Proxy                         Broker
     testSetupClientOpen(4);
+}
 
+void SessionTest::runBrokerHandshake(TestSocketState::State *clientBase,
+                                     int                     step)
+{
     // Client                       Proxy  <----TCP CONNECT---->  Broker
-    testSetupProxyConnect(5, clientBase);
+    testSetupProxyConnect(step + 0, clientBase);
 
     // Client                       Proxy  <-----HANDSHAKE----->  Broker
     // Client                       Proxy  -----AMQP Header---->  Broker
-    testSetupProxySendsProtocolHeader(6);
+    testSetupProxySendsProtocolHeader(step + 1);
 
     // Client                       Proxy  <-------Start--------  Broker
     // Client                       Proxy  --------StartOk----->  Broker
-    testSetupProxySendsStartOk(7, "host1", 2345, LOCAL_HOSTNAME, 1234, 32000);
+    testSetupProxySendsStartOk(
+        step + 2, "host1", 2345, LOCAL_HOSTNAME, 1234, 32000);
 
     // Client                       Proxy  <-------Tune--------  Broker
     // Client                       Proxy  --------TuneOk----->  Broker
     // Client                       Proxy  --------Open------->  Broker
-    testSetupProxyOpen(8);
+    testSetupProxyOpen(step + 3);
+}
+
+void SessionTest::runStandardConnect(TestSocketState::State *clientBase)
+{
+    // Run the whole handshake apart from OpenOk
+    runConnectToClientOpen(clientBase);
+
+    runBrokerHandshake(clientBase, 5);
 
     // Client  <-----OpenOk-------  Proxy  <-------OpenOk------  Broker
     testSetupProxyPassOpenOkThrough(9);
@@ -568,6 +583,8 @@ void SessionTest::runStandardConnect(TestSocketState::State *clientBase)
 void SessionTest::runStandardConnectWithDisconnect(
     TestSocketState::State *clientBase)
 {
+    runStandardConnect(clientBase);
+
     // Client  <-----Heartbeat----  Proxy  <-------Heartbeat---  Broker
     testSetupBrokerSendsHeartbeat(10);
 
@@ -1623,6 +1640,81 @@ TEST_F(SessionTest, Pause_Disconnects_Previously_Established_Connection)
 
     // Run the tests through to completion
     driveTo(18);
+}
+
+TEST_F(SessionTest,
+       Pause_Before_Connection_Holds_Before_Broker_Connect_Resumes_On_Unpause)
+{
+    TestSocketState::State base, clientBase;
+    testSetupHostnameMapperForServerClientBase(base, clientBase);
+
+    // Initialise the state
+    d_serverState.pushItem(0, base);
+    driveTo(0);
+
+    runConnectToClientOpen(&clientBase);
+
+    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioService,
+                                             std::move(serverSocket),
+                                             std::move(clientSocket),
+                                             &d_selector,
+                                             &d_eventSource,
+                                             &d_pool,
+                                             &d_dnsResolver,
+                                             d_mapper,
+                                             LOCAL_HOSTNAME,
+                                             d_authIntercept);
+
+    // Emulate `VhostEstablishedPauser` but pause everything
+    bool                    paused = false;
+    EventSubscriptionHandle vhostPauser =
+        d_eventSource.connectionVhostEstablished().subscribe(
+            [&session, &paused](uint64_t, const std::string &) {
+                session->pause();
+                paused = true;
+            });
+
+    session->start();
+
+    d_serverState.pushItem(
+        7, Func([&session, &paused] {
+            EXPECT_TRUE(paused);
+
+            EXPECT_FALSE(session->finished());
+            EXPECT_TRUE(session->state().getPaused());
+            EXPECT_TRUE(session->state().getReadyToConnectOnUnpause());
+        }));
+
+    {
+        // Ensure acquireConnection isn't called
+        EXPECT_CALL(d_selector, acquireConnection(_, _)).Times(0);
+
+        driveTo(7);
+    }
+
+    // Unpause
+    d_serverState.pushItem(8, Func([&session] { session->unpause(); }));
+
+    runBrokerHandshake(&clientBase, 9);
+
+    // Client  <-----OpenOk-------  Proxy  <-------OpenOk------  Broker
+    testSetupProxyPassOpenOkThrough(13);
+
+    // Check we're connected (or, "not_disconnected")
+    d_serverState.pushItem(
+        15, Func([&session] {
+            EXPECT_FALSE(session->finished());
+            EXPECT_EQ(session->state().getDisconnectType(),
+                      SessionState::DisconnectType::NOT_DISCONNECTED);
+        }));
+
+    EXPECT_CALL(d_selector, acquireConnection(_, _))
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+
+    // Run the tests through to completion
+    driveTo(16);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
