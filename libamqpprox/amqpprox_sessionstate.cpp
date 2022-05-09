@@ -44,6 +44,7 @@ SessionState::SessionState(
 , d_egressLatencyTotal(0)
 , d_egressLatencyCount(0)
 , d_paused(false)
+, d_readyToConnectOnUnpause(false)
 , d_authDeniedConnection(false)
 , d_ingressSecured(false)
 , d_virtualHost()
@@ -105,6 +106,11 @@ void SessionState::setHostnameMapper(
 void SessionState::setPaused(bool paused)
 {
     d_paused = paused;
+}
+
+void SessionState::setReadyToConnectOnUnpause(bool paused)
+{
+    d_readyToConnectOnUnpause = paused;
 }
 
 void SessionState::setAuthDeniedConnection(bool authDenied)

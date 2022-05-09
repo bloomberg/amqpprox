@@ -441,6 +441,7 @@ void Session::establishConnection()
 {
     if (d_sessionState.getPaused()) {
         LOG_DEBUG << "Not establishing a connection because paused";
+        d_sessionState.setReadyToConnectOnUnpause(true);
         return;
     }
 
@@ -525,8 +526,24 @@ void Session::pause()
 void Session::unpause()
 {
     if (d_sessionState.getPaused()) {
-        // TODO: attemptConnection if we skipped last time due to pause
-        this->disconnect(true);
+        if (d_sessionState.getReadyToConnectOnUnpause()) {
+            BOOST_LOG_SCOPED_THREAD_ATTR(
+                "Vhost",
+                boost::log::attributes::constant<std::string>(
+                    d_sessionState.getVirtualHost()));
+            BOOST_LOG_SCOPED_THREAD_ATTR(
+                "ConnID",
+                boost::log::attributes::constant<uint64_t>(
+                    d_sessionState.id()));
+            LOG_INFO << "Session unpaused. Starting to acquire connection";
+
+            d_sessionState.setReadyToConnectOnUnpause(false);
+            d_sessionState.setPaused(false);
+            establishConnection();
+        }
+        else {
+            this->disconnect(true);
+        }
     }
 }
 

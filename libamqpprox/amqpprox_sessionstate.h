@@ -59,6 +59,7 @@ class SessionState {
     std::atomic<uint64_t>           d_ingressLatencyTotal;
     std::atomic<uint64_t>           d_egressLatencyTotal;
     std::atomic<bool>               d_paused;
+    std::atomic<bool>               d_readyToConnectOnUnpause;
     std::atomic<bool>               d_authDeniedConnection;
     std::atomic<bool>               d_ingressSecured;
     std::string                     d_virtualHost;
@@ -108,6 +109,13 @@ class SessionState {
      * \param paused flag to specify paused or unpaused virtual host
      */
     void setPaused(bool paused);
+
+    /**
+     * \brief Mark this session as ready to connect on unpause
+     * \param paused flag to specify whether unpause should trigger
+     * attemptConnection
+     */
+    void setReadyToConnectOnUnpause(bool paused);
 
     /**
      * \brief Set the denied connection flag, because of auth failure
@@ -192,6 +200,11 @@ class SessionState {
     inline bool getPaused() const;
 
     /**
+     * \return the state(paused/unpaused) of the virtual host
+     */
+    inline bool getReadyToConnectOnUnpause() const;
+
+    /**
      * \return the state of the connection, whether it is denied because of
      * auth failure
      */
@@ -249,6 +262,11 @@ inline const std::string &SessionState::getVirtualHost() const
 inline bool SessionState::getPaused() const
 {
     return d_paused;
+}
+
+inline bool SessionState::getReadyToConnectOnUnpause() const
+{
+    return d_readyToConnectOnUnpause;
 }
 
 inline bool SessionState::getAuthDeniedConnection() const
