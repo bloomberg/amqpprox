@@ -78,6 +78,14 @@ void VhostControlCommand::handleCommand(const std::string & /* command */,
     }
     else if (subcommand == "UNPAUSE") {
         d_vhostState_p->setPaused(vhost, false);
+
+        auto visitor = [this, &vhost](std::shared_ptr<Session> session) {
+            if (session->state().getVirtualHost() == vhost) {
+                session->unpause();
+            }
+        };
+
+        serverHandle->visitSessions(visitor);
     }
     else if (subcommand == "FORCE_DISCONNECT") {
         auto visitor = [this, &vhost](std::shared_ptr<Session> session) {
