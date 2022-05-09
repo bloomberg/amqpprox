@@ -115,6 +115,13 @@ class Session : public std::enable_shared_from_this<Session> {
     void pause();
 
     /**
+     * \brief Un-pause this session. This will disconnect the session if it was
+     * connected to the broker when paused. If the session was paused during
+     * the handshake this may in future continue the handshake.
+     */
+    void unpause();
+
+    /**
      * \brief Disconnect both sides of the session
      * \param forcible to specify forcefully disconnect
      */

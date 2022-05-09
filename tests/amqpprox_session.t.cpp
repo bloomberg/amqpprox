@@ -172,6 +172,7 @@ class SessionTest : public ::testing::Test {
     methods::Close   close();
 
     void runStandardConnect(TestSocketState::State *clientBase);
+    void runStandardConnectWithDisconnect(TestSocketState::State *clientBase);
 
     void testSetupServerHandshake(int idx);
     void testSetupClientSendsProtocolHeader(int idx);
@@ -187,7 +188,7 @@ class SessionTest : public ::testing::Test {
     void testSetupProxySendsProtocolHeader(int idx);
     void testSetupProxySendsStartOk(
         int                     idx,
-        const std::string &     injectedClientHost,
+        const std::string      &injectedClientHost,
         int                     injectedClientPort,
         std::string_view        injectedProxyHost,
         int                     injectedProxyInboundPort,
@@ -349,7 +350,7 @@ void SessionTest::testSetupProxySendsProtocolHeader(int idx)
 
 void SessionTest::testSetupProxySendsStartOk(
     int                     idx,
-    const std::string &     injectedClientHost,
+    const std::string      &injectedClientHost,
     int                     injectedClientPort,
     std::string_view        injectedProxyHost,
     int                     injectedProxyInboundPort,
@@ -562,7 +563,11 @@ void SessionTest::runStandardConnect(TestSocketState::State *clientBase)
 
     // Client  <-----OpenOk-------  Proxy  <-------OpenOk------  Broker
     testSetupProxyPassOpenOkThrough(9);
+}
 
+void SessionTest::runStandardConnectWithDisconnect(
+    TestSocketState::State *clientBase)
+{
     // Client  <-----Heartbeat----  Proxy  <-------Heartbeat---  Broker
     testSetupBrokerSendsHeartbeat(10);
 
@@ -600,7 +605,7 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Disconnect)
     d_serverState.pushItem(0, base);
     driveTo(0);
 
-    runStandardConnect(&clientBase);
+    runStandardConnectWithDisconnect(&clientBase);
 
     MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
@@ -827,7 +832,7 @@ TEST_F(SessionTest, Connection_To_Proxy_Protocol)
     d_serverState.pushItem(0, base);
     driveTo(0);
 
-    runStandardConnect(&clientBase);
+    runStandardConnectWithDisconnect(&clientBase);
 
     MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
@@ -943,7 +948,6 @@ TEST_F(SessionTest, Connect_Multiple_Dns)
     d_serverState.pushItem(0, base);
     driveTo(0);
 
-    // runStandardConnect(&clientBase);
     testSetupServerHandshake(1);
     testSetupClientSendsProtocolHeader(2);
     testSetupClientStartOk(3);
@@ -1085,7 +1089,6 @@ TEST_F(SessionTest, Failover_Dns_Failure)
     d_serverState.pushItem(0, base);
     driveTo(0);
 
-    // runStandardConnect(&clientBase);
     testSetupServerHandshake(1);
     testSetupClientSendsProtocolHeader(2);
     testSetupClientStartOk(3);
@@ -1535,7 +1538,7 @@ TEST_F(SessionTest, Printing_Breathing_Test)
     d_serverState.pushItem(0, base);
     driveTo(0);
 
-    runStandardConnect(&clientBase);
+    runStandardConnectWithDisconnect(&clientBase);
 
     MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
@@ -1572,6 +1575,54 @@ TEST_F(SessionTest, Printing_Breathing_Test)
 
     // Check that something was printed, NB we do not expect any exact format
     EXPECT_NE(oss.str().length(), 0);
+}
+
+TEST_F(SessionTest, Pause_Disconnects_Previously_Established_Connection)
+{
+    EXPECT_CALL(d_selector, acquireConnection(_, _))
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+
+    TestSocketState::State base, clientBase;
+    testSetupHostnameMapperForServerClientBase(base, clientBase);
+
+    // Initialise the state
+    d_serverState.pushItem(0, base);
+    driveTo(0);
+
+    runStandardConnect(&clientBase);
+
+    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioService,
+                                             std::move(serverSocket),
+                                             std::move(clientSocket),
+                                             &d_selector,
+                                             &d_eventSource,
+                                             &d_pool,
+                                             &d_dnsResolver,
+                                             d_mapper,
+                                             LOCAL_HOSTNAME,
+                                             d_authIntercept);
+
+    session->start();
+
+    d_serverState.pushItem(16, Func([&session] { session->pause(); }));
+
+    driveTo(16);
+
+    // Unpause
+    d_serverState.pushItem(17, Func([&session] { session->unpause(); }));
+
+    // Check unpause disconnected us
+    d_serverState.pushItem(
+        18, Func([&session] {
+            EXPECT_TRUE(session->finished());
+            EXPECT_EQ(session->state().getDisconnectType(),
+                      SessionState::DisconnectType::DISCONNECTED_PROXY);
+        }));
+
+    // Run the tests through to completion
+    driveTo(18);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

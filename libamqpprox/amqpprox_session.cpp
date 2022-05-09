@@ -522,6 +522,14 @@ void Session::pause()
     }
 }
 
+void Session::unpause()
+{
+    if (d_sessionState.getPaused()) {
+        // TODO: attemptConnection if we skipped last time due to pause
+        this->disconnect(true);
+    }
+}
+
 void Session::disconnectUnauthClient(const FieldTable &clientProperties,
                                      std::string_view  reason)
 {
