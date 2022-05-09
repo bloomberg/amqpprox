@@ -261,7 +261,7 @@ Pauses all sessions for the given `vhost`. New client connections are still acce
 
 #### VHOST UNPAUSE vhost
 
-Resumes all sessions for the given `vhost`.
+Connections for `vhost` paused during the handshake are resumed by connecting out to the appropriate broker. All other sessions for `vhost` are disconnected as though `FORCE_DISCONNECT` had been run.
 
 #### VHOST BACKEND_DISCONNECT vhost
 
