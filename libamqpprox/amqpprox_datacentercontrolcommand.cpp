@@ -28,7 +28,7 @@ namespace Bloomberg {
 namespace amqpprox {
 
 DatacenterControlCommand::DatacenterControlCommand(Datacenter *datacenter,
-                                                   FarmStore * farmStore)
+                                                   FarmStore  *farmStore)
 : d_datacenter_p(datacenter)
 , d_farmStore_p(farmStore)
 {
@@ -46,9 +46,9 @@ std::string DatacenterControlCommand::helpText() const
 
 void DatacenterControlCommand::handleCommand(
     const std::string & /* command */,
-    const std::string &  restOfCommand,
+    const std::string   &restOfCommand,
     const OutputFunctor &outputFunctor,
-    Server *             serverHandle,
+    Server              *serverHandle,
     Control * /* controlHandle */)
 {
     ControlCommandOutput<OutputFunctor> output(outputFunctor);

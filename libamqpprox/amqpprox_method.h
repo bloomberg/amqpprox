@@ -30,7 +30,7 @@ class Method {
   public:
     boost::endian::big_uint16_t classType;
     boost::endian::big_uint16_t methodType;
-    const void *                payload;
+    const void                 *payload;
     std::size_t                 length;
 
     /**

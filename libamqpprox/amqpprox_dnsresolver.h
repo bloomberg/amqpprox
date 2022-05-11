@@ -62,7 +62,7 @@ class DNSResolver {
                                                 const std::string &)>;
 
   private:
-    boost::asio::io_service &      d_ioService;
+    boost::asio::io_service       &d_ioService;
     boost::asio::ip::tcp::resolver d_resolver;
     boost::asio::steady_timer      d_timer;
     std::atomic<uint32_t>          d_cacheTimeout;
@@ -119,8 +119,8 @@ class DNSResolver {
      * \param query_service The service/port to be the key to the cache
      * \param resolution A vector of endpoints to receive as the cached result
      */
-    void setCachedResolution(const std::string &        query_host,
-                             const std::string &        query_service,
+    void setCachedResolution(const std::string         &query_host,
+                             const std::string         &query_service,
                              std::vector<TcpEndpoint> &&resolution);
     /**
      * \brief Clear a resolution from the cache

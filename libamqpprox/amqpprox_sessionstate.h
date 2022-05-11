@@ -83,7 +83,7 @@ class SessionState {
      * \param local local endpoint
      * \param remote remote endpoint
      */
-    void setEgress(boost::asio::io_service &      ioService,
+    void setEgress(boost::asio::io_service       &ioService,
                    boost::asio::ip::tcp::endpoint local,
                    boost::asio::ip::tcp::endpoint remote);
 
@@ -93,7 +93,7 @@ class SessionState {
      * \param local local endpoint
      * \param remote remote endpoint
      */
-    void setIngress(boost::asio::io_service &      ioService,
+    void setIngress(boost::asio::io_service       &ioService,
                     boost::asio::ip::tcp::endpoint local,
                     boost::asio::ip::tcp::endpoint remote);
 
@@ -135,7 +135,7 @@ class SessionState {
      * \param hostnameMapper shared pointer to `HostnameMapper`
      */
     void
-    setHostnameMapper(boost::asio::io_service &              ioService,
+    setHostnameMapper(boost::asio::io_service               &ioService,
                       const std::shared_ptr<HostnameMapper> &hostnameMapper);
 
     /**

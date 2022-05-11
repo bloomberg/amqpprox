@@ -37,7 +37,7 @@ DNSHostnameMapper::DNSHostnameMapper()
 }
 
 void DNSHostnameMapper::prime(
-    boost::asio::io_service &                             ioService,
+    boost::asio::io_service                              &ioService,
     std::initializer_list<boost::asio::ip::tcp::endpoint> endpoints)
 {
     boost::asio::ip::tcp::resolver resolver(ioService);

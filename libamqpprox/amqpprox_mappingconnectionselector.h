@@ -35,9 +35,9 @@ class ResourceMapper;
  * implements the ConnectionSelector interface
  */
 class MappingConnectionSelector : public ConnectionSelector {
-    FarmStore *                              d_farmStore_p;
-    BackendStore *                           d_backendStore_p;
-    ResourceMapper *                         d_resourceMapper_p;
+    FarmStore                               *d_farmStore_p;
+    BackendStore                            *d_backendStore_p;
+    ResourceMapper                          *d_resourceMapper_p;
     std::string                              d_defaultFarmName;
     std::unordered_map<std::string, uint8_t> d_indexes;
     mutable std::mutex                       d_mutex;
@@ -50,8 +50,8 @@ class MappingConnectionSelector : public ConnectionSelector {
      * \param backendStore
      * \param resourceMapper
      */
-    MappingConnectionSelector(FarmStore *     farmStore,
-                              BackendStore *  backendStore,
+    MappingConnectionSelector(FarmStore      *farmStore,
+                              BackendStore   *backendStore,
                               ResourceMapper *resourceMapper);
 
     virtual ~MappingConnectionSelector();
@@ -65,7 +65,7 @@ class MappingConnectionSelector : public ConnectionSelector {
      */
     virtual int
     acquireConnection(std::shared_ptr<ConnectionManager> *connectionOut,
-                      const SessionState &                state) override;
+                      const SessionState                 &state) override;
 
     /**
      * \brief Set the default farm if a mapping is not found

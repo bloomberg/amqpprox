@@ -97,7 +97,7 @@ bool Types::encodeShortString(Buffer &buffer, const std::string &string)
 }
 
 bool Types::decodeByteVector(std::vector<uint8_t> *vector,
-                             Buffer &              buffer,
+                             Buffer               &buffer,
                              size_t                bytes)
 {
     assert(vector != nullptr);
@@ -114,7 +114,7 @@ bool Types::decodeByteVector(std::vector<uint8_t> *vector,
     return true;
 }
 
-bool Types::encodeByteVector(Buffer &                    buffer,
+bool Types::encodeByteVector(Buffer                     &buffer,
                              const std::vector<uint8_t> &vector)
 {
     if (buffer.available() < (vector.size())) {
@@ -413,7 +413,7 @@ bool Types::decodeFieldArray(std::vector<FieldValue> *vector, Buffer &buffer)
     return true;
 }
 
-bool Types::encodeFieldArray(Buffer &                       buffer,
+bool Types::encodeFieldArray(Buffer                        &buffer,
                              const std::vector<FieldValue> &vector)
 {
     Buffer writeBuffer = buffer.remaining();

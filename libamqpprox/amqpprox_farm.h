@@ -36,8 +36,8 @@ class Farm {
     std::string                     d_name;
     std::unordered_set<std::string> d_backendMembers;
 
-    BackendStore *                 d_backendStore_p;     // HELD NOT OWNED
-    BackendSelector *              d_backendSelector_p;  // HELD NOT OWNED
+    BackendStore                  *d_backendStore_p;     // HELD NOT OWNED
+    BackendSelector               *d_backendSelector_p;  // HELD NOT OWNED
     std::vector<PartitionPolicy *> d_partitionPolicies;
     std::shared_ptr<BackendSet>    d_backendSet;
 
@@ -71,10 +71,10 @@ class Farm {
      * \param backendSelector pointer to the `BackendSelector` logic used to
      * partition members
      */
-    Farm(const std::string &             name,
+    Farm(const std::string              &name,
          const std::vector<std::string> &members,
-         BackendStore *                  backendStore,
-         BackendSelector *               backendSelector);
+         BackendStore                   *backendStore,
+         BackendSelector                *backendSelector);
 
     // MANIPULATORS
     /**

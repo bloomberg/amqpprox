@@ -52,9 +52,9 @@ class Server {
     std::unordered_set<SessionPtr>           d_deletingSessions;
     std::unordered_map<int, boost::asio::ip::tcp::acceptor> d_listeningSockets;
     DNSResolver                                             d_dnsResolver;
-    ConnectionSelector *            d_connectionSelector_p;  // HELD NOT OWNED
-    EventSource *                   d_eventSource_p;         // HELD NOT OWNED
-    BufferPool *                    d_bufferPool_p;          // HELD NOT OWNED
+    ConnectionSelector             *d_connectionSelector_p;  // HELD NOT OWNED
+    EventSource                    *d_eventSource_p;         // HELD NOT OWNED
+    BufferPool                     *d_bufferPool_p;          // HELD NOT OWNED
     std::mutex                      d_mutex;
     std::shared_ptr<HostnameMapper> d_hostnameMapper;
     std::string                     d_localHostname;
@@ -62,8 +62,8 @@ class Server {
 
   public:
     Server(ConnectionSelector *selector,
-           EventSource *       eventSource,
-           BufferPool *        bufferPool);
+           EventSource        *eventSource,
+           BufferPool         *bufferPool);
 
     ~Server();
 

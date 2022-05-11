@@ -67,10 +67,10 @@ class Session : public std::enable_shared_from_this<Session> {
     std::size_t              d_clientWaterMark;
     SessionState             d_sessionState;
     Connector                d_connector;
-    ConnectionSelector *     d_connectionSelector_p;  // HELD NOT OWNED
-    EventSource *            d_eventSource_p;         // HELD NOT OWNED
-    BufferPool *             d_bufferPool_p;          // HELD NOT OWNED
-    DNSResolver *            d_dnsResolver_p;
+    ConnectionSelector      *d_connectionSelector_p;  // HELD NOT OWNED
+    EventSource             *d_eventSource_p;         // HELD NOT OWNED
+    BufferPool              *d_bufferPool_p;          // HELD NOT OWNED
+    DNSResolver             *d_dnsResolver_p;
     TimePoint                d_ingressWaitingSince;
     TimePoint                d_egressWaitingSince;
     uint32_t                 d_egressRetryCounter;
@@ -84,14 +84,14 @@ class Session : public std::enable_shared_from_this<Session> {
 
   public:
     // CREATORS
-    Session(boost::asio::io_service &                      ioservice,
-            MaybeSecureSocketAdaptor &&                    serverSocket,
-            MaybeSecureSocketAdaptor &&                    clientSocket,
-            ConnectionSelector *                           connectionSelector,
-            EventSource *                                  eventSource,
-            BufferPool *                                   bufferPool,
-            DNSResolver *                                  dnsResolver,
-            const std::shared_ptr<HostnameMapper> &        hostnameMapper,
+    Session(boost::asio::io_service                       &ioservice,
+            MaybeSecureSocketAdaptor                     &&serverSocket,
+            MaybeSecureSocketAdaptor                     &&clientSocket,
+            ConnectionSelector                            *connectionSelector,
+            EventSource                                   *eventSource,
+            BufferPool                                    *bufferPool,
+            DNSResolver                                   *dnsResolver,
+            const std::shared_ptr<HostnameMapper>         &hostnameMapper,
             std::string_view                               localHostname,
             const std::shared_ptr<AuthInterceptInterface> &authIntercept);
 
@@ -228,7 +228,7 @@ class Session : public std::enable_shared_from_this<Session> {
      * \param direction specifies direction of the data flow (ingress/egress)
      * \param ec specifies error code
      */
-    void handleSessionError(const char *              action,
+    void handleSessionError(const char               *action,
                             FlowType                  direction,
                             boost::system::error_code ec);
 
@@ -239,7 +239,7 @@ class Session : public std::enable_shared_from_this<Session> {
      * \param connectionManager shared pointer to `ConnectionManager`
      */
     void handleConnectionError(
-        const char *                              action,
+        const char                               *action,
         boost::system::error_code                 ec,
         const std::shared_ptr<ConnectionManager> &connectionManager);
 

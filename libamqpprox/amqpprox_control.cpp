@@ -48,17 +48,17 @@ namespace amqpprox {
  */
 class ControlSession : public std::enable_shared_from_this<ControlSession> {
     stream_protocol::socket d_socket;
-    Server *                d_server_p;
-    Control *               d_control_p;
-    EventSource *           d_eventSource_p;
+    Server                 *d_server_p;
+    Control                *d_control_p;
+    EventSource            *d_eventSource_p;
     boost::asio::streambuf  d_streamBuf;
     bool                    d_finished;
 
   public:
     ControlSession(stream_protocol::socket socket,
-                   Server *                server,
-                   Control *               control,
-                   EventSource *           eventSource)
+                   Server                 *server,
+                   Control                *control,
+                   EventSource            *eventSource)
     : d_socket(std::move(socket))
     , d_server_p(server)
     , d_control_p(control)
@@ -156,8 +156,8 @@ class ControlSession : public std::enable_shared_from_this<ControlSession> {
     }
 };
 
-Control::Control(Server *           server,
-                 EventSource *      source,
+Control::Control(Server            *server,
+                 EventSource       *source,
                  const std::string &udsPath)
 : d_server_p(server)
 , d_eventSource_p(source)
@@ -188,7 +188,7 @@ void Control::stop()
 
 void Control::scheduleRecurringEvent(
     int                                             intervalMs,
-    const std::string &                             name,
+    const std::string                              &name,
     const std::function<bool(Control *, Server *)> &event)
 {
     auto duration = boost::posix_time::milliseconds(intervalMs);

@@ -33,7 +33,7 @@ class BufferSource;
  * be switched at a later time with minimal changes.
  */
 class BufferHandle {
-    void *        d_data;
+    void         *d_data;
     std::size_t   d_size;
     BufferSource *d_source;
 

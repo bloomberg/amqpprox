@@ -45,7 +45,7 @@ void JsonStatFormatter::format(std::ostream &os, const ConnectionStats &stats)
        << "\"bytesSent\": " << stats.statsValue("bytesSent") << "}";
 }
 
-void JsonStatFormatter::format(std::ostream &                os,
+void JsonStatFormatter::format(std::ostream                 &os,
                                const StatSnapshot::StatsMap &statsMap)
 {
     bool firstIteration = true;
@@ -64,7 +64,7 @@ void JsonStatFormatter::format(std::ostream &                os,
     os << "}";
 }
 
-void JsonStatFormatter::format(std::ostream &      os,
+void JsonStatFormatter::format(std::ostream       &os,
                                const StatSnapshot &statSnapshot)
 {
     os << "{";
@@ -83,7 +83,7 @@ void JsonStatFormatter::format(std::ostream &      os,
     os << "}";
 }
 
-void JsonStatFormatter::format(std::ostream &                    os,
+void JsonStatFormatter::format(std::ostream                     &os,
                                const StatSnapshot::ProcessStats &processStats)
 {
     os << "{"
@@ -94,7 +94,7 @@ void JsonStatFormatter::format(std::ostream &                    os,
 }
 
 void JsonStatFormatter::format(
-    std::ostream &                              os,
+    std::ostream                               &os,
     const std::vector<StatSnapshot::PoolStats> &poolStats,
     uint64_t                                    poolSpillover)
 {

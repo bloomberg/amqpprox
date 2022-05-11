@@ -61,11 +61,11 @@ class ControlCommand {
      * \param serverHandle Server handle
      * \param controlHandle Control handle
      */
-    virtual void handleCommand(const std::string &  command,
-                               const std::string &  restOfCommand,
+    virtual void handleCommand(const std::string   &command,
+                               const std::string   &restOfCommand,
                                const OutputFunctor &outputFunctor,
-                               Server *             serverHandle,
-                               Control *            controlHandle) = 0;
+                               Server              *serverHandle,
+                               Control             *controlHandle) = 0;
 
     // ACCESSORS
     /**

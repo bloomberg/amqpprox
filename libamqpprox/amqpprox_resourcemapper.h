@@ -60,8 +60,8 @@ class ResourceMapper {
      * \brief Get the resource mapping for specified session state
      * \return true if entry found for the vhost, otherwise false
      */
-    bool getResourceMap(bool *              isFarm,
-                        std::string *       resourceName,
+    bool getResourceMap(bool               *isFarm,
+                        std::string        *resourceName,
                         const SessionState &state) const;
 
     /**

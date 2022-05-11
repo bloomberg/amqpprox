@@ -32,7 +32,7 @@ class DatacenterControlCommand : public ControlCommand {
   private:
     // DATA
     Datacenter *d_datacenter_p;
-    FarmStore * d_farmStore_p;
+    FarmStore  *d_farmStore_p;
 
   public:
     // CREATORS
@@ -64,11 +64,11 @@ class DatacenterControlCommand : public ControlCommand {
      * \param serverHandle access to the Server object
      * \param controlHandle access to the Control object
      */
-    virtual void handleCommand(const std::string &  command,
-                               const std::string &  restOfCommand,
+    virtual void handleCommand(const std::string   &command,
+                               const std::string   &restOfCommand,
                                const OutputFunctor &outputFunctor,
-                               Server *             serverHandle,
-                               Control *            controlHandle) override;
+                               Server              *serverHandle,
+                               Control             *controlHandle) override;
 };
 
 }

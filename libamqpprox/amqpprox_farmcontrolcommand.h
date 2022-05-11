@@ -37,15 +37,15 @@ class PartitionPolicyStore;
 class FarmControlCommand : public ControlCommand {
   private:
     // DATA
-    FarmStore *           d_store_p;                 // HELD NOT OWNED
-    BackendStore *        d_backendStore_p;          // HELD NOT OWNED
+    FarmStore            *d_store_p;                 // HELD NOT OWNED
+    BackendStore         *d_backendStore_p;          // HELD NOT OWNED
     BackendSelectorStore *d_backendSelectorStore_p;  // HELD NOT OWNED
     PartitionPolicyStore *d_partitionPolicyStore_p;  // HELD NOT OWNED
 
   public:
     // CREATORS
-    FarmControlCommand(FarmStore *           store,
-                       BackendStore *        backendStore,
+    FarmControlCommand(FarmStore            *store,
+                       BackendStore         *backendStore,
                        BackendSelectorStore *backendSelectorStore,
                        PartitionPolicyStore *partitionPolicyStore);
 
@@ -60,11 +60,11 @@ class FarmControlCommand : public ControlCommand {
      * \param serverHandle access to the Server object
      * \param controlHandle access to the Control object
      */
-    virtual void handleCommand(const std::string &  command,
-                               const std::string &  restOfCommand,
+    virtual void handleCommand(const std::string   &command,
+                               const std::string   &restOfCommand,
                                const OutputFunctor &outputFunctor,
-                               Server *             serverHandle,
-                               Control *            controlHandle) override;
+                               Server              *serverHandle,
+                               Control             *controlHandle) override;
 
     // ACCESSORS
     /**

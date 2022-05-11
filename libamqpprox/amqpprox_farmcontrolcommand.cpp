@@ -33,8 +33,8 @@ namespace Bloomberg {
 namespace amqpprox {
 
 FarmControlCommand::FarmControlCommand(
-    FarmStore *           store,
-    BackendStore *        backendStore,
+    FarmStore            *store,
+    BackendStore         *backendStore,
     BackendSelectorStore *backendSelectorStore,
     PartitionPolicyStore *partitionPolicyStore)
 : d_store_p(store)
@@ -60,7 +60,7 @@ std::string FarmControlCommand::helpText() const
 }
 
 void FarmControlCommand::handleCommand(const std::string & /* command */,
-                                       const std::string &  restOfCommand,
+                                       const std::string   &restOfCommand,
                                        const OutputFunctor &outputFunctor,
                                        Server * /* serverHandle */,
                                        Control * /* controlHandle */)

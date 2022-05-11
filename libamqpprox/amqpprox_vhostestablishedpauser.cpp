@@ -25,8 +25,8 @@ namespace Bloomberg {
 namespace amqpprox {
 
 EventSubscriptionHandle vhostEstablishedPauser(EventSource *eventSource,
-                                               Server *     server,
-                                               VhostState * vhostState)
+                                               Server      *server,
+                                               VhostState  *vhostState)
 {
     return eventSource->connectionVhostEstablished().subscribe(
         [=](uint64_t id, const std::string &vhost) {

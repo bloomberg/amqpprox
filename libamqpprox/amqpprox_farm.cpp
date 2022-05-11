@@ -26,10 +26,10 @@ namespace Bloomberg {
 namespace amqpprox {
 
 // CREATORS
-Farm::Farm(const std::string &             name,
+Farm::Farm(const std::string              &name,
            const std::vector<std::string> &members,
-           BackendStore *                  backendStore,
-           BackendSelector *               backendSelector)
+           BackendStore                   *backendStore,
+           BackendSelector                *backendSelector)
 : d_name(name)
 , d_backendMembers()
 , d_backendStore_p(backendStore)
@@ -82,7 +82,7 @@ void Farm::repartition()
 void Farm::doRepartitionWhileLocked(std::lock_guard<std::mutex> & /* guard */)
 {
     std::vector<BackendSet::Partition> partitions(1);
-    BackendSet::Partition &            initialPartition = partitions[0];
+    BackendSet::Partition             &initialPartition = partitions[0];
 
     // Create the initial partition
     for (const auto &member : d_backendMembers) {

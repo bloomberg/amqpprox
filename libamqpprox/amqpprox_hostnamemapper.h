@@ -34,7 +34,7 @@ class HostnameMapper {
      * \param endpoints list of endpoints to prime the cache with
      */
     virtual void
-    prime(boost::asio::io_service &                             ioService,
+    prime(boost::asio::io_service                              &ioService,
           std::initializer_list<boost::asio::ip::tcp::endpoint> endpoint) = 0;
 
     /**

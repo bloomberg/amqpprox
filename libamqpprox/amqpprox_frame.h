@@ -31,7 +31,7 @@ class Frame {
     boost::endian::big_uint8_t  type;
     boost::endian::big_uint16_t channel;
     boost::endian::big_uint32_t length;
-    const void *                payload;
+    const void                 *payload;
 
     Frame();
 
@@ -59,10 +59,10 @@ class Frame {
      * \returns true if a frame was successfully read, false if there was not
      * enough bytes in the buffer to decode the frame
      */
-    static bool decode(Frame *      frame,
+    static bool decode(Frame       *frame,
                        const void **endOfFrame,
                        std::size_t *remaining,
-                       const void * buffer,
+                       const void  *buffer,
                        std::size_t  bufferLen);
 
     /**

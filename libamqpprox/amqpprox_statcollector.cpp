@@ -271,7 +271,7 @@ void StatCollector::populateProgramStats(ConnectionStats *programStats) const
     *programStats = val;
 }
 
-void StatCollector::populateMap(StatSnapshot::StatsMap *      map,
+void StatCollector::populateMap(StatSnapshot::StatsMap       *map,
                                 const StatSnapshot::StatsMap &source,
                                 const StatSnapshot::StatsMap &previous) const
 {

@@ -26,7 +26,7 @@ namespace methods {
 
 Start::Start(uint8_t                         versionMajor,
              uint8_t                         versionMinor,
-             const FieldTable &              properties,
+             const FieldTable               &properties,
              const std::vector<std::string> &mechanisms,
              const std::vector<std::string> &locales)
 : d_versionMajor(versionMajor)

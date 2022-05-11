@@ -38,10 +38,10 @@ Frame::Frame()
 {
 }
 
-bool Frame::decode(Frame *      frame,
+bool Frame::decode(Frame       *frame,
                    const void **endOfFrame,
                    std::size_t *remaining,
-                   const void * buf,
+                   const void  *buf,
                    std::size_t  bufferLen)
 {
     if (bufferLen < frameOverhead()) {

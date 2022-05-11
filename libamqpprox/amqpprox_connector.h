@@ -88,9 +88,9 @@ class Connector {
     methods::OpenOk       d_openOk;
     methods::Close        d_close;
     methods::CloseOk      d_closeOk;
-    SessionState *        d_sessionState_p;  // HELD NOT OWNED
-    EventSource *         d_eventSource_p;   // HELD NOT OWNED
-    BufferPool *          d_bufferPool_p;    // HELD NOT OWNED
+    SessionState         *d_sessionState_p;  // HELD NOT OWNED
+    EventSource          *d_eventSource_p;   // HELD NOT OWNED
+    BufferPool           *d_bufferPool_p;    // HELD NOT OWNED
     BufferHandle          d_synthesizedReplyBuffer;
     Buffer                d_buffer;
     std::function<void()> d_connectionCreationHandler;
@@ -102,15 +102,15 @@ class Connector {
     template <typename T>
     void sendResponse(const T &response, bool sendToIngressSide);
 
-    inline void synthesizeMessage(methods::Close & replyMethod,
+    inline void synthesizeMessage(methods::Close  &replyMethod,
                                   bool             sendToIngressSide,
                                   uint64_t         code,
                                   std::string_view text);
 
   public:
-    Connector(SessionState *   sessionState,
-              EventSource *    eventSource,
-              BufferPool *     bufferPool,
+    Connector(SessionState    *sessionState,
+              EventSource     *eventSource,
+              BufferPool      *bufferPool,
               std::string_view localHostname);
 
     /**

@@ -112,7 +112,7 @@ class SocketInterceptInterface {
      * \param peer_endpoint The endpoint to connect to
      * \param handler The completion handler to invoke on success/error
      */
-    virtual void async_connect(const endpoint &    peer_endpoint,
+    virtual void async_connect(const endpoint     &peer_endpoint,
                                AsyncConnectHandler handler) = 0;
 
     /**
@@ -163,7 +163,7 @@ class SocketInterceptInterface {
      */
     virtual std::size_t
     read_some(const std::vector<std::pair<void *, size_t>> &buffers,
-              boost::system::error_code &                   ec) = 0;
+              boost::system::error_code                    &ec) = 0;
 
     /**
      * \brief Asynchronously read some data onto the socket

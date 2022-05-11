@@ -41,7 +41,7 @@ class HumanStatFormatter : public StatFormatter {
      *
      * \param connectionStats reference to the connectionStats
      */
-    virtual void format(std::ostream &         os,
+    virtual void format(std::ostream          &os,
                         const ConnectionStats &connectionStats) override;
 
     /**
@@ -52,7 +52,7 @@ class HumanStatFormatter : public StatFormatter {
      *
      * \param statsMap reference to the StatsMap
      */
-    virtual void format(std::ostream &                os,
+    virtual void format(std::ostream                 &os,
                         const StatSnapshot::StatsMap &statsMap) override;
 
     /**
@@ -63,7 +63,7 @@ class HumanStatFormatter : public StatFormatter {
      *
      * \param statSnapshot reference to the connectionStats
      */
-    virtual void format(std::ostream &      os,
+    virtual void format(std::ostream       &os,
                         const StatSnapshot &statSnapshot) override;
 
     /**
@@ -75,7 +75,7 @@ class HumanStatFormatter : public StatFormatter {
      * \param processStats reference to the ProcessStats
      */
     virtual void
-    format(std::ostream &                    os,
+    format(std::ostream                     &os,
            const StatSnapshot::ProcessStats &processStats) override;
 
     /**
@@ -88,7 +88,7 @@ class HumanStatFormatter : public StatFormatter {
      *
      * \param poolSpillover the amount of poolSpillover
      */
-    virtual void format(std::ostream &                              os,
+    virtual void format(std::ostream                               &os,
                         const std::vector<StatSnapshot::PoolStats> &poolStats,
                         uint64_t poolSpillover) override;
 };

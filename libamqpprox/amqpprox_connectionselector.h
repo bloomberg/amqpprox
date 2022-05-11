@@ -39,7 +39,7 @@ class ConnectionSelector {
      */
     virtual int
     acquireConnection(std::shared_ptr<ConnectionManager> *connectionOut,
-                      const SessionState &                state) = 0;
+                      const SessionState                 &state) = 0;
 };
 
 }

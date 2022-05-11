@@ -54,7 +54,7 @@ SessionState::SessionState(
 {
 }
 
-void SessionState::setEgress(boost::asio::io_service &      ioService,
+void SessionState::setEgress(boost::asio::io_service       &ioService,
                              boost::asio::ip::tcp::endpoint local,
                              boost::asio::ip::tcp::endpoint remote)
 {
@@ -67,7 +67,7 @@ void SessionState::setEgress(boost::asio::io_service &      ioService,
     d_egressRemoteEndpoint = remote;
 }
 
-void SessionState::setIngress(boost::asio::io_service &      ioService,
+void SessionState::setIngress(boost::asio::io_service       &ioService,
                               boost::asio::ip::tcp::endpoint local,
                               boost::asio::ip::tcp::endpoint remote)
 {
@@ -87,7 +87,7 @@ void SessionState::setVirtualHost(const std::string &vhost)
 }
 
 void SessionState::setHostnameMapper(
-    boost::asio::io_service &              ioService,
+    boost::asio::io_service               &ioService,
     const std::shared_ptr<HostnameMapper> &hostnameMapper)
 {
     if (!hostnameMapper) {

@@ -26,7 +26,7 @@
 namespace Bloomberg {
 namespace amqpprox {
 
-MapControlCommand::MapControlCommand(ResourceMapper *           mapper,
+MapControlCommand::MapControlCommand(ResourceMapper            *mapper,
                                      MappingConnectionSelector *selector)
 : d_mapper_p(mapper)
 , d_selector_p(selector)
@@ -51,7 +51,7 @@ std::string MapControlCommand::helpText() const
 }
 
 void MapControlCommand::handleCommand(const std::string & /* command */,
-                                      const std::string &  restOfCommand,
+                                      const std::string   &restOfCommand,
                                       const OutputFunctor &outputFunctor,
                                       Server * /* serverHandle */,
                                       Control * /* controlHandle */)

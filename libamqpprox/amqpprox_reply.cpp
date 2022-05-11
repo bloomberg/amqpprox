@@ -17,4 +17,3 @@
 #include <amqpprox_reply.h>
 
 // Ensure builds independently
-

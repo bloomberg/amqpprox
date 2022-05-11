@@ -28,7 +28,7 @@ enum class MetricType { GAUGE, COUNTER, DISTRIBUTION };
 template <typename T>
 std::string
 formatMetric(MetricType                                              type,
-             const std::string &                                     name,
+             const std::string                                      &name,
              T                                                       value,
              const std::vector<std::pair<std::string, std::string>> &tags)
 {
@@ -59,7 +59,7 @@ formatMetric(MetricType                                              type,
 }
 
 StatsDPublisher::StatsDPublisher(boost::asio::io_service *ioService,
-                                 const std::string &      host,
+                                 const std::string       &host,
                                  int                      port)
 : d_socket(*ioService,
            boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 0))
@@ -84,7 +84,7 @@ void StatsDPublisher::sendMetric(const std::string &metric)
 }
 
 void StatsDPublisher::publish(const ConnectionStats &stats,
-                              const TagVector &      tags)
+                              const TagVector       &tags)
 {
     static const std::vector<std::string> gaugeMetrics = {
         "pausedConnectionCount",
@@ -154,7 +154,7 @@ void StatsDPublisher::publish(
 
 void StatsDPublisher::publishHostnameMetrics(
     const StatSnapshot::StatsMap &stats,
-    const std::string &           type)
+    const std::string            &type)
 {
     for (const auto &stat : stats) {
         publish(

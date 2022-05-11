@@ -49,8 +49,8 @@ void DNSResolver::setCacheTimeout(int timeoutMs)
     d_cacheTimeout = timeoutMs;
 }
 
-void DNSResolver::setCachedResolution(const std::string &        query_host,
-                                      const std::string &        query_service,
+void DNSResolver::setCachedResolution(const std::string         &query_host,
+                                      const std::string         &query_service,
                                       std::vector<TcpEndpoint> &&resolution)
 {
     std::lock_guard lg(d_cacheLock);

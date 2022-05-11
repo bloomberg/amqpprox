@@ -31,7 +31,7 @@ const std::string SELECTOR_NAME("round-robin");
 }
 
 const Backend *
-RobinBackendSelector::select(BackendSet *                 backendSet,
+RobinBackendSelector::select(BackendSet                  *backendSet,
                              const std::vector<uint64_t> &markers,
                              uint64_t                     retryCount) const
 {

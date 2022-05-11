@@ -39,7 +39,7 @@ struct severity_tag;
 
 // Custom formating for the verbosity/severity information
 boost::log::formatting_ostream &
-operator<<(boost::log::formatting_ostream &                   strm,
+operator<<(boost::log::formatting_ostream                    &strm,
            const boost::log::to_log_manip<int, severity_tag> &manip)
 {
     static const char *strings[] = {

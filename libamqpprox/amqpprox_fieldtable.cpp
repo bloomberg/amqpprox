@@ -39,7 +39,7 @@ std::ostream &operator<<(std::ostream &os, const FieldTable &table)
     return os;
 }
 
-std::ostream &operator<<(std::ostream &                     os,
+std::ostream &operator<<(std::ostream                      &os,
                          const std::shared_ptr<FieldTable> &table)
 {
     return os << *table;
