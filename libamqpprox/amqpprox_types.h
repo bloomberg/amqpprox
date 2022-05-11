@@ -83,7 +83,7 @@ class Types {
      * \return true in case of success, otherwise false
      */
     static bool decodeByteVector(std::vector<uint8_t> *vector,
-                                 Buffer &              buffer,
+                                 Buffer               &buffer,
                                  size_t                bytes);
 
     /**
@@ -93,7 +93,7 @@ class Types {
      * \param data AMQP byte array type stored as std::vector of unit8_t type
      * \return true in case of success, otherwise false
      */
-    static bool encodeByteVector(Buffer &                    buffer,
+    static bool encodeByteVector(Buffer                     &buffer,
                                  const std::vector<uint8_t> &data);
 
     /**
@@ -123,7 +123,7 @@ class Types {
      * \return true in case of success, otherwise false
      */
     static bool decodeFieldArray(std::vector<FieldValue> *vector,
-                                 Buffer &                 buffer);
+                                 Buffer                  &buffer);
 
     /**
      * \brief Encode AMQP field type array and write the data into the
@@ -132,7 +132,7 @@ class Types {
      * \param data AMQP field type array stored as std::vector of `FieldValue`
      * \return true in case of success, otherwise false
      */
-    static bool encodeFieldArray(Buffer &                       buffer,
+    static bool encodeFieldArray(Buffer                        &buffer,
                                  const std::vector<FieldValue> &data);
 
     /**

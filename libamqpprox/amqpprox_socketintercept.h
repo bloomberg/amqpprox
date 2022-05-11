@@ -206,7 +206,7 @@ class SocketIntercept {
      */
     template <typename MutableBufferSequence>
     std::size_t read_some(const MutableBufferSequence &buffers,
-                          boost::system::error_code &  ec)
+                          boost::system::error_code   &ec)
     {
         std::vector<std::pair<void *, size_t>> bufs;
         auto begin = boost::asio::buffer_sequence_begin(buffers);

@@ -78,7 +78,7 @@ FieldTable ConnectorUtil::generateServerProperties()
     return ft;
 }
 
-void ConnectorUtil::injectProxyClientIdent(methods::StartOk * startOk,
+void ConnectorUtil::injectProxyClientIdent(methods::StartOk  *startOk,
                                            const std::string &clientHostname,
                                            int                clientRemotePort,
                                            std::string_view   localHostname,

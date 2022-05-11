@@ -26,7 +26,7 @@ namespace amqpprox {
  * \brief Represents IO buffer
  */
 class Buffer {
-    char *      d_data;
+    char       *d_data;
     std::size_t d_length;
     std::size_t d_offset;
 

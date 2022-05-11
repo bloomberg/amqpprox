@@ -42,7 +42,7 @@ class DNSHostnameMapper : public HostnameMapper {
      * \param ioService handle to the boost asio service
      * \param endpoints list of endpoints to prime the cache with
      */
-    void prime(boost::asio::io_service &                             ioService,
+    void prime(boost::asio::io_service                              &ioService,
                std::initializer_list<boost::asio::ip::tcp::endpoint> endpoints)
         override;
 

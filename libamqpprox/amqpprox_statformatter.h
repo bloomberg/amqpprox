@@ -41,7 +41,7 @@ class StatFormatter {
      * \param os the output stream
      * \param connectionStats const reference to the `ConnectionStats`
      */
-    virtual void format(std::ostream &         os,
+    virtual void format(std::ostream          &os,
                         const ConnectionStats &connectionStats) = 0;
 
     /**
@@ -50,7 +50,7 @@ class StatFormatter {
      * \param os the output stream
      * \param statsMap const reference to the `StatSnapshot::StatsMap`
      */
-    virtual void format(std::ostream &                os,
+    virtual void format(std::ostream                 &os,
                         const StatSnapshot::StatsMap &statsMap) = 0;
 
     /**
@@ -59,7 +59,7 @@ class StatFormatter {
      * \param os the output stream
      * \param statSnapshot const reference to the `StatSnapshot`
      */
-    virtual void format(std::ostream &      os,
+    virtual void format(std::ostream       &os,
                         const StatSnapshot &statSnapshot) = 0;
 
     /**
@@ -68,7 +68,7 @@ class StatFormatter {
      * \param os the output stream
      * \param processStats const reference to the `StatSnapshot::ProcessStats`
      */
-    virtual void format(std::ostream &                    os,
+    virtual void format(std::ostream                     &os,
                         const StatSnapshot::ProcessStats &processStats) = 0;
 
     /**
@@ -79,7 +79,7 @@ class StatFormatter {
      * `StatSnapshot::PoolStats`
      * \param poolSpillover the amount of poolSpillover
      */
-    virtual void format(std::ostream &                              os,
+    virtual void format(std::ostream                               &os,
                         const std::vector<StatSnapshot::PoolStats> &poolStats,
                         uint64_t poolSpillover) = 0;
 };

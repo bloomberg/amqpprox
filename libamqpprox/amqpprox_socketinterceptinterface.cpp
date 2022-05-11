@@ -17,4 +17,3 @@
 #include <amqpprox_socketinterceptinterface.h>
 
 // Ensure builds independently
-

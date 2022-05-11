@@ -49,8 +49,8 @@ void ResourceMapper::unmapVhost(const std::string &vhost)
 }
 
 // ACCESSORS
-bool ResourceMapper::getResourceMap(bool *              isFarm,
-                                    std::string *       resourceName,
+bool ResourceMapper::getResourceMap(bool               *isFarm,
+                                    std::string        *resourceName,
                                     const SessionState &state) const
 {
     std::lock_guard<std::mutex> lg(d_mutex);

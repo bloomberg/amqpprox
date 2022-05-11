@@ -59,8 +59,8 @@ void initTLS(boost::asio::ssl::context &context)
 }
 
 Server::Server(ConnectionSelector *selector,
-               EventSource *       eventSource,
-               BufferPool *        bufferPool)
+               EventSource        *eventSource,
+               BufferPool         *bufferPool)
 : d_ioService()
 , d_ingressTlsContext(boost::asio::ssl::context::tlsv12)
 , d_egressTlsContext(boost::asio::ssl::context::tlsv12)

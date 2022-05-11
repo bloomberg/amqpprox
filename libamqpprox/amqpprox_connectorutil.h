@@ -67,7 +67,7 @@ class ConnectorUtil {
      * \param isIngressSecured Represents ingress connection is secured (TLS
      * enabled)
      */
-    static void injectProxyClientIdent(methods::StartOk * startOk,
+    static void injectProxyClientIdent(methods::StartOk  *startOk,
                                        const std::string &clientHostname,
                                        int                clientRemotePort,
                                        std::string_view   localHostname,

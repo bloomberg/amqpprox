@@ -34,8 +34,8 @@ namespace amqpprox {
 namespace {
 
 bool mapForFilter(StatSnapshot::StatsMap *map,
-                  const std::string &     filterType,
-                  const StatSnapshot &    statSnapshot)
+                  const std::string      &filterType,
+                  const StatSnapshot     &statSnapshot)
 {
     if (filterType == "VHOST") {
         *map = statSnapshot.vhosts();
@@ -52,11 +52,11 @@ bool mapForFilter(StatSnapshot::StatsMap *map,
     return true;
 }
 
-void formatOutput(std::ostream &      oss,
-                  StatFormatter &     formatter,
+void formatOutput(std::ostream       &oss,
+                  StatFormatter      &formatter,
                   const StatSnapshot &statSnapshot,
-                  const std::string & filterType,
-                  const std::string & filterValue)
+                  const std::string  &filterType,
+                  const std::string  &filterValue)
 {
     StatSnapshot::StatsMap map;
 
@@ -89,10 +89,10 @@ void formatOutput(std::ostream &      oss,
     oss << std::endl;
 }
 
-bool outputStats(const StatSnapshot &          statSnapshot,
-                 const std::string &           outputType,
-                 const std::string &           filterType,
-                 const std::string &           filterValue,
+bool outputStats(const StatSnapshot           &statSnapshot,
+                 const std::string            &outputType,
+                 const std::string            &filterType,
+                 const std::string            &filterValue,
                  ControlCommand::OutputFunctor outputFunc)
 {
     std::ostringstream oss;
@@ -178,11 +178,11 @@ std::string StatControlCommand::helpText() const
            "Output statistics";
 }
 
-void StatControlCommand::handleCommand(const std::string &  command,
-                                       const std::string &  restOfCommand,
+void StatControlCommand::handleCommand(const std::string   &command,
+                                       const std::string   &restOfCommand,
                                        const OutputFunctor &outputFunctor,
-                                       Server *             serverHandle,
-                                       Control *            controlHandle)
+                                       Server              *serverHandle,
+                                       Control             *controlHandle)
 {
     std::istringstream iss(restOfCommand);
     std::string        subcommand;

@@ -30,8 +30,8 @@ namespace Bloomberg {
 namespace amqpprox {
 
 MappingConnectionSelector::MappingConnectionSelector(
-    FarmStore *     farmStore,
-    BackendStore *  backendStore,
+    FarmStore      *farmStore,
+    BackendStore   *backendStore,
     ResourceMapper *resourceMapper)
 : d_farmStore_p(farmStore)
 , d_backendStore_p(backendStore)
@@ -48,7 +48,7 @@ MappingConnectionSelector::~MappingConnectionSelector()
 
 int MappingConnectionSelector::acquireConnection(
     std::shared_ptr<ConnectionManager> *connectionOut,
-    const SessionState &                state)
+    const SessionState                 &state)
 {
     std::shared_ptr<ConnectionManager> connectionManager;
 

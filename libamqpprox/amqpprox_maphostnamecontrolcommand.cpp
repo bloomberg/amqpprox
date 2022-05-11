@@ -39,10 +39,10 @@ std::string MapHostnameControlCommand::helpText() const
 
 void MapHostnameControlCommand::handleCommand(
     const std::string &,
-    const std::string &  restOfCommand,
+    const std::string   &restOfCommand,
     const OutputFunctor &outputFunctor,
-    Server *             serverHandle,
-    Control *            controlHandle)
+    Server              *serverHandle,
+    Control             *controlHandle)
 {
     std::istringstream iss(restOfCommand);
     std::string        subcommand;

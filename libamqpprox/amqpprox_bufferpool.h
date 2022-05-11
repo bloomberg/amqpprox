@@ -74,7 +74,7 @@ class BufferPool {
      * each buffer size in the pool.
      */
     void getPoolStatistics(std::vector<BufferAllocationStat> *stats,
-                           uint64_t *                         spilloverCount);
+                           uint64_t                          *spilloverCount);
 };
 
 }

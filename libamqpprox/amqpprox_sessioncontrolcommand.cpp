@@ -39,9 +39,9 @@ std::string SessionControlCommand::helpText() const
 }
 
 void SessionControlCommand::handleCommand(const std::string & /* command */,
-                                          const std::string &  restOfCommand,
+                                          const std::string   &restOfCommand,
                                           const OutputFunctor &outputFunctor,
-                                          Server *             serverHandle,
+                                          Server              *serverHandle,
                                           Control * /* controlHandle */)
 {
     ControlCommandOutput<OutputFunctor> output(outputFunctor);

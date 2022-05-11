@@ -40,7 +40,7 @@ std::string LoggingControlCommand::helpText() const
 }
 
 void LoggingControlCommand::handleCommand(const std::string & /* command */,
-                                          const std::string &  restOfCommand,
+                                          const std::string   &restOfCommand,
                                           const OutputFunctor &outputFunctor,
                                           Server * /* serverHandle */,
                                           Control * /* controlHandle */)

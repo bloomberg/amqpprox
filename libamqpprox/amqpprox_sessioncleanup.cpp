@@ -25,7 +25,7 @@ namespace Bloomberg {
 namespace amqpprox {
 
 SessionCleanup::SessionCleanup(StatCollector *statCollector,
-                               EventSource *  eventSource)
+                               EventSource   *eventSource)
 : d_statCollector_p(statCollector)
 , d_eventSource_p(eventSource)
 {

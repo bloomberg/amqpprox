@@ -50,8 +50,8 @@ class StatCollector {
   private:
     StatSnapshot d_current;
     StatSnapshot d_previous;
-    CpuMonitor * d_cpuMonitor_p;  // HELD NOT OWNED
-    BufferPool * d_bufferPool_p;  // HELD NOT OWNED
+    CpuMonitor  *d_cpuMonitor_p;  // HELD NOT OWNED
+    BufferPool  *d_bufferPool_p;  // HELD NOT OWNED
 
   public:
     // CREATORS
@@ -101,7 +101,7 @@ class StatCollector {
   private:
     void populateProgramStats(ConnectionStats *programStats) const;
 
-    void populateMap(StatSnapshot::StatsMap *      map,
+    void populateMap(StatSnapshot::StatsMap       *map,
                      const StatSnapshot::StatsMap &source,
                      const StatSnapshot::StatsMap &previous) const;
 };

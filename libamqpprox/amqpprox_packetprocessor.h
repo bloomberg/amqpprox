@@ -35,7 +35,7 @@ class SessionState;
  */
 class PacketProcessor {
     SessionState &d_state;
-    Connector &   d_connector;
+    Connector    &d_connector;
     Buffer        d_ingressWriteBuffer;
     Buffer        d_egressWriteBuffer;
     Buffer        d_remainingBuffer;

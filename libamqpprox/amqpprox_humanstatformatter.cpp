@@ -73,7 +73,7 @@ void HumanStatFormatter::format(std::ostream &os, const ConnectionStats &stats)
        << stats.statsValue("framesSent") << " frames/s";
 }
 
-void HumanStatFormatter::format(std::ostream &                os,
+void HumanStatFormatter::format(std::ostream                 &os,
                                 const StatSnapshot::StatsMap &statsMap)
 {
     for (const auto &stat : statsMap) {
@@ -83,7 +83,7 @@ void HumanStatFormatter::format(std::ostream &                os,
     }
 }
 
-void HumanStatFormatter::format(std::ostream &      os,
+void HumanStatFormatter::format(std::ostream       &os,
                                 const StatSnapshot &statSnapshot)
 {
     os << "Overall:\n";
@@ -103,7 +103,7 @@ void HumanStatFormatter::format(std::ostream &      os,
     format(os, statSnapshot.backends());
 }
 
-void HumanStatFormatter::format(std::ostream &                    os,
+void HumanStatFormatter::format(std::ostream                     &os,
                                 const StatSnapshot::ProcessStats &processStats)
 {
     os << "CPU%: " << processStats.d_overall << " "
@@ -114,7 +114,7 @@ void HumanStatFormatter::format(std::ostream &                    os,
 }
 
 void HumanStatFormatter::format(
-    std::ostream &                              os,
+    std::ostream                               &os,
     const std::vector<StatSnapshot::PoolStats> &poolStats,
     uint64_t                                    poolSpillover)
 {

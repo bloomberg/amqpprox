@@ -34,7 +34,7 @@ class StatCollector;
  */
 class SessionCleanup {
     StatCollector *d_statCollector_p;  // HELD NOT OWNED
-    EventSource *  d_eventSource_p;    // HELD NOT OWNED
+    EventSource   *d_eventSource_p;    // HELD NOT OWNED
 
   public:
     // CREATORS

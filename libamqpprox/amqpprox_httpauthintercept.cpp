@@ -43,10 +43,10 @@ int       HTTP_VERSION    = 11;  // HTTP/1.1 version
 }
 
 HttpAuthIntercept::HttpAuthIntercept(boost::asio::io_service &ioService,
-                                     const std::string &      hostname,
-                                     const std::string &      port,
-                                     const std::string &      target,
-                                     DNSResolver *            dnsResolver)
+                                     const std::string       &hostname,
+                                     const std::string       &port,
+                                     const std::string       &target,
+                                     DNSResolver             *dnsResolver)
 : AuthInterceptInterface(ioService)
 , d_ioService(ioService)
 , d_hostname(hostname)
@@ -59,7 +59,7 @@ HttpAuthIntercept::HttpAuthIntercept(boost::asio::io_service &ioService,
 
 void HttpAuthIntercept::authenticate(
     const authproto::AuthRequest authRequestData,
-    const ReceiveResponseCb &    responseCb)
+    const ReceiveResponseCb     &responseCb)
 {
     std::shared_ptr<beast::http::request<beast::http::string_body>> request =
         std::make_shared<beast::http::request<beast::http::string_body>>();
@@ -96,8 +96,8 @@ void HttpAuthIntercept::authenticate(
 
 void HttpAuthIntercept::onResolve(
     std::shared_ptr<beast::http::request<beast::http::string_body>> request,
-    const ReceiveResponseCb &                                       responseCb,
-    const boost::system::error_code &                               ec,
+    const ReceiveResponseCb                                        &responseCb,
+    const boost::system::error_code                                &ec,
     std::vector<tcp::endpoint>                                      results)
 {
     if (ec) {
@@ -133,7 +133,7 @@ void HttpAuthIntercept::onResolve(
 void HttpAuthIntercept::onConnect(
     std::shared_ptr<beast::tcp_stream>                              stream,
     std::shared_ptr<beast::http::request<beast::http::string_body>> request,
-    const ReceiveResponseCb &                                       responseCb,
+    const ReceiveResponseCb                                        &responseCb,
     beast::error_code                                               ec,
     tcp::resolver::results_type::endpoint_type)
 {

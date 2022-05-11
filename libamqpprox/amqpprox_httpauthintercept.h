@@ -43,13 +43,13 @@ class HttpAuthIntercept
     std::string              d_hostname;
     std::string              d_port;
     std::string              d_target;
-    DNSResolver *            d_dnsResolver_p;
+    DNSResolver             *d_dnsResolver_p;
     mutable std::mutex       d_mutex;
 
     void
     onResolve(std::shared_ptr<beast::http::request<beast::http::string_body>>
                                                request,
-              const ReceiveResponseCb &        responseCb,
+              const ReceiveResponseCb         &responseCb,
               const boost::system::error_code &ec,
               std::vector<tcp::endpoint>       results);
     void
@@ -78,10 +78,10 @@ class HttpAuthIntercept
   public:
     // CREATORS
     HttpAuthIntercept(boost::asio::io_service &ioService,
-                      const std::string &      hostname,
-                      const std::string &      port,
-                      const std::string &      target,
-                      DNSResolver *            dnsResolver);
+                      const std::string       &hostname,
+                      const std::string       &port,
+                      const std::string       &target,
+                      DNSResolver             *dnsResolver);
 
     virtual ~HttpAuthIntercept() override = default;
 

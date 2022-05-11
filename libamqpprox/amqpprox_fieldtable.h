@@ -98,7 +98,7 @@ class FieldTable {
 };
 
 inline void FieldTable::pushField(const std::string &name,
-                                  const FieldValue & value)
+                                  const FieldValue  &value)
 {
     d_fields.emplace_back(std::make_pair(name, value));
 }
@@ -108,7 +108,7 @@ inline void FieldTable::reset()
     d_fields.clear();
 }
 
-inline bool FieldTable::findFieldValue(FieldValue *       value,
+inline bool FieldTable::findFieldValue(FieldValue        *value,
                                        const std::string &name) const
 {
     for (const auto &vals : d_fields) {
@@ -120,7 +120,7 @@ inline bool FieldTable::findFieldValue(FieldValue *       value,
     return false;
 }
 
-inline bool FieldTable::findFieldIndex(std::size_t *      index,
+inline bool FieldTable::findFieldIndex(std::size_t       *index,
                                        const std::string &name) const
 {
     int i = 0;
@@ -160,7 +160,7 @@ inline std::string &FieldTable::fieldName(std::size_t index)
 }
 
 std::ostream &operator<<(std::ostream &os, const FieldTable &table);
-std::ostream &operator<<(std::ostream &                     os,
+std::ostream &operator<<(std::ostream                      &os,
                          const std::shared_ptr<FieldTable> &table);
 
 bool        operator==(const FieldTable &lhs, const FieldTable &rhs);

@@ -33,8 +33,8 @@ class VhostState;
  * \param vhostState pointer to `VhostState`
  */
 EventSubscriptionHandle vhostEstablishedPauser(EventSource *eventSource,
-                                               Server *     server,
-                                               VhostState * vhostState);
+                                               Server      *server,
+                                               VhostState  *vhostState);
 
 }
 }

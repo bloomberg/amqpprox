@@ -60,13 +60,14 @@ std::string TlsControlCommand::helpText() const
 {
     return "(INGRESS | EGRESS) (KEY_FILE file | CERT_CHAIN_FILE file | "
            "RSA_KEY_FILE file | TMP_DH_FILE file | CA_CERT_FILE file | "
-           "VERIFY_MODE mode* | CIPHERS (PRINT | SET ciphersuite(:ciphersuite)*))";
+           "VERIFY_MODE mode* | CIPHERS (PRINT | SET "
+           "ciphersuite(:ciphersuite)*))";
 }
 
 void TlsControlCommand::handleCommand(const std::string & /* command */,
-                                      const std::string &  restOfCommand,
+                                      const std::string   &restOfCommand,
                                       const OutputFunctor &outputFunctor,
-                                      Server *             serverHandle,
+                                      Server              *serverHandle,
                                       Control * /* controlHandle */)
 {
     ControlCommandOutput<OutputFunctor> output(outputFunctor);
@@ -84,9 +85,9 @@ void TlsControlCommand::handleCommand(const std::string & /* command */,
         return;
     }
 
-    auto &context = (direction == "INGRESS")
-                        ? serverHandle->ingressTlsContext()
-                        : serverHandle->egressTlsContext();
+    auto                     &context = (direction == "INGRESS")
+                                            ? serverHandle->ingressTlsContext()
+                                            : serverHandle->egressTlsContext();
     boost::system::error_code ec;
 
     if ("VERIFY_MODE" == command) {

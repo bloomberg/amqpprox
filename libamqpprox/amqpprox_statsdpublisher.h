@@ -42,7 +42,7 @@ class StatsDPublisher {
   public:
     // CREATORS
     StatsDPublisher(boost::asio::io_service *ioService,
-                    const std::string &      host,
+                    const std::string       &host,
                     int                      port);
 
     // MANIPULATORS
@@ -86,7 +86,7 @@ class StatsDPublisher {
      * \param type of endpoint
      */
     void publishHostnameMetrics(const StatSnapshot::StatsMap &stats,
-                                const std::string &           type);
+                                const std::string            &type);
 };
 
 }

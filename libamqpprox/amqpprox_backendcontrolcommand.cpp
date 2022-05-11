@@ -46,7 +46,7 @@ std::string BackendControlCommand::helpText() const
 }
 
 void BackendControlCommand::handleCommand(const std::string & /* command */,
-                                          const std::string &  restOfCommand,
+                                          const std::string   &restOfCommand,
                                           const OutputFunctor &outputFunctor,
                                           Server * /* serverHandle */,
                                           Control *controlHandle)

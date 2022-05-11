@@ -38,7 +38,7 @@ class RobinBackendSelector : public BackendSelector {
     virtual ~RobinBackendSelector() override = default;
 
     // ACCESSORS
-    virtual const Backend *select(BackendSet *                 backendSet,
+    virtual const Backend *select(BackendSet                  *backendSet,
                                   const std::vector<uint64_t> &markers,
                                   uint64_t retryCount) const override;
 

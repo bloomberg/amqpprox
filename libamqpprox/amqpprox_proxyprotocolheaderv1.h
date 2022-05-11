@@ -89,7 +89,7 @@ inline int ProxyProtocolHeaderV1::destinationPort() const
     return d_destinationPort;
 }
 
-std::ostream &operator<<(std::ostream &               os,
+std::ostream &operator<<(std::ostream                &os,
                          const ProxyProtocolHeaderV1 &header);
 
 }  // amqpprox namespace

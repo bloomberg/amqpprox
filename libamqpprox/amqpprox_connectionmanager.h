@@ -50,7 +50,7 @@ class ConnectionManager {
     // DATA
     std::shared_ptr<BackendSet>     d_backendSet;
     std::vector<BackendSet::Marker> d_markerSnapshot;
-    BackendSelector *               d_backendSelector_p;  // HELD NOT OWNED
+    BackendSelector                *d_backendSelector_p;  // HELD NOT OWNED
 
   public:
     // CREATORS
@@ -63,7 +63,7 @@ class ConnectionManager {
      * \param backendSelector Backend selector
      */
     ConnectionManager(std::shared_ptr<BackendSet> backendSet,
-                      BackendSelector *           backendSelector);
+                      BackendSelector            *backendSelector);
 
     // ACCESSORS
     /**

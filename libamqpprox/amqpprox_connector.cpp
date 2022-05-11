@@ -61,9 +61,9 @@ std::ostream &streamOutMethod(std::ostream &os, const Method &method)
 }
 
 template <typename T>
-void decodeMethod(T *           t,
+void decodeMethod(T            *t,
                   const Method &method,
-                  Buffer &      buffer,
+                  Buffer       &buffer,
                   FlowType      direction)
 {
     if (method.methodType != T::methodType()) {
@@ -102,9 +102,9 @@ const Buffer legacyProtocolHeader(Constants::legacyProtocolHeader(),
 
 }
 
-Connector::Connector(SessionState *   sessionState,
-                     EventSource *    eventSource,
-                     BufferPool *     bufferPool,
+Connector::Connector(SessionState    *sessionState,
+                     EventSource     *eventSource,
+                     BufferPool      *bufferPool,
                      std::string_view localHostname)
 : d_state(State::AWAITING_PROTOCOL_HEADER)
 , d_synthesizedStart(ConnectorUtil::synthesizedStart())
@@ -413,7 +413,7 @@ void Connector::sendResponse(const T &response, bool sendToIngressSide)
     }
 }
 
-void Connector::synthesizeMessage(methods::Close & replyMethod,
+void Connector::synthesizeMessage(methods::Close  &replyMethod,
                                   bool             sendToIngressSide,
                                   uint64_t         code,
                                   std::string_view text)

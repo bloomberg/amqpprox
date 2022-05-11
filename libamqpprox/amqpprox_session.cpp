@@ -100,7 +100,7 @@ std::ostream &operator<<(std::ostream &os, const ConnectionSummary &cs)
 }
 
 void logException(const std::string_view error,
-                  const SessionState &   sessionState,
+                  const SessionState    &sessionState,
                   FlowType               direction)
 {
     LOG_ERROR << "Received exception: " << error
@@ -110,13 +110,13 @@ void logException(const std::string_view error,
 
 }
 
-Session::Session(boost::asio::io_service &              ioservice,
-                 MaybeSecureSocketAdaptor &&            serverSocket,
-                 MaybeSecureSocketAdaptor &&            clientSocket,
-                 ConnectionSelector *                   connectionSelector,
-                 EventSource *                          eventSource,
-                 BufferPool *                           bufferPool,
-                 DNSResolver *                          dnsResolver,
+Session::Session(boost::asio::io_service               &ioservice,
+                 MaybeSecureSocketAdaptor             &&serverSocket,
+                 MaybeSecureSocketAdaptor             &&clientSocket,
+                 ConnectionSelector                    *connectionSelector,
+                 EventSource                           *eventSource,
+                 BufferPool                            *bufferPool,
+                 DNSResolver                           *dnsResolver,
                  const std::shared_ptr<HostnameMapper> &hostnameMapper,
                  std::string_view                       localHostname,
                  const std::shared_ptr<AuthInterceptInterface> &authIntercept)
@@ -224,7 +224,7 @@ void Session::attemptConnection(
     using endpointType = boost::asio::ip::tcp::endpoint;
     auto self(shared_from_this());
     auto callback = [this, self, connectionManager](
-                        const error_code &        ec,
+                        const error_code         &ec,
                         std::vector<endpointType> endpoints) {
         BOOST_LOG_SCOPED_THREAD_ATTR(
             "Vhost",
@@ -805,7 +805,7 @@ void Session::handleData(FlowType direction)
     }
 }
 
-void Session::handleSessionError(const char *              action,
+void Session::handleSessionError(const char               *action,
                                  FlowType                  direction,
                                  boost::system::error_code ec)
 {
@@ -871,7 +871,7 @@ void Session::handleSessionError(const char *              action,
 }
 
 void Session::handleConnectionError(
-    const char *                              action,
+    const char                               *action,
     boost::system::error_code                 ec,
     const std::shared_ptr<ConnectionManager> &connectionManager)
 {

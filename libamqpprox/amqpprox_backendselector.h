@@ -47,7 +47,7 @@ class BackendSelector {
      * If no `Backend` is suitable based on the specified values, a null
      * pointer will be returned.
      */
-    virtual const Backend *select(BackendSet *                 backendSet,
+    virtual const Backend *select(BackendSet                  *backendSet,
                                   const std::vector<uint64_t> &markers,
                                   uint64_t retryCount) const = 0;
 

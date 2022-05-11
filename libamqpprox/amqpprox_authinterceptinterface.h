@@ -58,7 +58,7 @@ class AuthInterceptInterface {
      * \param responseCb Callbak function with response values
      */
     virtual void authenticate(const authproto::AuthRequest authRequestData,
-                              const ReceiveResponseCb &    responseCb) = 0;
+                              const ReceiveResponseCb     &responseCb) = 0;
 
     // ACCESSORS
     /**

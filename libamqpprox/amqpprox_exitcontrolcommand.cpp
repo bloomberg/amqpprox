@@ -34,8 +34,8 @@ std::string ExitControlCommand::helpText() const
 void ExitControlCommand::handleCommand(const std::string & /* command */,
                                        const std::string & /* restOfCommand */,
                                        const OutputFunctor &outputFunctor,
-                                       Server *             serverHandle,
-                                       Control *            controlHandle)
+                                       Server              *serverHandle,
+                                       Control             *controlHandle)
 {
     ControlCommandOutput<OutputFunctor> output(outputFunctor);
 

@@ -33,8 +33,8 @@ class Server;
  * \brief Class for running control service
  */
 class Control {
-    Server *                                               d_server_p;
-    EventSource *                                          d_eventSource_p;
+    Server                                                *d_server_p;
+    EventSource                                           *d_eventSource_p;
     boost::asio::io_service                                d_ioService;
     boost::asio::local::stream_protocol::acceptor          d_acceptor;
     boost::asio::local::stream_protocol::socket            d_socket;
@@ -65,7 +65,7 @@ class Control {
      */
     void scheduleRecurringEvent(
         int                                             intervalMs,
-        const std::string &                             name,
+        const std::string                              &name,
         const std::function<bool(Control *, Server *)> &event);
 
     /**

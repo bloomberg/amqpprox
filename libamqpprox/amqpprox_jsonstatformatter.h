@@ -40,7 +40,7 @@ class JsonStatFormatter : public StatFormatter {
      *
      * \param connectionStats reference to the ConnectionStats
      */
-    virtual void format(std::ostream &         os,
+    virtual void format(std::ostream          &os,
                         const ConnectionStats &connectionStats) override;
 
     /**
@@ -51,7 +51,7 @@ class JsonStatFormatter : public StatFormatter {
      *
      * \param statsMap reference to the StatsMap
      */
-    virtual void format(std::ostream &                os,
+    virtual void format(std::ostream                 &os,
                         const StatSnapshot::StatsMap &statsMap) override;
     /**
      * \brief output the `StatSnapshot` into the output stream in a
@@ -61,7 +61,7 @@ class JsonStatFormatter : public StatFormatter {
      *
      * \param statSnapshot reference to the StatSnapshot
      */
-    virtual void format(std::ostream &      os,
+    virtual void format(std::ostream       &os,
                         const StatSnapshot &statSnapshot) override;
 
     /**
@@ -73,7 +73,7 @@ class JsonStatFormatter : public StatFormatter {
      * \param processStats reference to the ProcessStats
      */
     virtual void
-    format(std::ostream &                    os,
+    format(std::ostream                     &os,
            const StatSnapshot::ProcessStats &processStats) override;
     /**
      * \brief output the `StatSnapshot::PoolStats` into the output stream in
@@ -85,7 +85,7 @@ class JsonStatFormatter : public StatFormatter {
      *
      * \param poolSpillover the amount of poolSpillover
      */
-    virtual void format(std::ostream &                              os,
+    virtual void format(std::ostream                               &os,
                         const std::vector<StatSnapshot::PoolStats> &poolStats,
                         uint64_t poolSpillover) override;
 };

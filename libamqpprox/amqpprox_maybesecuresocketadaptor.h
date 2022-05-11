@@ -41,7 +41,7 @@ class MaybeSecureSocketAdaptor {
     using endpoint    = boost::asio::ip::tcp::endpoint;
     using handshake_type = boost::asio::ssl::stream_base::handshake_type;
 
-    boost::asio::io_service &                              d_ioService;
+    boost::asio::io_service                               &d_ioService;
     std::optional<std::reference_wrapper<SocketIntercept>> d_intercept;
     std::unique_ptr<stream_type>                           d_socket;
     bool                                                   d_secured;
@@ -54,7 +54,7 @@ class MaybeSecureSocketAdaptor {
 
 #ifdef SOCKET_TESTING
     MaybeSecureSocketAdaptor(boost::asio::io_service &ioService,
-                             SocketIntercept &        intercept,
+                             SocketIntercept         &intercept,
                              bool                     secured)
     : d_ioService(ioService)
     , d_intercept(intercept)
@@ -67,7 +67,7 @@ class MaybeSecureSocketAdaptor {
     }
 #endif
 
-    MaybeSecureSocketAdaptor(boost::asio::io_service &  ioService,
+    MaybeSecureSocketAdaptor(boost::asio::io_service   &ioService,
                              boost::asio::ssl::context &context,
                              bool                       secured)
     : d_ioService(ioService)
@@ -283,7 +283,7 @@ class MaybeSecureSocketAdaptor {
 
     template <typename MutableBufferSequence>
     std::size_t read_some(const MutableBufferSequence &buffers,
-                          boost::system::error_code &  ec)
+                          boost::system::error_code   &ec)
     {
         if (BOOST_UNLIKELY(d_intercept.has_value())) {
             return d_intercept.value().get().read_some(buffers, ec);
