@@ -90,7 +90,6 @@ void AuthControlCommand::handleCommand(const std::string & /* command */,
             serverHandle->getAuthIntercept()->print(output);
         }
         else if (subcommand == "PRINT") {
-            std::ostringstream oss;
             serverHandle->getAuthIntercept()->print(output);
         }
         else {

@@ -21,7 +21,6 @@
 #include <memory>
 #include <mutex>
 #include <string>
-#include <unordered_map>
 
 namespace Bloomberg {
 namespace amqpprox {
@@ -35,12 +34,11 @@ class ResourceMapper;
  * implements the ConnectionSelector interface
  */
 class MappingConnectionSelector : public ConnectionSelector {
-    FarmStore                               *d_farmStore_p;
-    BackendStore                            *d_backendStore_p;
-    ResourceMapper                          *d_resourceMapper_p;
-    std::string                              d_defaultFarmName;
-    std::unordered_map<std::string, uint8_t> d_indexes;
-    mutable std::mutex                       d_mutex;
+    FarmStore         *d_farmStore_p;
+    BackendStore      *d_backendStore_p;
+    ResourceMapper    *d_resourceMapper_p;
+    std::string        d_defaultFarmName;
+    mutable std::mutex d_mutex;
 
   public:
     // CREATORS
