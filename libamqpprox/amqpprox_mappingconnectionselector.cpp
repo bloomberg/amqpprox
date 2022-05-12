@@ -37,7 +37,6 @@ MappingConnectionSelector::MappingConnectionSelector(
 , d_backendStore_p(backendStore)
 , d_resourceMapper_p(resourceMapper)
 , d_defaultFarmName("")
-, d_indexes()
 , d_mutex()
 {
 }
