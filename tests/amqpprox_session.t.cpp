@@ -153,6 +153,11 @@ class SessionTest : public ::testing::Test {
 
     SessionTest();
 
+    std::shared_ptr<Session>
+    makeSession(MaybeSecureSocketAdaptor              &&clientSocket,
+                MaybeSecureSocketAdaptor              &&serverSocket,
+                std::shared_ptr<AuthInterceptInterface> authIntercept = 0);
+
     void driveTo(int targetStep);
 
     template <typename METH>
@@ -213,6 +218,28 @@ class SessionTest : public ::testing::Test {
         TestSocketState::State &serverState,
         TestSocketState::State &clientState);
 };
+
+std::shared_ptr<Session>
+SessionTest::makeSession(MaybeSecureSocketAdaptor              &&clientSocket,
+                         MaybeSecureSocketAdaptor              &&serverSocket,
+                         std::shared_ptr<AuthInterceptInterface> authIntercept)
+{
+    if (!authIntercept) {
+        authIntercept = d_authIntercept;
+    }
+
+    return std::make_shared<Session>(d_ioContext,
+                                     std::move(serverSocket),
+                                     std::move(clientSocket),
+                                     &d_selector,
+                                     &d_eventSource,
+                                     &d_pool,
+                                     &d_dnsResolver,
+                                     d_mapper,
+                                     LOCAL_HOSTNAME,
+                                     authIntercept,
+                                     false);
+}
 
 template <typename TYPE>
 std::vector<TYPE> filterVariant(const std::vector<Item> &items);
@@ -625,16 +652,8 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Disconnect)
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_authIntercept);
+    auto                     session =
+        makeSession(std::move(clientSocket), std::move(serverSocket));
 
     session->start();
 
@@ -696,16 +715,8 @@ TEST_F(SessionTest, BadClientHandshake)
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_authIntercept);
+    auto                     session =
+        makeSession(std::move(clientSocket), std::move(serverSocket));
 
     session->start();
 
@@ -759,16 +770,8 @@ TEST_F(SessionTest, BadServerHandshake)
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_authIntercept);
+    auto                     session =
+        makeSession(std::move(clientSocket), std::move(serverSocket));
 
     session->start();
 
@@ -808,16 +811,8 @@ TEST_F(SessionTest, New_Client_Handshake_Failure)
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_authIntercept);
+    auto                     session =
+        makeSession(std::move(clientSocket), std::move(serverSocket));
 
     session->start();
 
@@ -854,16 +849,8 @@ TEST_F(SessionTest, Connection_To_Proxy_Protocol)
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_authIntercept);
+    auto                     session =
+        makeSession(std::move(clientSocket), std::move(serverSocket));
 
     session->start();
 
@@ -995,16 +982,8 @@ TEST_F(SessionTest, Connect_Multiple_Dns)
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_authIntercept);
+    auto                     session =
+        makeSession(std::move(clientSocket), std::move(serverSocket));
 
     session->start();
 
@@ -1144,16 +1123,8 @@ TEST_F(SessionTest, Failover_Dns_Failure)
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_authIntercept);
+    auto                     session =
+        makeSession(std::move(clientSocket), std::move(serverSocket));
 
     session->start();
 
@@ -1200,16 +1171,8 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Force_Disconnect)
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_authIntercept);
+    auto                     session =
+        makeSession(std::move(clientSocket), std::move(serverSocket));
 
     session->start();
 
@@ -1256,16 +1219,8 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Backend_Disconnect)
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_authIntercept);
+    auto                     session =
+        makeSession(std::move(clientSocket), std::move(serverSocket));
 
     session->start();
 
@@ -1341,16 +1296,8 @@ TEST_F(SessionTest, Authorized_Client_Test)
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_mockAuthIntercept);
+    auto                     session = makeSession(
+        std::move(clientSocket), std::move(serverSocket), d_mockAuthIntercept);
 
     session->start();
 
@@ -1406,16 +1353,8 @@ TEST_F(
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_mockAuthIntercept);
+    auto                     session = makeSession(
+        std::move(clientSocket), std::move(serverSocket), d_mockAuthIntercept);
 
     session->start();
 
@@ -1473,16 +1412,8 @@ TEST_F(SessionTest,
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_mockAuthIntercept);
+    auto                     session = makeSession(
+        std::move(clientSocket), std::move(serverSocket), d_mockAuthIntercept);
 
     session->start();
 
@@ -1538,16 +1469,8 @@ TEST_F(SessionTest, Forward_Received_Close_Method_To_Client_During_Handshake)
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_authIntercept);
+    auto                     session =
+        makeSession(std::move(clientSocket), std::move(serverSocket));
 
     session->start();
 
@@ -1568,16 +1491,8 @@ TEST_F(SessionTest, Close_Connection_No_Broker_Mapping)
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_authIntercept);
+    auto                     session =
+        makeSession(std::move(clientSocket), std::move(serverSocket));
 
     // Initialise the state
     d_serverState.pushItem(0, base);
@@ -1628,16 +1543,8 @@ TEST_F(SessionTest, Printing_Breathing_Test)
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_authIntercept);
+    auto                     session =
+        makeSession(std::move(clientSocket), std::move(serverSocket));
 
     session->start();
 
@@ -1680,16 +1587,8 @@ TEST_F(SessionTest, Pause_Disconnects_Previously_Established_Connection)
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_authIntercept);
+    auto                     session =
+        makeSession(std::move(clientSocket), std::move(serverSocket));
 
     session->start();
 
@@ -1726,16 +1625,8 @@ TEST_F(SessionTest,
 
     MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioContext,
-                                             std::move(serverSocket),
-                                             std::move(clientSocket),
-                                             &d_selector,
-                                             &d_eventSource,
-                                             &d_pool,
-                                             &d_dnsResolver,
-                                             d_mapper,
-                                             LOCAL_HOSTNAME,
-                                             d_authIntercept);
+    auto                     session =
+        makeSession(std::move(clientSocket), std::move(serverSocket));
 
     // Emulate `VhostEstablishedPauser` but pause everything
     bool                    paused = false;

@@ -75,11 +75,6 @@ class SocketIntercept {
     void setSecure(bool secure);
 
     /**
-     * \return if the socket is in secure mode
-     */
-    bool isSecure() const;
-
-    /**
      * \brief Reset the socket's context as if it is a fresh socket
      *
      * This is used to reset the context before it can be used to be accepted

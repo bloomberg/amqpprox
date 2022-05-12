@@ -119,7 +119,8 @@ Session::Session(boost::asio::io_context               &ioContext,
                  DNSResolver                           *dnsResolver,
                  const std::shared_ptr<HostnameMapper> &hostnameMapper,
                  std::string_view                       localHostname,
-                 const std::shared_ptr<AuthInterceptInterface> &authIntercept)
+                 const std::shared_ptr<AuthInterceptInterface> &authIntercept,
+                 bool isIngressSecure)
 : d_ioContext(ioContext)
 , d_serverSocket(std::move(serverSocket))
 , d_clientSocket(std::move(clientSocket))
@@ -153,6 +154,8 @@ Session::Session(boost::asio::io_context               &ioContext,
         LOG_ERROR << "Setting options onto listening socket failed with: "
                   << ec;
     }
+
+    d_sessionState.setIngressSecured(isIngressSecure);
 }
 
 Session::~Session()
@@ -193,7 +196,6 @@ void Session::start()
     };
     d_serverSocket.async_handshake(boost::asio::ssl::stream_base::server,
                                    handshake_cb);
-    d_sessionState.setIngressSecured(this->isSecureServerSocket());
 }
 
 void Session::attemptConnection(

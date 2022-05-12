@@ -57,11 +57,6 @@ class SocketInterceptInterface {
     virtual void setSecure(bool secure) = 0;
 
     /**
-     * \return if the socket is in secure mode
-     */
-    virtual bool isSecure() const = 0;
-
-    /**
      * \brief Reset the socket's context as if it is a fresh socket
      *
      * This is used to reset the context before it can be used to be accepted

@@ -36,12 +36,6 @@ void SocketInterceptTestAdaptor::setSecure(bool secure)
     d_state.currentState().d_secure = secure;
 }
 
-bool SocketInterceptTestAdaptor::isSecure() const
-{
-    d_state.recordCall("isSecure");
-    return d_state.currentState().d_secure;
-}
-
 void SocketInterceptTestAdaptor::refreshSocketContext()
 {
     d_state.recordCall("refreshSocketContext");

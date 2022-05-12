@@ -25,11 +25,6 @@ void SocketIntercept::setSecure(bool secure)
     d_impl.setSecure(secure);
 }
 
-bool SocketIntercept::isSecure() const
-{
-    return d_impl.isSecure();
-}
-
 void SocketIntercept::refreshSocketContext()
 {
     d_impl.refreshSocketContext();

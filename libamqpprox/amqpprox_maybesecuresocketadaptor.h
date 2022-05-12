@@ -98,15 +98,6 @@ class MaybeSecureSocketAdaptor {
 
     boost::asio::ip::tcp::socket &socket() { return d_socket->next_layer(); }
 
-    bool isSecure()
-    {
-        if (BOOST_UNLIKELY(d_intercept.has_value())) {
-            return d_intercept.value().get().isSecure();
-        }
-
-        return d_secured && d_handshook;
-    }
-
     void setSecure(bool secure)
     {
         if (BOOST_UNLIKELY(d_intercept.has_value())) {
@@ -368,6 +359,14 @@ class MaybeSecureSocketAdaptor {
             return d_socket->next_layer().async_read_some(null_buffer,
                                                           handler);
         }
+    }
+
+  private:
+    bool isSecure()
+    {
+        // The d_handshook check exists solely because proxy protocol requires
+        // us to write to the socket outside the TLS tunnel.
+        return d_secured && d_handshook;
     }
 };
 }
