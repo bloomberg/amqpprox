@@ -94,7 +94,8 @@ class Session : public std::enable_shared_from_this<Session> {
             DNSResolver                                   *dnsResolver,
             const std::shared_ptr<HostnameMapper>         &hostnameMapper,
             std::string_view                               localHostname,
-            const std::shared_ptr<AuthInterceptInterface> &authIntercept);
+            const std::shared_ptr<AuthInterceptInterface> &authIntercept,
+            bool                                           isIngressSecure);
 
     ~Session();
 
@@ -315,12 +316,6 @@ class Session : public std::enable_shared_from_this<Session> {
      * message off the wire or not.
      */
     inline bool &currentlyReading(FlowType direction);
-
-    /**
-     * \return true if communication with server socket is secured, otherwise
-     * false. Represents whether clients communicate with proxy using TLS.
-     */
-    inline bool isSecureServerSocket();
 };
 
 inline MaybeSecureSocketAdaptor &Session::readSocket(FlowType direction)
@@ -416,11 +411,6 @@ inline bool &Session::currentlyReading(FlowType direction)
 {
     return direction == FlowType::INGRESS ? d_ingressCurrentlyReading
                                           : d_egressCurrentlyReading;
-}
-
-inline bool Session::isSecureServerSocket()
-{
-    return d_serverSocket.isSecure();
 }
 
 }

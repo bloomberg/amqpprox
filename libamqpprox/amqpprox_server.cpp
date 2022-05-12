@@ -217,7 +217,8 @@ void Server::doAccept(int port, bool secure)
                                               &d_dnsResolver,
                                               d_hostnameMapper,
                                               d_localHostname,
-                                              d_authIntercept);
+                                              d_authIntercept,
+                                              secure);
 
                 {
                     std::lock_guard<std::mutex> lg(d_mutex);

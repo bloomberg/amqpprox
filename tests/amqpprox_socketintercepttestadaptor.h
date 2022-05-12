@@ -79,7 +79,6 @@ class SocketInterceptTestAdaptor : public SocketInterceptInterface {
 
     // SocketInterceptInterface Implementations
     virtual void setSecure(bool secure) override;
-    virtual bool isSecure() const override;
     virtual void refreshSocketContext() override;
 
     virtual endpoint remote_endpoint(boost::system::error_code &ec) override;
