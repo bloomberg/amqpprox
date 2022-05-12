@@ -535,7 +535,7 @@ void Session::unpause()
                 "ConnID",
                 boost::log::attributes::constant<uint64_t>(
                     d_sessionState.id()));
-            LOG_INFO << "Session unpaused. Starting to acquire connection";
+            LOG_DEBUG << "Session unpaused. Starting to acquire connection";
 
             d_sessionState.setReadyToConnectOnUnpause(false);
             d_sessionState.setPaused(false);
