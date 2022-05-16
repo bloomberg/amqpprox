@@ -143,7 +143,8 @@ EXIT Exit the program gracefully.
 FARM (ADD name selector backend* | PARTITION name policy | DELETE name | PRINT) - Change farms
 HELP Print this help text.
 LIMIT (CONN_RATE_ALARM | CONN_RATE) (VHOST vhostName numberOfConnections | DEFAULT numberOfConnections) - Configure connection rate limits (normal or alarmonly) for incoming clients connections
-LIMIT DISABLE (CONN_RATE_ALARM | CONN_RATE) (VHOST vhostName | DEFAULT) - Disable configured connection rate limits (normal or alarmonly) for incoming clients
+LIMIT (DATA_RATE_ALARM | DATA_RATE) (DEFAULT | VHOST vhostName) BytesPerSecond - Configure data rate limits or alarms for incoming client data
+LIMIT DISABLE (CONN_RATE_ALARM | CONN_RATE | DATA_RATE_ALARM | DATA_RATE) (VHOST vhostName | DEFAULT) - Disable configured limit thresholds
 LIMIT PRINT [vhostName] - Print the configured default or specific connection rate limits for specified vhost
 LISTEN START port | START_SECURE port | STOP [port]
 LOG CONSOLE verbosity | FILE verbosity

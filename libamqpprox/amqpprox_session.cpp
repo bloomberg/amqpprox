@@ -23,6 +23,7 @@
 #include <amqpprox_connectionmanager.h>
 #include <amqpprox_connectionselectorinterface.h>
 #include <amqpprox_constants.h>
+#include <amqpprox_dataratelimitmanager.h>
 #include <amqpprox_dnsresolver.h>
 #include <amqpprox_eventsource.h>
 #include <amqpprox_fieldtable.h>
@@ -120,7 +121,8 @@ Session::Session(boost::asio::io_context               &ioContext,
                  const std::shared_ptr<HostnameMapper> &hostnameMapper,
                  std::string_view                       localHostname,
                  const std::shared_ptr<AuthInterceptInterface> &authIntercept,
-                 bool isIngressSecure)
+                 bool                  isIngressSecure,
+                 DataRateLimitManager *limitManager)
 : d_ioContext(ioContext)
 , d_serverSocket(std::move(serverSocket))
 , d_clientSocket(std::move(clientSocket))
@@ -147,6 +149,7 @@ Session::Session(boost::asio::io_context               &ioContext,
 , d_resolvedEndpointsIndex(0)
 , d_connectionRateLimitedTimer(ioContext)
 , d_authIntercept(authIntercept)
+, d_limitManager(limitManager)
 {
     boost::system::error_code ec;
     d_serverSocket.setDefaultOptions(ec);
@@ -157,6 +160,10 @@ Session::Session(boost::asio::io_context               &ioContext,
     }
 
     d_sessionState.setIngressSecured(isIngressSecure);
+
+    // Set data rate limits before we get the vhost
+    d_serverSocket.setReadRateLimit(d_limitManager->getDefaultDataRateLimit());
+    d_serverSocket.setReadRateAlarm(d_limitManager->getDefaultDataRateAlarm());
 }
 
 Session::~Session()
@@ -442,6 +449,9 @@ std::string Session::getProxyProtocolHeader(const Backend *currentBackend)
 
 void Session::establishConnection()
 {
+    // Now we know the vhost name, apply vhost specific limits
+    this->updateDataRateLimits();
+
     if (d_sessionState.getPaused()) {
         LOG_DEBUG << "Not establishing a connection because paused";
         d_sessionState.setReadyToConnectOnUnpause(true);
@@ -990,6 +1000,22 @@ void Session::performDisconnectBoth()
             LOG_INFO << "Server close failed rc: " << closeEc;
         }
     });
+}
+
+void Session::updateDataRateLimits()
+{
+    // Called from the control socket thread
+
+    const std::size_t limit =
+        d_limitManager->getDataRateLimit(d_sessionState.getVirtualHost());
+    d_serverSocket.setReadRateLimit(limit);
+
+    const std::size_t alarm =
+        d_limitManager->getDataRateAlarm(d_sessionState.getVirtualHost());
+
+    d_serverSocket.setReadRateAlarm(alarm);
+
+    LOG_DEBUG << "Set data rate limit: " << limit << " alarm: " << alarm;
 }
 
 }

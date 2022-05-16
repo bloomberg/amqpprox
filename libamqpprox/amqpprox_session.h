@@ -45,6 +45,7 @@ class ConnectionManager;
 class ConnectionSelectorInterface;
 class EventSource;
 class DNSResolver;
+class DataRateLimitManager;
 
 /**
  * \brief Binds the incoming and outgoing sockets into a channel through the
@@ -85,7 +86,7 @@ class Session : public std::enable_shared_from_this<Session> {
     uint32_t                                    d_resolvedEndpointsIndex;
     boost::asio::steady_timer                   d_connectionRateLimitedTimer;
     std::shared_ptr<AuthInterceptInterface>     d_authIntercept;
-
+    DataRateLimitManager *d_limitManager;  // HELD NOT OWNED
   public:
     // CREATORS
     Session(boost::asio::io_context                       &ioContext,
@@ -98,7 +99,8 @@ class Session : public std::enable_shared_from_this<Session> {
             const std::shared_ptr<HostnameMapper>         &hostnameMapper,
             std::string_view                               localHostname,
             const std::shared_ptr<AuthInterceptInterface> &authIntercept,
-            bool                                           isIngressSecure);
+            bool                                           isIngressSecure,
+            DataRateLimitManager                          *limitManager);
 
     ~Session();
 
@@ -174,6 +176,12 @@ class Session : public std::enable_shared_from_this<Session> {
      * \return proxy protocol header
      */
     std::string getProxyProtocolHeader(const Backend *currentBackend);
+
+    /**
+     * Set data rate thresholds (alarm and otherwise) for the server socket.
+     * This will take into account the latest limit values
+     **/
+    void updateDataRateLimits();
 
   private:
     /**
