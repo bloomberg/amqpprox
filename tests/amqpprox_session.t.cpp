@@ -45,6 +45,7 @@
 #include <amqpprox_connectionselectorinterface.h>
 #include <amqpprox_connectorutil.h>
 #include <amqpprox_constants.h>
+#include <amqpprox_dataratelimitmanager.h>
 #include <amqpprox_defaultauthintercept.h>
 #include <amqpprox_dnsresolver.h>
 #include <amqpprox_eventsource.h>
@@ -150,6 +151,7 @@ class SessionTest : public ::testing::Test {
     int                                         d_step;
     std::shared_ptr<AuthInterceptInterface>     d_authIntercept;
     std::shared_ptr<AuthInterceptInterfaceMock> d_mockAuthIntercept;
+    DataRateLimitManager                        d_limitManager;
 
     SessionTest();
 
@@ -238,7 +240,8 @@ SessionTest::makeSession(MaybeSecureSocketAdaptor              &&clientSocket,
                                      d_mapper,
                                      LOCAL_HOSTNAME,
                                      authIntercept,
-                                     false);
+                                     false,
+                                     &d_limitManager);
 }
 
 template <typename TYPE>

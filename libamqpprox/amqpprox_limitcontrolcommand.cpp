@@ -16,8 +16,10 @@
 #include <amqpprox_limitcontrolcommand.h>
 
 #include <amqpprox_connectionlimitermanager.h>
+#include <amqpprox_dataratelimitmanager.h>
 #include <amqpprox_fixedwindowconnectionratelimiter.h>
 #include <amqpprox_server.h>
+#include <amqpprox_session.h>
 
 #include <optional>
 #include <sstream>
@@ -137,6 +139,110 @@ void handleConnectionLimit(
     }
 }
 
+void updateVhostLimits(Server *serverHandle, const std::string &vhost)
+{
+    auto visitor = [&vhost](const std::shared_ptr<Session> &session) {
+        if (session->state().getVirtualHost() == vhost) {
+            session->updateDataRateLimits();
+        }
+    };
+
+    serverHandle->visitSessions(visitor);
+}
+
+void updateDefaultLimits(Server *serverHandle)
+{
+    auto visitor = [](const std::shared_ptr<Session> &session) {
+        session->updateDataRateLimits();
+    };
+
+    serverHandle->visitSessions(visitor);
+}
+
+void handleDataRateAlarmLimit(
+    Server                                              *serverHandle,
+    std::istringstream                                  &iss,
+    ControlCommandOutput<ControlCommand::OutputFunctor> &output,
+    DataRateLimitManager                                *limitManager,
+    bool                                                 isDefault,
+    const std::string                                   &vhostName,
+    bool                                                 isDisable)
+{
+    if (isDisable) {
+        if (isDefault) {
+            const size_t DISABLED_LIMIT = std::numeric_limits<size_t>::max();
+            limitManager->setDefaultDataRateAlarm(DISABLED_LIMIT);
+
+            updateDefaultLimits(serverHandle);
+        }
+        else {
+            limitManager->disableVhostDataRateAlarm(vhostName);
+
+            updateVhostLimits(serverHandle, vhostName);
+        }
+    }
+    else {
+        size_t bytesPerSecond = 0;
+        if (!(iss >> bytesPerSecond)) {
+            output << "Failed to read bytesPerSecond";
+            return;
+        }
+
+        if (isDefault) {
+            limitManager->setDefaultDataRateAlarm(bytesPerSecond);
+
+            updateDefaultLimits(serverHandle);
+        }
+        else {
+            limitManager->setVhostDataRateAlarm(vhostName, bytesPerSecond);
+
+            updateVhostLimits(serverHandle, vhostName);
+        }
+    }
+}
+
+void handleDataRateLimit(
+    Server                                              *serverHandle,
+    std::istringstream                                  &iss,
+    ControlCommandOutput<ControlCommand::OutputFunctor> &output,
+    DataRateLimitManager                                *limitManager,
+    bool                                                 isDefault,
+    const std::string                                   &vhostName,
+    bool                                                 isDisable)
+{
+    if (isDisable) {
+        if (isDefault) {
+            const size_t DISABLED_LIMIT = std::numeric_limits<size_t>::max();
+            limitManager->setDefaultDataRateLimit(DISABLED_LIMIT);
+
+            updateDefaultLimits(serverHandle);
+        }
+        else {
+            limitManager->disableVhostDataRateLimit(vhostName);
+
+            updateVhostLimits(serverHandle, vhostName);
+        }
+    }
+    else {
+        size_t bytesPerSecond = 0;
+        if (!(iss >> bytesPerSecond)) {
+            output << "Failed to read bytesPerSecond";
+            return;
+        }
+
+        if (isDefault) {
+            limitManager->setDefaultDataRateLimit(bytesPerSecond);
+
+            updateDefaultLimits(serverHandle);
+        }
+        else {
+            limitManager->setVhostDataRateLimit(vhostName, bytesPerSecond);
+
+            updateVhostLimits(serverHandle, vhostName);
+        }
+    }
+}
+
 void printVhostLimits(
     const std::string        &vhostName,
     ConnectionLimiterManager *connectionLimiterManager,
@@ -231,9 +337,11 @@ readVhostOrDefault(std::istringstream &iss)
 }
 
 LimitControlCommand::LimitControlCommand(
-    ConnectionLimiterManager *connectionLimiterManager)
+    ConnectionLimiterManager *connectionLimiterManager,
+    DataRateLimitManager     *dataRateLimitManager)
 : ControlCommand()
 , d_connectionLimiterManager_p(connectionLimiterManager)
+, d_dataRateLimitManager(dataRateLimitManager)
 {
 }
 
@@ -249,8 +357,13 @@ std::string LimitControlCommand::helpText() const
            "connection rate limits (normal or alarmonly) for incoming clients "
            "connections\n"
 
-           "LIMIT DISABLE (CONN_RATE_ALARM | CONN_RATE) (VHOST vhostName | "
-           "DEFAULT) - Disable configured limit thresholds\n"
+           "LIMIT (DATA_RATE_ALARM | DATA_RATE) (DEFAULT | VHOST vhostName) "
+           "BytesPerSecond - Configure data rate limits or alarms for "
+           "incoming client data\n"
+
+           "LIMIT DISABLE (CONN_RATE_ALARM | CONN_RATE | DATA_RATE_ALARM | "
+           "DATA_RATE) (VHOST vhostName | DEFAULT) - Disable configured limit "
+           "thresholds\n"
 
            "LIMIT PRINT [vhostName] - Print the configured default limits or "
            "specific vhost limits";
@@ -259,7 +372,7 @@ std::string LimitControlCommand::helpText() const
 void LimitControlCommand::handleCommand(const std::string & /* command */,
                                         const std::string   &restOfCommand,
                                         const OutputFunctor &outputFunctor,
-                                        Server *,
+                                        Server              *serverHandle,
                                         Control * /* controlHandle */)
 {
     ControlCommandOutput<OutputFunctor> output(outputFunctor);
@@ -295,7 +408,7 @@ void LimitControlCommand::handleCommand(const std::string & /* command */,
     }
 
     auto vhostOrDefault = readVhostOrDefault(iss);
-    if (!readVhostOrDefault) {
+    if (!vhostOrDefault) {
         output << "Failed to read (VHOST vhostName | DEFAULT) for "
                << subcommand;
         return;
@@ -319,10 +432,27 @@ void LimitControlCommand::handleCommand(const std::string & /* command */,
                               vhostName,
                               isDisable);
     }
+    else if (subcommand == "DATA_RATE_ALARM") {
+        handleDataRateAlarmLimit(serverHandle,
+                                 iss,
+                                 output,
+                                 d_dataRateLimitManager,
+                                 isDefault,
+                                 vhostName,
+                                 isDisable);
+    }
+    else if (subcommand == "DATA_RATE") {
+        handleDataRateLimit(serverHandle,
+                            iss,
+                            output,
+                            d_dataRateLimitManager,
+                            isDefault,
+                            vhostName,
+                            isDisable);
+    }
     else {
         output << "Invalid subcommand provided for LIMIT command.\n";
     }
 }
-
 }
 }

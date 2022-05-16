@@ -29,11 +29,13 @@ class ConnectionLimiterManager;
 
 class LimitControlCommand : public ControlCommand {
     ConnectionLimiterManager *d_connectionLimiterManager_p;  // HELD NOT OWNED
+    DataRateLimitManager     *d_dataRateLimitManager;        // HELD NOT OWNED
 
   public:
     // CREATORS
     explicit LimitControlCommand(
-        ConnectionLimiterManager *connectionLimiterManager);
+        ConnectionLimiterManager *connectionLimiterManager,
+        DataRateLimitManager     *dataRateLimitManager);
 
     virtual ~LimitControlCommand() override = default;
 

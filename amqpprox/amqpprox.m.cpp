@@ -24,6 +24,7 @@
 #include <amqpprox_eventsource.h>
 #include <amqpprox_farmstore.h>
 #include <amqpprox_frame.h>
+#include <amqpprox_dataratelimitmanager.h>
 #include <amqpprox_logging.h>
 #include <amqpprox_loggingcontrolcommand.h>
 #include <amqpprox_partitionpolicy.h>
@@ -195,9 +196,11 @@ int main(int argc, char *argv[])
     ConnectionLimiterManager connectionLimiterManager;
     ConnectionSelector       connectionSelector(
         &farmStore, &backendStore, &resourceMapper, &connectionLimiterManager);
-    SessionCleanup cleaner(&statCollector, &eventSource);
+    SessionCleanup       cleaner(&statCollector, &eventSource);
+    DataRateLimitManager dataRateLimitManager;
 
-    Server  server(&connectionSelector, &eventSource, &bufferPool);
+    Server server(
+        &connectionSelector, &eventSource, &bufferPool, &dataRateLimitManager);
     Control control(&server, &eventSource, controlSocket);
 
     // Set up the backend selector store
@@ -240,7 +243,8 @@ int main(int argc, char *argv[])
         CommandPtr(new MapHostnameControlCommand()),
         CommandPtr(new TlsControlCommand),
         CommandPtr(new AuthControlCommand),
-        CommandPtr(new LimitControlCommand(&connectionLimiterManager))};
+        CommandPtr(new LimitControlCommand(&connectionLimiterManager,
+                                           &dataRateLimitManager))};
 
     for (auto &&command : commands) {
         control.addControlCommand(std::move(command));

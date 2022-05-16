@@ -23,6 +23,8 @@ add_library(libamqpprox STATIC
     amqpprox_cpumonitor.cpp
     amqpprox_datacenter.cpp
     amqpprox_datacentercontrolcommand.cpp
+    amqpprox_dataratelimit.cpp
+    amqpprox_dataratelimitmanager.cpp
     amqpprox_dnshostnamemapper.cpp
     amqpprox_dnsresolver.cpp
     amqpprox_eventsource.cpp

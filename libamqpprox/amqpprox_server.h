@@ -36,6 +36,7 @@ class BufferPool;
 class Session;
 class EventSource;
 class HostnameMapper;
+class DataRateLimitManager;
 
 /**
  * \brief Sockets are accept()'ed in this component. For each incoming
@@ -60,11 +61,13 @@ class Server {
     std::shared_ptr<HostnameMapper> d_hostnameMapper;
     std::string                     d_localHostname;
     std::shared_ptr<AuthInterceptInterface> d_authIntercept;
+    DataRateLimitManager                   *d_limitManager;  // HELD NOT OWNED
 
   public:
     Server(ConnectionSelectorInterface *selector,
            EventSource                 *eventSource,
-           BufferPool                  *bufferPool);
+           BufferPool                  *bufferPool,
+           DataRateLimitManager        *limitManager);
 
     ~Server();
 

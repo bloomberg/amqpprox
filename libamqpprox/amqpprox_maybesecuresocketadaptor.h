@@ -16,14 +16,16 @@
 #ifndef BLOOMBERG_AMQPPROX_MAYBESECURESOCKETADAPTOR
 #define BLOOMBERG_AMQPPROX_MAYBESECURESOCKETADAPTOR
 
+#include <amqpprox_dataratelimit.h>
+#include <amqpprox_logging.h>
+#include <amqpprox_socketintercept.h>
+
 #include <boost/asio.hpp>
 #include <boost/asio/ssl/stream.hpp>
 #include <boost/asio/ssl/stream_base.hpp>
 #include <openssl/ssl.h>
 
-#include <amqpprox_logging.h>
-#include <amqpprox_socketintercept.h>
-
+#include <chrono>
 #include <functional>
 
 namespace Bloomberg {
@@ -49,6 +51,12 @@ class MaybeSecureSocketAdaptor {
     char                                                   d_smallBuffer;
     bool                                                   d_smallBufferSet;
 
+    DataRateLimit             d_dataRateLimit;
+    DataRateLimit             d_dataRateAlarm;
+    boost::asio::steady_timer d_dataRateTimer;
+    bool                      d_alarmed;
+    bool                      d_dataRateTimerStarted;
+
   public:
     typedef typename stream_type::executor_type executor_type;
 
@@ -63,6 +71,11 @@ class MaybeSecureSocketAdaptor {
     , d_handshook(false)
     , d_smallBuffer(0)
     , d_smallBufferSet(false)
+    , d_dataRateLimit()
+    , d_dataRateAlarm()
+    , d_dataRateTimer(d_ioContext)
+    , d_alarmed(false)
+    , d_dataRateTimerStarted(false)
     {
     }
 #endif
@@ -77,6 +90,11 @@ class MaybeSecureSocketAdaptor {
     , d_handshook(false)
     , d_smallBuffer(0)
     , d_smallBufferSet(false)
+    , d_dataRateLimit()
+    , d_dataRateAlarm()
+    , d_dataRateTimer(d_ioContext)
+    , d_alarmed(false)
+    , d_dataRateTimerStarted(false)
     {
     }
 
@@ -88,18 +106,22 @@ class MaybeSecureSocketAdaptor {
     , d_handshook(src.d_handshook)
     , d_smallBuffer(src.d_smallBuffer)
     , d_smallBufferSet(src.d_smallBufferSet)
+    , d_dataRateLimit(src.d_dataRateLimit)
+    , d_dataRateAlarm(src.d_dataRateAlarm)
+    , d_dataRateTimer(d_ioContext)
+    , d_alarmed(false)
+    , d_dataRateTimerStarted(false)
     {
         src.d_socket         = std::unique_ptr<stream_type>();
         src.d_secured        = false;
         src.d_handshook      = false;
         src.d_smallBuffer    = 0;
         src.d_smallBufferSet = false;
+
+        src.d_dataRateTimer.cancel();
     }
 
-    boost::asio::ip::tcp::socket &socket()
-    {
-        return d_socket->next_layer();
-    }
+    boost::asio::ip::tcp::socket &socket() { return d_socket->next_layer(); }
 
     void setSecure(bool secure)
     {
@@ -139,6 +161,18 @@ class MaybeSecureSocketAdaptor {
             LOG_TRACE << "Setting keepalive on socket returned ec: " << ec;
             return;
         }
+    }
+
+    void setReadRateLimit(std::size_t bytesPerSecond)
+    {
+        // Called from the control socket thread and main thread
+        d_dataRateLimit.setQuota(bytesPerSecond);
+    }
+
+    void setReadRateAlarm(std::size_t bytesPerSecond)
+    {
+        // Called from the control socket thread and main thread
+        d_dataRateAlarm.setQuota(bytesPerSecond);
     }
 
     // Methods for compatibility with boost ssl stream / TCP stream
@@ -296,18 +330,26 @@ class MaybeSecureSocketAdaptor {
 
                 if (ec && result == 0) {
                     ec = boost::system::error_code();
+
                     // Pretend read_some succeeded this time around because
                     // there's one byte left over.
+                    recordReadUsage(1);
                     return 1;
                 }
+                result = 1 + result;
 
-                return 1 + result;
+                recordReadUsage(result);
+                return result;
             }
 
             return d_socket->read_some(buffers, ec);
         }
         else {
-            return d_socket->next_layer().read_some(buffers, ec);
+            size_t result = d_socket->next_layer().read_some(buffers, ec);
+
+            recordReadUsage(result);
+
+            return result;
         }
     }
 
@@ -329,6 +371,50 @@ class MaybeSecureSocketAdaptor {
         if (BOOST_UNLIKELY(d_intercept.has_value())) {
             return d_intercept.value().get().async_read_some(null_buffer,
                                                              handler);
+        }
+
+        if (!d_alarmed && d_dataRateAlarm.remainingQuota() == 0) {
+            if (d_dataRateTimerStarted) {
+                // The VHost info etc is populated by log scoped variables
+                // above
+                LOG_INFO << "Data Rate Alarm: Hit "
+                         << d_dataRateAlarm.getQuota() << " bytes/s";
+
+                // TODO: Better limit alarm debouncing?
+                d_alarmed = true;
+            }
+            else {
+                // We have hit our quota but we haven't started the refresh
+                // timer yet so it's probable the usage has never reset. Start
+                // the refresh timer for this connection and continue until we
+                // hit it a second time.
+                // Note we share the same timer between alarm and actual limit
+                // thresholds
+
+                this->onTimer(boost::system::error_code());
+            }
+        }
+
+        if (d_dataRateLimit.remainingQuota() == 0) {
+            if (d_dataRateTimerStarted) {
+                d_dataRateTimer.cancel();
+                d_dataRateTimer.expires_at(d_dataRateTimer.expiry());
+                d_dataRateTimer.async_wait(
+                    [this, null_buffer, handler](
+                        const boost::system::error_code &error) {
+                        this->onTimer(error);
+                        this->async_read_some(null_buffer, handler);
+                    });
+
+                return;
+            }
+            else {
+                // As above, we might have hit our quota but we aren't
+                // regularly resetting the actual usage. Let's start doing that
+                // and then only take action when we next hit the quota
+
+                this->onTimer(boost::system::error_code());
+            }
         }
 
         if (isSecure()) {
@@ -370,6 +456,30 @@ class MaybeSecureSocketAdaptor {
         // The d_handshook check exists solely because proxy protocol requires
         // us to write to the socket outside the TLS tunnel.
         return d_secured && d_handshook;
+    }
+
+    void onTimer(const boost::system::error_code &error)
+    {
+        if (error == boost::asio::error::operation_aborted) {
+            return;
+        }
+
+        d_dataRateLimit.onTimer();
+        d_dataRateAlarm.onTimer();
+        d_alarmed = false;
+
+        d_dataRateTimer.expires_after(std::chrono::milliseconds(1000));
+        d_dataRateTimer.async_wait(
+            [this](const boost::system::error_code &error) {
+                this->onTimer(error);
+            });
+        d_dataRateTimerStarted = true;
+    }
+
+    void recordReadUsage(std::size_t amount)
+    {
+        d_dataRateLimit.recordUsage(amount);
+        d_dataRateAlarm.recordUsage(amount);
     }
 };
 }
