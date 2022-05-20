@@ -22,19 +22,18 @@ namespace Bloomberg {
 namespace amqpprox {
 
 class ResourceMapper;
-class MappingConnectionSelector;
+class ConnectionSelector;
 
 /**
  * \brief Control command to change mappings of resources to servers,
  * implements the ControlCommand interface
  */
 class MapControlCommand : public ControlCommand {
-    ResourceMapper            *d_mapper_p;    // HELD NOT OWNED
-    MappingConnectionSelector *d_selector_p;  // HELD NOT OWNED
+    ResourceMapper     *d_mapper_p;    // HELD NOT OWNED
+    ConnectionSelector *d_selector_p;  // HELD NOT OWNED
 
   public:
-    MapControlCommand(ResourceMapper            *mapper,
-                      MappingConnectionSelector *selector);
+    MapControlCommand(ResourceMapper *mapper, ConnectionSelector *selector);
 
     /**
      * \return the command verb this handles

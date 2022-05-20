@@ -15,7 +15,7 @@
 */
 #include <amqpprox_mapcontrolcommand.h>
 
-#include <amqpprox_mappingconnectionselector.h>
+#include <amqpprox_connectionselector.h>
 #include <amqpprox_resourcemapper.h>
 
 #include <boost/algorithm/string.hpp>
@@ -26,8 +26,8 @@
 namespace Bloomberg {
 namespace amqpprox {
 
-MapControlCommand::MapControlCommand(ResourceMapper            *mapper,
-                                     MappingConnectionSelector *selector)
+MapControlCommand::MapControlCommand(ResourceMapper     *mapper,
+                                     ConnectionSelector *selector)
 : d_mapper_p(mapper)
 , d_selector_p(selector)
 {

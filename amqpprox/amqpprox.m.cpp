@@ -16,6 +16,7 @@
 #include <amqpprox_backendselectorstore.h>
 #include <amqpprox_backendstore.h>
 #include <amqpprox_bufferpool.h>
+#include <amqpprox_connectionselector.h>
 #include <amqpprox_control.h>
 #include <amqpprox_cpumonitor.h>
 #include <amqpprox_datacenter.h>
@@ -24,7 +25,6 @@
 #include <amqpprox_frame.h>
 #include <amqpprox_logging.h>
 #include <amqpprox_loggingcontrolcommand.h>
-#include <amqpprox_mappingconnectionselector.h>
 #include <amqpprox_partitionpolicy.h>
 #include <amqpprox_partitionpolicystore.h>
 #include <amqpprox_resourcemapper.h>
@@ -168,16 +168,16 @@ int main(int argc, char *argv[])
     // Buffer sizes in range, skipping some of the larger powers of 2 once we
     // get around page sizes.
     BufferPool     bufferPool({32,
-                           64,
-                           128,
-                           256,
-                           512,
-                           1024,
-                           4096,
-                           16384,
-                           32768,
-                           65536,
-                           Frame::getMaxFrameSize()});
+                               64,
+                               128,
+                               256,
+                               512,
+                               1024,
+                               4096,
+                               16384,
+                               32768,
+                               65536,
+                               Frame::getMaxFrameSize()});
     CpuMonitor     monitor;
     Datacenter     datacenter;
     EventSource    eventSource;
@@ -187,14 +187,14 @@ int main(int argc, char *argv[])
     StatCollector  statCollector;
     statCollector.setCpuMonitor(&monitor);
     statCollector.setBufferPool(&bufferPool);
-    VhostState                vhostState;
-    PartitionPolicyStore      partitionPolicyStore;
-    BackendSelectorStore      backendSelectorStore;
-    MappingConnectionSelector mappingSelector(
+    VhostState           vhostState;
+    PartitionPolicyStore partitionPolicyStore;
+    BackendSelectorStore backendSelectorStore;
+    ConnectionSelector   connectionSelector(
         &farmStore, &backendStore, &resourceMapper);
     SessionCleanup cleaner(&statCollector, &eventSource);
 
-    Server  server(&mappingSelector, &eventSource, &bufferPool);
+    Server  server(&connectionSelector, &eventSource, &bufferPool);
     Control control(&server, &eventSource, controlSocket);
 
     // Set up the backend selector store
@@ -228,7 +228,8 @@ int main(int argc, char *argv[])
                                           &backendSelectorStore,
                                           &partitionPolicyStore)),
         CommandPtr(new BackendControlCommand(&backendStore)),
-        CommandPtr(new MapControlCommand(&resourceMapper, &mappingSelector)),
+        CommandPtr(
+            new MapControlCommand(&resourceMapper, &connectionSelector)),
         CommandPtr(new VhostControlCommand(&vhostState)),
         CommandPtr(new ListenControlCommand),
         CommandPtr(new LoggingControlCommand),

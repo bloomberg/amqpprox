@@ -1,5 +1,5 @@
 /*
-** Copyright 2020 Bloomberg Finance L.P.
+** Copyright 2022 Bloomberg Finance L.P.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -16,30 +16,65 @@
 #ifndef BLOOMBERG_AMQPPROX_CONNECTIONSELECTOR
 #define BLOOMBERG_AMQPPROX_CONNECTIONSELECTOR
 
+#include <amqpprox_connectionselectorinterface.h>
+
 #include <memory>
+#include <mutex>
+#include <string>
 
 namespace Bloomberg {
 namespace amqpprox {
 
-class ConnectionManager;
-class SessionState;
+class FarmStore;
+class BackendStore;
+class ResourceMapper;
 
 /**
- * \brief Represents a connection selector
+ * \brief Determines where to make the egress connection(proxy to broker),
+ * implements the ConnectionSelectorInterface
  */
-class ConnectionSelector {
-  public:
-    virtual ~ConnectionSelector() = default;
+class ConnectionSelector : public ConnectionSelectorInterface {
+    FarmStore         *d_farmStore_p;
+    BackendStore      *d_backendStore_p;
+    ResourceMapper    *d_resourceMapper_p;
+    std::string        d_defaultFarmName;
+    mutable std::mutex d_mutex;
 
+  public:
+    // CREATORS
+    /**
+     * \brief Construct a ConnectionSelector
+     * \param farmStore
+     * \param backendStore
+     * \param resourceMapper
+     */
+    ConnectionSelector(FarmStore      *farmStore,
+                       BackendStore   *backendStore,
+                       ResourceMapper *resourceMapper);
+
+    virtual ~ConnectionSelector();
+
+    // MANIPULATORS
     /**
      * \brief Acquire a connection from the specified session `state` and set
-     * `connectionOut` to be a `ConnectionManager` instance tracking the
-     * connection attempt
-     * \return Zero on success, or a non-zero value otherwise
+     * `connectionOut` to be a `ConnectionManager` instance tracking connection
+     * attempt.
+     * \return connection status to represent whether the connection should go
+     * through
      */
-    virtual int
+    virtual SessionState::ConnectionStatus
     acquireConnection(std::shared_ptr<ConnectionManager> *connectionOut,
-                      const SessionState                 &state) = 0;
+                      const SessionState                 &state) override;
+
+    /**
+     * \brief Set the default farm if a mapping is not found
+     */
+    void setDefaultFarm(const std::string &farmName);
+
+    /**
+     * \brief Unset any default farm if a mapping is not found
+     */
+    void unsetDefaultFarm();
 };
 
 }

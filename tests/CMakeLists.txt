@@ -24,7 +24,7 @@ add_executable(amqpprox_tests
     amqpprox_farmstore.t.cpp
     amqpprox_frame.t.cpp
     amqpprox_flowtype.t.cpp
-    amqpprox_mappingconnectionselector.t.cpp
+    amqpprox_connectionselector.t.cpp
     amqpprox_methods_start.t.cpp
     amqpprox_packetprocessor.t.cpp
     amqpprox_partitionpolicystore.t.cpp
