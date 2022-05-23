@@ -13,7 +13,7 @@ add_library(libamqpprox STATIC
     amqpprox_bufferpool.cpp
     amqpprox_buffersource.cpp
     amqpprox_connectionmanager.cpp
-    amqpprox_connectionselector.cpp
+    amqpprox_connectionselectorinterface.cpp
     amqpprox_connectionscontrolcommand.cpp
     amqpprox_connectionstats.cpp
     amqpprox_connector.cpp
@@ -44,7 +44,7 @@ add_library(libamqpprox STATIC
     amqpprox_loggingcontrolcommand.cpp
     amqpprox_mapcontrolcommand.cpp
     amqpprox_maphostnamecontrolcommand.cpp
-    amqpprox_mappingconnectionselector.cpp
+    amqpprox_connectionselector.cpp
     amqpprox_maybesecuresocketadaptor.cpp
     amqpprox_method.cpp
     amqpprox_packetprocessor.cpp

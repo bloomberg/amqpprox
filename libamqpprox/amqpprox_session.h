@@ -32,6 +32,7 @@
 
 #include <chrono>
 #include <iosfwd>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -39,7 +40,7 @@ namespace Bloomberg {
 namespace amqpprox {
 
 class ConnectionManager;
-class ConnectionSelector;
+class ConnectionSelectorInterface;
 class EventSource;
 class DNSResolver;
 
@@ -56,28 +57,28 @@ class Session : public std::enable_shared_from_this<Session> {
     using TimePoint =
         std::chrono::time_point<std::chrono::high_resolution_clock>;
 
-    boost::asio::io_service &d_ioService;
-    MaybeSecureSocketAdaptor d_serverSocket;
-    MaybeSecureSocketAdaptor d_clientSocket;
-    BufferHandle             d_serverDataHandle;
-    BufferHandle             d_serverWriteDataHandle;
-    BufferHandle             d_clientDataHandle;
-    BufferHandle             d_clientWriteDataHandle;
-    std::size_t              d_serverWaterMark;
-    std::size_t              d_clientWaterMark;
-    SessionState             d_sessionState;
-    Connector                d_connector;
-    ConnectionSelector      *d_connectionSelector_p;  // HELD NOT OWNED
-    EventSource             *d_eventSource_p;         // HELD NOT OWNED
-    BufferPool              *d_bufferPool_p;          // HELD NOT OWNED
-    DNSResolver             *d_dnsResolver_p;
-    TimePoint                d_ingressWaitingSince;
-    TimePoint                d_egressWaitingSince;
-    uint32_t                 d_egressRetryCounter;
-    bool                     d_ingressCurrentlyReading;
-    TimePoint                d_ingressStartedAt;
-    bool                     d_egressCurrentlyReading;
-    TimePoint                d_egressStartedAt;
+    boost::asio::io_service     &d_ioService;
+    MaybeSecureSocketAdaptor     d_serverSocket;
+    MaybeSecureSocketAdaptor     d_clientSocket;
+    BufferHandle                 d_serverDataHandle;
+    BufferHandle                 d_serverWriteDataHandle;
+    BufferHandle                 d_clientDataHandle;
+    BufferHandle                 d_clientWriteDataHandle;
+    std::size_t                  d_serverWaterMark;
+    std::size_t                  d_clientWaterMark;
+    SessionState                 d_sessionState;
+    Connector                    d_connector;
+    ConnectionSelectorInterface *d_connectionSelector_p;  // HELD NOT OWNED
+    EventSource                 *d_eventSource_p;         // HELD NOT OWNED
+    BufferPool                  *d_bufferPool_p;          // HELD NOT OWNED
+    DNSResolver                 *d_dnsResolver_p;
+    TimePoint                    d_ingressWaitingSince;
+    TimePoint                    d_egressWaitingSince;
+    uint32_t                     d_egressRetryCounter;
+    bool                         d_ingressCurrentlyReading;
+    TimePoint                    d_ingressStartedAt;
+    bool                         d_egressCurrentlyReading;
+    TimePoint                    d_egressStartedAt;
     std::vector<boost::asio::ip::tcp::endpoint> d_resolvedEndpoints;
     uint32_t                                    d_resolvedEndpointsIndex;
     std::shared_ptr<AuthInterceptInterface>     d_authIntercept;
@@ -87,7 +88,7 @@ class Session : public std::enable_shared_from_this<Session> {
     Session(boost::asio::io_service                       &ioservice,
             MaybeSecureSocketAdaptor                     &&serverSocket,
             MaybeSecureSocketAdaptor                     &&clientSocket,
-            ConnectionSelector                            *connectionSelector,
+            ConnectionSelectorInterface                   *connectionSelector,
             EventSource                                   *eventSource,
             BufferPool                                    *bufferPool,
             DNSResolver                                   *dnsResolver,

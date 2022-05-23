@@ -42,7 +42,7 @@
 #include <amqpprox_backendset.h>
 #include <amqpprox_bufferpool.h>
 #include <amqpprox_connectionmanager.h>
-#include <amqpprox_connectionselector.h>
+#include <amqpprox_connectionselectorinterface.h>
 #include <amqpprox_connectorutil.h>
 #include <amqpprox_constants.h>
 #include <amqpprox_defaultauthintercept.h>
@@ -72,6 +72,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <memory>
 #include <stdexcept>
 
 using namespace Bloomberg;
@@ -87,12 +88,13 @@ using ConnectComplete   = TestSocketState::ConnectComplete;
 
 const char LOCAL_HOSTNAME[] = "amqpprox-host";
 
-struct SelectorMock : public ConnectionSelector {
+struct SelectorMock : public ConnectionSelectorInterface {
     virtual ~SelectorMock() {}
 
-    MOCK_METHOD2(acquireConnection,
-                 int(std::shared_ptr<ConnectionManager> *,
-                     const SessionState &));
+    MOCK_METHOD2(
+        acquireConnection,
+        SessionState::ConnectionStatus(std::shared_ptr<ConnectionManager> *,
+                                       const SessionState &));
 };
 
 struct HostnameMapperMock : public HostnameMapper {
@@ -182,9 +184,9 @@ class SessionTest : public ::testing::Test {
         int                     idx,
         const methods::StartOk &overriddenStartOk = methods::StartOk());
     void testSetupClientOpen(int idx);
-    void
-         testSetupUnauthClientOpenWithShutdown(int  idx,
-                                               bool authenticationFailureClose);
+    void testSetupClientOpenWithProxyClose(
+        int                                    idx,
+        const std::shared_ptr<methods::Close> &closeMethodPtr = nullptr);
     void testSetupClientOpenWithoutTune(int idx);
     void testSetupProxyConnect(int idx, TestSocketState::State *clientBase);
     void testSetupProxySendsProtocolHeader(int idx);
@@ -282,30 +284,26 @@ void SessionTest::testSetupClientOpen(int idx)
     d_serverState.pushItem(idx, Data(encode(clientOpen())));
 }
 
-void SessionTest::testSetupUnauthClientOpenWithShutdown(
-    int  idx,
-    bool authenticationFailureClose)
+void SessionTest::testSetupClientOpenWithProxyClose(
+    int                                    idx,
+    const std::shared_ptr<methods::Close> &closeMethodPtr)
 {
     // Client  ------TuneOk------>  Proxy                         Broker
     // Client  ------Open-------->  Proxy                         Broker
     // Client  <-----Close--------  Proxy                         Broker
     d_serverState.pushItem(idx, Data(encode(clientTuneOk())));
     d_serverState.pushItem(idx, Data(encode(clientOpen())));
-    methods::Close closeMethod = methods::Close();
-    closeMethod.setReply(Reply::Codes::access_refused,
-                         "Unauthorized test client");
-    d_serverState.expect(
-        idx,
-        [this, closeMethod, authenticationFailureClose](const auto &items) {
-            if (authenticationFailureClose) {
-                auto data = filterVariant<Data>(items);
-                ASSERT_EQ(data.size(), 1);
-                EXPECT_EQ(data[0], Data(encode(closeMethod)));
-            }
-            EXPECT_THAT(items,
-                        Contains(VariantWith<Call>(Call("async_shutdown"))));
-            EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
-        });
+
+    d_serverState.expect(idx, [this, closeMethodPtr](const auto &items) {
+        if (closeMethodPtr) {
+            auto data = filterVariant<Data>(items);
+            ASSERT_EQ(data.size(), 1);
+            EXPECT_EQ(data[0], Data(encode(*closeMethodPtr)));
+        }
+        EXPECT_THAT(items,
+                    Contains(VariantWith<Call>(Call("async_shutdown"))));
+        EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
+    });
     d_clientState.expect(idx, [this](const auto &items) {
         EXPECT_THAT(items,
                     Contains(VariantWith<Call>(Call("async_shutdown"))));
@@ -613,7 +611,8 @@ void SessionTest::runStandardConnectWithDisconnect(
 TEST_F(SessionTest, Connection_Then_Ping_Then_Disconnect)
 {
     EXPECT_CALL(d_selector, acquireConnection(_, _))
-        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm),
+                        Return(SessionState::ConnectionStatus::SUCCESS)));
 
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
@@ -719,7 +718,8 @@ TEST_F(SessionTest, BadClientHandshake)
 TEST_F(SessionTest, BadServerHandshake)
 {
     EXPECT_CALL(d_selector, acquireConnection(_, _))
-        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm),
+                        Return(SessionState::ConnectionStatus::SUCCESS)));
 
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
@@ -836,7 +836,8 @@ TEST_F(SessionTest, Connection_To_Proxy_Protocol)
     auto cm = std::make_shared<ConnectionManager>(
         std::make_shared<BackendSet>(partitions), &d_robinSelector);
     EXPECT_CALL(d_selector, acquireConnection(_, _))
-        .WillOnce(DoAll(SetArgPointee<0>(cm), Return(0)));
+        .WillOnce(DoAll(SetArgPointee<0>(cm),
+                        Return(SessionState::ConnectionStatus::SUCCESS)));
 
     auto protocolHeader = std::vector<uint8_t>(
         Constants::protocolHeader(),
@@ -937,7 +938,8 @@ TEST_F(SessionTest, Connect_Multiple_Dns)
         std::make_shared<BackendSet>(partitions), &d_robinSelector);
 
     EXPECT_CALL(d_selector, acquireConnection(_, _))
-        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm),
+                        Return(SessionState::ConnectionStatus::SUCCESS)));
 
     EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
     EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
@@ -1078,7 +1080,8 @@ TEST_F(SessionTest, Failover_Dns_Failure)
         std::make_shared<BackendSet>(partitions), &d_robinSelector);
 
     EXPECT_CALL(d_selector, acquireConnection(_, _))
-        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm),
+                        Return(SessionState::ConnectionStatus::SUCCESS)));
 
     EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
     EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
@@ -1173,7 +1176,8 @@ TEST_F(SessionTest, Failover_Dns_Failure)
 TEST_F(SessionTest, Connection_Then_Ping_Then_Force_Disconnect)
 {
     EXPECT_CALL(d_selector, acquireConnection(_, _))
-        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm),
+                        Return(SessionState::ConnectionStatus::SUCCESS)));
 
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
@@ -1228,7 +1232,8 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Force_Disconnect)
 TEST_F(SessionTest, Connection_Then_Ping_Then_Backend_Disconnect)
 {
     EXPECT_CALL(d_selector, acquireConnection(_, _))
-        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm),
+                        Return(SessionState::ConnectionStatus::SUCCESS)));
 
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
@@ -1290,7 +1295,8 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Backend_Disconnect)
 TEST_F(SessionTest, Authorized_Client_Test)
 {
     EXPECT_CALL(d_selector, acquireConnection(_, _))
-        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm),
+                        Return(SessionState::ConnectionStatus::SUCCESS)));
 
     std::string             modifiedMechanism   = "TEST_MECHANISM";
     std::string             modifiedCredentials = "credentials";
@@ -1369,7 +1375,8 @@ TEST_F(
     Unauthorized_Client_Test_Without_Authentication_Failure_Close_Capability)
 {
     EXPECT_CALL(d_selector, acquireConnection(_, _))
-        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm),
+                        Return(SessionState::ConnectionStatus::SUCCESS)));
 
     authproto::AuthResponse authResponseData;
     authResponseData.set_result(authproto::AuthResponse::DENY);
@@ -1395,7 +1402,7 @@ TEST_F(
     testSetupServerHandshake(1);
     testSetupClientSendsProtocolHeader(2);
     testSetupClientStartOk(3);
-    testSetupUnauthClientOpenWithShutdown(4, false);
+    testSetupClientOpenWithProxyClose(4);
 
     MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
@@ -1422,7 +1429,8 @@ TEST_F(SessionTest,
        Unauthorized_Client_Test_With_Authentication_Failure_Close_Capability)
 {
     EXPECT_CALL(d_selector, acquireConnection(_, _))
-        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm),
+                        Return(SessionState::ConnectionStatus::SUCCESS)));
 
     authproto::AuthResponse authResponseData;
     authResponseData.set_result(authproto::AuthResponse::DENY);
@@ -1456,7 +1464,12 @@ TEST_F(SessionTest,
                                FieldValue('F', capabilitiesTable));
     overriddenStartOk.setClientProperties(clientProperties);
     testSetupClientStartOk(3, overriddenStartOk);
-    testSetupUnauthClientOpenWithShutdown(4, true);
+
+    std::shared_ptr<methods::Close> closeMethodPtr =
+        std::make_shared<methods::Close>();
+    closeMethodPtr->setReply(Reply::Codes::access_refused,
+                             "Unauthorized test client");
+    testSetupClientOpenWithProxyClose(4, closeMethodPtr);
 
     MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
     MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
@@ -1482,7 +1495,8 @@ TEST_F(SessionTest,
 TEST_F(SessionTest, Forward_Received_Close_Method_To_Client_During_Handshake)
 {
     EXPECT_CALL(d_selector, acquireConnection(_, _))
-        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm),
+                        Return(SessionState::ConnectionStatus::SUCCESS)));
 
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
@@ -1543,10 +1557,65 @@ TEST_F(SessionTest, Forward_Received_Close_Method_To_Client_During_Handshake)
     EXPECT_TRUE(session->finished());
 }
 
+TEST_F(SessionTest, Close_Connection_No_Broker_Mapping)
+{
+    EXPECT_CALL(d_selector, acquireConnection(_, _))
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm),
+                        Return(SessionState::ConnectionStatus::NO_BACKEND)));
+
+    TestSocketState::State base, clientBase;
+    testSetupHostnameMapperForServerClientBase(base, clientBase);
+
+    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioService,
+                                             std::move(serverSocket),
+                                             std::move(clientSocket),
+                                             &d_selector,
+                                             &d_eventSource,
+                                             &d_pool,
+                                             &d_dnsResolver,
+                                             d_mapper,
+                                             LOCAL_HOSTNAME,
+                                             d_authIntercept);
+
+    // Initialise the state
+    d_serverState.pushItem(0, base);
+    driveTo(0);
+
+    testSetupServerHandshake(1);
+
+    // Read a protocol header from the client and reply with Start method
+    // Client  ----AMQP Header--->  Proxy                         Broker
+    // Client  <-----Start--------  Proxy                         Broker
+    testSetupClientSendsProtocolHeader(2);
+
+    // Client  ------StartOk----->  Proxy                         Broker
+    // Client  <-----Tune---------  Proxy                         Broker
+    testSetupClientStartOk(3);
+
+    // Client  ------TuneOk------>  Proxy                         Broker
+    // Client  ------Open-------->  Proxy                         Broker
+    // Client  <-----Close--------  Proxy                         Broker
+    std::shared_ptr<methods::Close> closeMethodPtr =
+        std::make_shared<methods::Close>();
+    closeMethodPtr->setReply(Reply::Codes::resource_error,
+                             "No known broker mapping for vhost ");
+    testSetupClientOpenWithProxyClose(4, closeMethodPtr);
+
+    session->start();
+
+    // Run the tests through to completion
+    driveTo(5);
+
+    EXPECT_TRUE(session->finished());
+}
+
 TEST_F(SessionTest, Printing_Breathing_Test)
 {
     EXPECT_CALL(d_selector, acquireConnection(_, _))
-        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm),
+                        Return(SessionState::ConnectionStatus::SUCCESS)));
 
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
@@ -1597,7 +1666,8 @@ TEST_F(SessionTest, Printing_Breathing_Test)
 TEST_F(SessionTest, Pause_Disconnects_Previously_Established_Connection)
 {
     EXPECT_CALL(d_selector, acquireConnection(_, _))
-        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm),
+                        Return(SessionState::ConnectionStatus::SUCCESS)));
 
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
@@ -1711,7 +1781,8 @@ TEST_F(SessionTest,
         }));
 
     EXPECT_CALL(d_selector, acquireConnection(_, _))
-        .WillOnce(DoAll(SetArgPointee<0>(d_cm), Return(0)));
+        .WillOnce(DoAll(SetArgPointee<0>(d_cm),
+                        Return(SessionState::ConnectionStatus::SUCCESS)));
 
     // Run the tests through to completion
     driveTo(16);

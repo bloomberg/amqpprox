@@ -42,6 +42,13 @@ class SessionState {
         DISCONNECTED_PROXY
     };
 
+    enum class ConnectionStatus {
+        SUCCESS = 0,
+        NO_FARM,
+        ERROR_FARM,
+        NO_BACKEND
+    };
+
   private:
     static uint64_t                 s_nextId;
     boost::asio::ip::tcp::endpoint  d_ingressLocalEndpoint;

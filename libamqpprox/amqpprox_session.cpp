@@ -21,7 +21,7 @@
 #include <amqpprox_bufferpool.h>
 #include <amqpprox_closeerror.h>
 #include <amqpprox_connectionmanager.h>
-#include <amqpprox_connectionselector.h>
+#include <amqpprox_connectionselectorinterface.h>
 #include <amqpprox_constants.h>
 #include <amqpprox_dnsresolver.h>
 #include <amqpprox_eventsource.h>
@@ -113,7 +113,7 @@ void logException(const std::string_view error,
 Session::Session(boost::asio::io_service               &ioservice,
                  MaybeSecureSocketAdaptor             &&serverSocket,
                  MaybeSecureSocketAdaptor             &&clientSocket,
-                 ConnectionSelector                    *connectionSelector,
+                 ConnectionSelectorInterface           *connectionSelector,
                  EventSource                           *eventSource,
                  BufferPool                            *bufferPool,
                  DNSResolver                           *dnsResolver,
@@ -446,11 +446,31 @@ void Session::establishConnection()
     }
 
     std::shared_ptr<ConnectionManager> connectionManager;
-    int rc = d_connectionSelector_p->acquireConnection(&connectionManager,
-                                                       d_sessionState);
-    if (0 != rc) {
+    SessionState::ConnectionStatus     rc =
+        d_connectionSelector_p->acquireConnection(&connectionManager,
+                                                  d_sessionState);
+    if (rc != SessionState::ConnectionStatus::SUCCESS) {
         // Failure reason logged within acquireConnection
-        disconnect(true);
+        switch (rc) {
+        case SessionState::ConnectionStatus::NO_FARM:
+        case SessionState::ConnectionStatus::ERROR_FARM:
+        case SessionState::ConnectionStatus::NO_BACKEND:
+            d_connector.synthesizeCustomCloseError(
+                true,
+                Reply::Codes::resource_error,
+                "No known broker mapping for vhost " +
+                    d_sessionState.getVirtualHost());
+            sendSyntheticData();
+            disconnect(true);
+            break;
+
+        default:
+            LOG_INFO << "Failed to acquire connection for vhost "
+                     << d_sessionState.getVirtualHost()
+                     << ", rc: " << static_cast<int>(rc);
+            disconnect(true);
+        }
+
         return;
     }
 
