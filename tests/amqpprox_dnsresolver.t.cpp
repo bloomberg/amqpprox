@@ -29,18 +29,18 @@ using namespace testing;
 
 TEST(DNSResolver, Breathing)
 {
-    boost::asio::io_service ioService;
-    DNSResolver             resolver(ioService);
-    ioService.run();
+    boost::asio::io_context ioContext;
+    DNSResolver             resolver(ioContext);
+    ioContext.run();
 }
 
 TEST(DNSResolver, StartStopCleanup)
 {
-    boost::asio::io_service ioService;
-    DNSResolver             resolver(ioService);
+    boost::asio::io_context ioContext;
+    DNSResolver             resolver(ioContext);
     resolver.startCleanupTimer();
     resolver.stopCleanupTimer();
-    ioService.run();
+    ioContext.run();
 }
 
 struct MockDnsResolver {
@@ -72,8 +72,8 @@ TEST(DNSResolver, Override_And_Return)
                                                std::placeholders::_2,
                                                std::placeholders::_3));
 
-    boost::asio::io_service ioService;
-    DNSResolver             resolver(ioService);
+    boost::asio::io_context ioContext;
+    DNSResolver             resolver(ioContext);
     resolver.startCleanupTimer();
     auto cb = [local_ipv4,
                local_ipv6](const boost::system::error_code &ec,
@@ -84,7 +84,7 @@ TEST(DNSResolver, Override_And_Return)
     };
     resolver.resolve("test1", "5672", cb);
     resolver.stopCleanupTimer();
-    ioService.run();
+    ioContext.run();
 
     DNSResolver::setOverrideFunction(DNSResolver::OverrideFunction());
 }
@@ -110,8 +110,8 @@ TEST(DNSResolver, Cache_Removes_Multiple_Resolutions)
                                                std::placeholders::_2,
                                                std::placeholders::_3));
 
-    boost::asio::io_service ioService;
-    DNSResolver             resolver(ioService);
+    boost::asio::io_context ioContext;
+    DNSResolver             resolver(ioContext);
     resolver.startCleanupTimer();
     auto cb = [local_ipv4,
                local_ipv6](const boost::system::error_code &ec,
@@ -126,7 +126,7 @@ TEST(DNSResolver, Cache_Removes_Multiple_Resolutions)
     resolver.resolve("test1", "5672", cb);
     resolver.resolve("test1", "5672", cb);
     resolver.stopCleanupTimer();
-    ioService.run();
+    ioContext.run();
 
     DNSResolver::setOverrideFunction(DNSResolver::OverrideFunction());
 }
@@ -154,8 +154,8 @@ TEST(DNSResolver, Multiple_Resolutions_Needed_After_Cache_Cleanup)
                                                std::placeholders::_2,
                                                std::placeholders::_3));
 
-    boost::asio::io_service ioService;
-    DNSResolver             resolver(ioService);
+    boost::asio::io_context ioContext;
+    DNSResolver             resolver(ioContext);
     auto                    cb = [local_ipv4,
                local_ipv6](const boost::system::error_code &ec,
                            const std::vector<TcpEndpoint> & endpoints) {
@@ -171,12 +171,12 @@ TEST(DNSResolver, Multiple_Resolutions_Needed_After_Cache_Cleanup)
     // the chance
     resolver.setCacheTimeout(1);
     resolver.startCleanupTimer();
-    ioService.run_for(50ms);
+    ioContext.run_for(50ms);
 
     // Second request should be cache cold, so expectation is 2 times
     resolver.resolve("test1", "5672", cb);
     resolver.stopCleanupTimer();
-    ioService.run();
+    ioContext.run();
 
     DNSResolver::setOverrideFunction(DNSResolver::OverrideFunction());
 }
@@ -212,8 +212,8 @@ TEST(DNSResolver, Independent_Resolutions_Get_Cached_Indpendently)
                                                std::placeholders::_2,
                                                std::placeholders::_3));
 
-    boost::asio::io_service ioService;
-    DNSResolver             resolver(ioService);
+    boost::asio::io_context ioContext;
+    DNSResolver             resolver(ioContext);
     resolver.startCleanupTimer();
     auto cb1 = [local_ipv4,
                 local_ipv6](const boost::system::error_code &ec,
@@ -236,7 +236,7 @@ TEST(DNSResolver, Independent_Resolutions_Get_Cached_Indpendently)
     resolver.resolve("test2", "5673", cb2);
     resolver.resolve("test2", "5673", cb2);
     resolver.stopCleanupTimer();
-    ioService.run();
+    ioContext.run();
 
     DNSResolver::setOverrideFunction(DNSResolver::OverrideFunction());
 }
@@ -258,8 +258,8 @@ TEST(DNSResolver, No_Underlying_Call_When_Cached)
                                                std::placeholders::_2,
                                                std::placeholders::_3));
 
-    boost::asio::io_service ioService;
-    DNSResolver             resolver(ioService);
+    boost::asio::io_context ioContext;
+    DNSResolver             resolver(ioContext);
     resolver.startCleanupTimer();
     auto cb1 = [local_ipv4,
                 local_ipv6](const boost::system::error_code &ec,
@@ -273,7 +273,7 @@ TEST(DNSResolver, No_Underlying_Call_When_Cached)
     resolver.resolve("test1", "5672", cb1);
     resolver.resolve("test1", "5672", cb1);
     resolver.stopCleanupTimer();
-    ioService.run();
+    ioContext.run();
 
     DNSResolver::setOverrideFunction(DNSResolver::OverrideFunction());
 }
@@ -299,8 +299,8 @@ TEST(DNSResolver, Cache_Clear_Means_Multiple_Resolutions)
                                                std::placeholders::_2,
                                                std::placeholders::_3));
 
-    boost::asio::io_service ioService;
-    DNSResolver             resolver(ioService);
+    boost::asio::io_context ioContext;
+    DNSResolver             resolver(ioContext);
     resolver.startCleanupTimer();
     auto cb = [local_ipv4,
                local_ipv6](const boost::system::error_code &ec,
@@ -316,7 +316,7 @@ TEST(DNSResolver, Cache_Clear_Means_Multiple_Resolutions)
     resolver.clearCachedResolution("test1", "5672");
     resolver.resolve("test1", "5672", cb);
     resolver.stopCleanupTimer();
-    ioService.run();
+    ioContext.run();
 
     DNSResolver::setOverrideFunction(DNSResolver::OverrideFunction());
 }
@@ -327,8 +327,8 @@ TEST(DNSResolver, Real_Resolver_For_IP)
     std::vector<TcpEndpoint> resolveResult;
     resolveResult.push_back(local_ipv4);
 
-    boost::asio::io_service ioService;
-    DNSResolver             resolver(ioService);
+    boost::asio::io_context ioContext;
+    DNSResolver             resolver(ioContext);
     resolver.startCleanupTimer();
     auto cb = [local_ipv4](const boost::system::error_code &ec,
                            const std::vector<TcpEndpoint> & endpoints) {
@@ -338,5 +338,5 @@ TEST(DNSResolver, Real_Resolver_For_IP)
     };
     resolver.resolve("127.0.0.1", "5672", cb);
     resolver.stopCleanupTimer();
-    ioService.run();
+    ioContext.run();
 }

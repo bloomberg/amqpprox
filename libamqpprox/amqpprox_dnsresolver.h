@@ -62,7 +62,7 @@ class DNSResolver {
                                                 const std::string &)>;
 
   private:
-    boost::asio::io_service       &d_ioService;
+    boost::asio::io_context       &d_ioContext;
     boost::asio::ip::tcp::resolver d_resolver;
     boost::asio::steady_timer      d_timer;
     std::atomic<uint32_t>          d_cacheTimeout;
@@ -74,11 +74,11 @@ class DNSResolver {
 
   public:
     /**
-     * \brief Construct a resolver using io_service
+     * \brief Construct a resolver using io_context
      *
-     * This resolver will then use the passed io_service as its event loop.
+     * This resolver will then use the passed io_context as its event loop.
      */
-    explicit DNSResolver(boost::asio::io_service &ioService);
+    explicit DNSResolver(boost::asio::io_context &ioContext);
 
     ~DNSResolver();
 
@@ -192,7 +192,7 @@ void DNSResolver::resolve(std::string_view       query_host,
             boost::system::error_code ec;
             std::vector<TcpEndpoint>  result = it->second;
             auto cb = [callback, ec, result] { callback(ec, result); };
-            d_ioService.post(cb);
+            d_ioContext.post(cb);
             return;
         }
     }
@@ -203,7 +203,7 @@ void DNSResolver::resolve(std::string_view       query_host,
         LOG_TRACE << "Returning " << vec.size()
                   << " overriden values with ec = " << ec;
         auto cb = [callback, ec, vec] { callback(ec, vec); };
-        d_ioService.post(cb);
+        d_ioContext.post(cb);
 
         if (!ec) {
             setCachedResolution(host, service, std::move(vec));

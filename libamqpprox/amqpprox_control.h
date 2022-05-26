@@ -35,7 +35,7 @@ class Server;
 class Control {
     Server                                                *d_server_p;
     EventSource                                           *d_eventSource_p;
-    boost::asio::io_service                                d_ioService;
+    boost::asio::io_context                                d_ioContext;
     boost::asio::local::stream_protocol::acceptor          d_acceptor;
     boost::asio::local::stream_protocol::socket            d_socket;
     std::map<std::string, std::unique_ptr<ControlCommand>> d_controlCommands;
@@ -91,7 +91,7 @@ class Control {
     /**
      * \return IO service for the control thread
      */
-    boost::asio::io_service &ioService();
+    boost::asio::io_context &ioContext();
 
   private:
     void doAccept();

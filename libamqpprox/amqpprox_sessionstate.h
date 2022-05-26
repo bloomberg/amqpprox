@@ -87,21 +87,21 @@ class SessionState {
     // MANIPULATORS
     /**
      * \brief Set the tcp pair for egress
-     * \param ioService handle to the boost asio service
+     * \param ioContext handle to the boost asio service
      * \param local local endpoint
      * \param remote remote endpoint
      */
-    void setEgress(boost::asio::io_service       &ioService,
+    void setEgress(boost::asio::io_context       &ioContext,
                    boost::asio::ip::tcp::endpoint local,
                    boost::asio::ip::tcp::endpoint remote);
 
     /**
      * \brief Set the tcp pair for ingress
-     * \param ioService handle to the boost asio service
+     * \param ioContext handle to the boost asio service
      * \param local local endpoint
      * \param remote remote endpoint
      */
-    void setIngress(boost::asio::io_service       &ioService,
+    void setIngress(boost::asio::io_context       &ioContext,
                     boost::asio::ip::tcp::endpoint local,
                     boost::asio::ip::tcp::endpoint remote);
 
@@ -146,11 +146,11 @@ class SessionState {
 
     /**
      * \brief Set up a hostname mapper for the Session
-     * \param ioService handle to the boost asio service
+     * \param ioContext handle to the boost asio service
      * \param hostnameMapper shared pointer to `HostnameMapper`
      */
     void
-    setHostnameMapper(boost::asio::io_service               &ioService,
+    setHostnameMapper(boost::asio::io_context               &ioContext,
                       const std::shared_ptr<HostnameMapper> &hostnameMapper);
 
     /**

@@ -32,7 +32,7 @@ class MockHostnameMapper : public HostnameMapper {
   public:
     MOCK_METHOD2(
         prime,
-        void(boost::asio::io_service &ioService,
+        void(boost::asio::io_context &ioContext,
              const std::initializer_list<boost::asio::ip::tcp::endpoint>
                  endpoint));
     MOCK_CONST_METHOD1(
@@ -44,7 +44,7 @@ class MockHostnameMapper : public HostnameMapper {
 
 TEST(SessionState, noHostnameMapper)
 {
-    io_service ioService;
+    io_context ioContext;
 
     SessionState s(nullptr);
 
@@ -52,7 +52,7 @@ TEST(SessionState, noHostnameMapper)
     auto ip2  = "2.2.2.2";
     auto port = 42;
 
-    s.setEgress(ioService,
+    s.setEgress(ioContext,
                 ip::tcp::endpoint(ip::address::from_string(ip1), port),
                 ip::tcp::endpoint(ip::address::from_string(ip2), port));
 
@@ -63,7 +63,7 @@ TEST(SessionState, noHostnameMapper)
 
 TEST(SessionState, hostnameMapper)
 {
-    io_service ioService;
+    io_context ioContext;
 
     auto         m = std::make_shared<MockHostnameMapper>();
     SessionState s(m);
@@ -73,7 +73,7 @@ TEST(SessionState, hostnameMapper)
     auto port = 42;
 
     EXPECT_CALL(*m, prime(_, _)).Times(1);
-    s.setEgress(ioService,
+    s.setEgress(ioContext,
                 ip::tcp::endpoint(ip::address::from_string(ip1), port),
                 ip::tcp::endpoint(ip::address::from_string(ip2), port));
 

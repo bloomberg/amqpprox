@@ -62,7 +62,7 @@ void MapHostnameControlCommand::handleCommand(
     serverHandle->setHostnameMapper(m);
     serverHandle->visitSessions(
         [&m, controlHandle](const std::shared_ptr<Session> &s) {
-            s->state().setHostnameMapper(controlHandle->ioService(), m);
+            s->state().setHostnameMapper(controlHandle->ioContext(), m);
         });
 
     outputFunctor("Hostname mapper set for all current sessions.\n", true);

@@ -161,9 +161,9 @@ Control::Control(Server            *server,
                  const std::string &udsPath)
 : d_server_p(server)
 , d_eventSource_p(source)
-, d_ioService()
-, d_acceptor(d_ioService, stream_protocol::endpoint(udsPath))
-, d_socket(d_ioService)
+, d_ioContext()
+, d_acceptor(d_ioContext, stream_protocol::endpoint(udsPath))
+, d_socket(d_ioContext)
 {
     boost::asio::socket_base::reuse_address option(true);
     d_acceptor.set_option(option);
@@ -174,7 +174,7 @@ Control::Control(Server            *server,
 void Control::run()
 {
     try {
-        d_ioService.run();
+        d_ioContext.run();
     }
     catch (std::exception &e) {
         LOG_FATAL << "Control Thread Exception: " << e.what();
@@ -183,7 +183,7 @@ void Control::run()
 
 void Control::stop()
 {
-    d_ioService.stop();
+    d_ioContext.stop();
 }
 
 void Control::scheduleRecurringEvent(
@@ -192,7 +192,7 @@ void Control::scheduleRecurringEvent(
     const std::function<bool(Control *, Server *)> &event)
 {
     auto duration = boost::posix_time::milliseconds(intervalMs);
-    auto timer    = std::make_shared<boost::asio::deadline_timer>(d_ioService);
+    auto timer    = std::make_shared<boost::asio::deadline_timer>(d_ioContext);
     timer->expires_from_now(duration);
     timer->async_wait([this, name, intervalMs, event, timer](
                           const boost::system::error_code &ec) {
@@ -248,9 +248,9 @@ void Control::doAccept()
     });
 }
 
-boost::asio::io_service &Control::ioService()
+boost::asio::io_context &Control::ioContext()
 {
-    return d_ioService;
+    return d_ioContext;
 }
 
 }

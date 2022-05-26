@@ -58,13 +58,13 @@ formatMetric(MetricType                                              type,
 
 }
 
-StatsDPublisher::StatsDPublisher(boost::asio::io_service *ioService,
+StatsDPublisher::StatsDPublisher(boost::asio::io_context *ioContext,
                                  const std::string       &host,
                                  int                      port)
-: d_socket(*ioService,
+: d_socket(*ioContext,
            boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 0))
 {
-    boost::asio::ip::udp::resolver        resolver(*ioService);
+    boost::asio::ip::udp::resolver        resolver(*ioContext);
     boost::asio::ip::udp::resolver::query query(
         boost::asio::ip::udp::v4(), host, std::to_string(port));
     d_statsdEndpoint = *resolver.resolve(query);

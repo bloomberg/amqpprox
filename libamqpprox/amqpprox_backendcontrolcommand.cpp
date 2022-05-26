@@ -77,8 +77,8 @@ void BackendControlCommand::handleCommand(const std::string & /* command */,
         if (!name.empty() && !datacenter.empty() && !host.empty() && port) {
             std::string ip;
             if (!isDns) {
-                auto &ioService = controlHandle->ioService();
-                boost::asio::ip::tcp::resolver        resolver(ioService);
+                auto &ioContext = controlHandle->ioContext();
+                boost::asio::ip::tcp::resolver        resolver(ioContext);
                 boost::asio::ip::tcp::resolver::query q(host, "");
                 boost::system::error_code             ec;
                 auto it = resolver.resolve(q, ec);

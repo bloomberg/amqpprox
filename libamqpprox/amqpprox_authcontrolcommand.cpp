@@ -74,7 +74,7 @@ void AuthControlCommand::handleCommand(const std::string & /* command */,
             }
 
             serverHandle->setAuthIntercept(std::make_shared<HttpAuthIntercept>(
-                serverHandle->ioService(),
+                serverHandle->ioContext(),
                 hostname,
                 std::to_string(port),
                 target,
@@ -85,7 +85,7 @@ void AuthControlCommand::handleCommand(const std::string & /* command */,
         else if (subcommand == "ALWAYS_ALLOW") {
             serverHandle->setAuthIntercept(
                 std::make_shared<DefaultAuthIntercept>(
-                    serverHandle->ioService()));
+                    serverHandle->ioContext()));
 
             serverHandle->getAuthIntercept()->print(output);
         }

@@ -294,7 +294,7 @@ void StatControlCommand::handleCommand(const std::string   &command,
         }
         std::shared_ptr<StatsDPublisher> publisher =
             std::make_shared<StatsDPublisher>(
-                &controlHandle->ioService(), outputHost, outputPort);
+                &controlHandle->ioContext(), outputHost, outputPort);
         StatFunctor sf = [publisher](const StatSnapshot &statSnapshot) {
             publisher->publish(statSnapshot);
             return true;

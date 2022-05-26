@@ -37,10 +37,10 @@ DNSHostnameMapper::DNSHostnameMapper()
 }
 
 void DNSHostnameMapper::prime(
-    boost::asio::io_service                              &ioService,
+    boost::asio::io_context                              &ioContext,
     std::initializer_list<boost::asio::ip::tcp::endpoint> endpoints)
 {
-    boost::asio::ip::tcp::resolver resolver(ioService);
+    boost::asio::ip::tcp::resolver resolver(ioContext);
     for (const auto &endpoint : endpoints) {
         auto address = boost::lexical_cast<std::string>(endpoint.address());
         boost::upgrade_lock<boost::shared_mutex> lock(d_lg);

@@ -44,7 +44,7 @@ class HostnameMapper;
 class Server {
     using SessionPtr = std::shared_ptr<Session>;
 
-    boost::asio::io_service                  d_ioService;
+    boost::asio::io_context                  d_ioContext;
     boost::asio::ssl::context                d_ingressTlsContext;
     boost::asio::ssl::context                d_egressTlsContext;
     boost::asio::deadline_timer              d_timer;
@@ -162,7 +162,7 @@ class Server {
     /**
      * \return the boost::asio io service object
      */
-    boost::asio::io_service &ioService();
+    boost::asio::io_context &ioContext();
 
     /**
      * \return the current AuthIntercept mechanism applied on each session
