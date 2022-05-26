@@ -34,7 +34,7 @@ class AuthResponse;
  */
 class AuthInterceptInterface {
   protected:
-    boost::asio::io_service &d_ioService;
+    boost::asio::io_context &d_ioContext;
 
   public:
     /**
@@ -45,7 +45,7 @@ class AuthInterceptInterface {
         ReceiveResponseCb;
 
     // CREATORS
-    explicit AuthInterceptInterface(boost::asio::io_service &ioService);
+    explicit AuthInterceptInterface(boost::asio::io_context &ioContext);
 
     virtual ~AuthInterceptInterface() = default;
 

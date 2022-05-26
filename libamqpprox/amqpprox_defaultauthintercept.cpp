@@ -27,8 +27,8 @@
 namespace Bloomberg {
 namespace amqpprox {
 
-DefaultAuthIntercept::DefaultAuthIntercept(boost::asio::io_service &ioService)
-: AuthInterceptInterface(ioService)
+DefaultAuthIntercept::DefaultAuthIntercept(boost::asio::io_context &ioContext)
+: AuthInterceptInterface(ioContext)
 {
 }
 
@@ -41,7 +41,7 @@ void DefaultAuthIntercept::authenticate(const authproto::AuthRequest,
         authResponseData.set_reason("Default route auth used - always allow");
         responseCb(authResponseData);
     };
-    boost::asio::post(d_ioService, cb);
+    boost::asio::post(d_ioContext, cb);
 }
 
 void DefaultAuthIntercept::print(std::ostream &os) const

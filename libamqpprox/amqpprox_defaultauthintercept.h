@@ -36,7 +36,7 @@ class AuthRequest;
 class DefaultAuthIntercept : public AuthInterceptInterface {
   public:
     // CREATORS
-    explicit DefaultAuthIntercept(boost::asio::io_service &ioService);
+    explicit DefaultAuthIntercept(boost::asio::io_context &ioContext);
 
     virtual ~DefaultAuthIntercept() override = default;
 

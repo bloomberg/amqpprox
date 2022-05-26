@@ -29,9 +29,9 @@ int main(int argc, char *argv[])
             return 1;
         }
 
-        boost::asio::io_service ioService;
+        boost::asio::io_context ioContext;
 
-        stream_protocol::socket clientSocket(ioService);
+        stream_protocol::socket clientSocket(ioContext);
         clientSocket.connect(stream_protocol::endpoint(argv[1]));
 
         std::string allArgs{argv[2]};

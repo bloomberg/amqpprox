@@ -41,7 +41,7 @@ class StatsDPublisher {
 
   public:
     // CREATORS
-    StatsDPublisher(boost::asio::io_service *ioService,
+    StatsDPublisher(boost::asio::io_context *ioContext,
                     const std::string       &host,
                     int                      port);
 

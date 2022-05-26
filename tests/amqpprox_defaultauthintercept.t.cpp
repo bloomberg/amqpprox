@@ -31,29 +31,29 @@ using Bloomberg::amqpprox::DefaultAuthIntercept;
 
 TEST(DefaultAuthIntercept, Breathing)
 {
-    boost::asio::io_service ioService;
-    DefaultAuthIntercept    defaultAuth(ioService);
-    ioService.run();
+    boost::asio::io_context ioContext;
+    DefaultAuthIntercept    defaultAuth(ioContext);
+    ioContext.run();
 }
 
 TEST(DefaultAuthIntercept, Authenticate)
 {
-    boost::asio::io_service ioService;
-    DefaultAuthIntercept    defaultAuth(ioService);
+    boost::asio::io_context ioContext;
+    DefaultAuthIntercept    defaultAuth(ioContext);
     auto responseCb = [](const authproto::AuthResponse &authResponseData) {
         ASSERT_EQ(authResponseData.result(), authproto::AuthResponse::ALLOW);
         ASSERT_EQ(authResponseData.reason(),
                   "Default route auth used - always allow");
     };
     defaultAuth.authenticate(authproto::AuthRequest(), responseCb);
-    ioService.run();
+    ioContext.run();
 }
 
 TEST(DefaultAuthIntercept, Print)
 {
-    boost::asio::io_service ioService;
-    DefaultAuthIntercept    defaultAuth(ioService);
-    ioService.run();
+    boost::asio::io_context ioContext;
+    DefaultAuthIntercept    defaultAuth(ioContext);
+    ioContext.run();
     std::ostringstream oss;
     defaultAuth.print(oss);
     EXPECT_EQ(oss.str(),

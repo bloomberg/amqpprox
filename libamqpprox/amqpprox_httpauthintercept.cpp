@@ -41,13 +41,13 @@ const int TIMEOUT_SECONDS = 30;
 int       HTTP_VERSION    = 11;  // HTTP/1.1 version
 }
 
-HttpAuthIntercept::HttpAuthIntercept(boost::asio::io_service &ioService,
+HttpAuthIntercept::HttpAuthIntercept(boost::asio::io_context &ioContext,
                                      const std::string       &hostname,
                                      const std::string       &port,
                                      const std::string       &target,
                                      DNSResolver             *dnsResolver)
-: AuthInterceptInterface(ioService)
-, d_ioService(ioService)
+: AuthInterceptInterface(ioContext)
+, d_ioContext(ioContext)
 , d_hostname(hostname)
 , d_port(port)
 , d_target(target)
@@ -115,7 +115,7 @@ void HttpAuthIntercept::onResolve(
 
     std::shared_ptr<beast::tcp_stream> stream =
         std::make_shared<beast::tcp_stream>(
-            boost::asio::make_strand(d_ioService));
+            boost::asio::make_strand(d_ioContext));
     // Set a timeout on the operation
     stream->expires_after(std::chrono::seconds(TIMEOUT_SECONDS));
 

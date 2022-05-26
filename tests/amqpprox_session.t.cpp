@@ -64,7 +64,7 @@
 #include <authresponse.pb.h>
 
 #include <boost/asio/error.hpp>
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/system/error_code.hpp>
@@ -99,7 +99,7 @@ struct SelectorMock : public ConnectionSelectorInterface {
 
 struct HostnameMapperMock : public HostnameMapper {
     MOCK_METHOD2(prime,
-                 void(boost::asio::io_service &,
+                 void(boost::asio::io_context &,
                       std::initializer_list<boost::asio::ip::tcp::endpoint>));
 
     MOCK_CONST_METHOD1(mapToHostname,
@@ -109,8 +109,8 @@ struct HostnameMapperMock : public HostnameMapper {
 struct AuthInterceptInterfaceMock : public AuthInterceptInterface {
     virtual ~AuthInterceptInterfaceMock() {}
 
-    AuthInterceptInterfaceMock(boost::asio::io_service &ioService)
-    : AuthInterceptInterface(ioService)
+    AuthInterceptInterfaceMock(boost::asio::io_context &ioContext)
+    : AuthInterceptInterface(ioContext)
     {
     }
 
@@ -129,7 +129,7 @@ boost::asio::ip::tcp::endpoint makeEndpoint(const std::string &str,
 
 class SessionTest : public ::testing::Test {
   protected:
-    boost::asio::io_service                     d_ioService;
+    boost::asio::io_context                     d_ioContext;
     BufferPool                                  d_pool;
     Backend                                     d_backend1;
     Backend                                     d_backend2;
@@ -623,9 +623,9 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Disconnect)
 
     runStandardConnectWithDisconnect(&clientBase);
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -694,9 +694,9 @@ TEST_F(SessionTest, BadClientHandshake)
 
     testSetupClientOpenWithoutTune(4);
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -757,9 +757,9 @@ TEST_F(SessionTest, BadServerHandshake)
     // Client                       Proxy  <-------OpenOk------  Broker
     testSetupProxyOutOfOrderOpen(7);
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -806,9 +806,9 @@ TEST_F(SessionTest, New_Client_Handshake_Failure)
         EXPECT_THAT(items, Contains(VariantWith<Call>(Call("close"))));
     });
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -852,9 +852,9 @@ TEST_F(SessionTest, Connection_To_Proxy_Protocol)
 
     runStandardConnectWithDisconnect(&clientBase);
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -993,9 +993,9 @@ TEST_F(SessionTest, Connect_Multiple_Dns)
     testSetupBrokerRespondsCloseOk(step++);
     testSetupHandlersCleanedUp(step++);
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -1142,9 +1142,9 @@ TEST_F(SessionTest, Failover_Dns_Failure)
     testSetupBrokerRespondsCloseOk(step++);
     testSetupHandlersCleanedUp(step++);
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -1198,9 +1198,9 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Force_Disconnect)
     testSetupBrokerSendsHeartbeat(10);
     testSetupClientSendsHeartbeat(11);
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -1254,9 +1254,9 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Backend_Disconnect)
     testSetupBrokerSendsHeartbeat(10);
     testSetupClientSendsHeartbeat(11);
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -1339,9 +1339,9 @@ TEST_F(SessionTest, Authorized_Client_Test)
     testSetupBrokerRespondsCloseOk(14);
     testSetupHandlersCleanedUp(15);
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -1404,9 +1404,9 @@ TEST_F(
     testSetupClientStartOk(3);
     testSetupClientOpenWithProxyClose(4);
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -1471,9 +1471,9 @@ TEST_F(SessionTest,
                              "Unauthorized test client");
     testSetupClientOpenWithProxyClose(4, closeMethodPtr);
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -1536,9 +1536,9 @@ TEST_F(SessionTest, Forward_Received_Close_Method_To_Client_During_Handshake)
     // client Client  <-------Close------- Proxy  <-------Close--------  Broker
     testSetupProxyForwardsBrokerClose(8);
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -1566,9 +1566,9 @@ TEST_F(SessionTest, Close_Connection_No_Broker_Mapping)
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -1626,9 +1626,9 @@ TEST_F(SessionTest, Printing_Breathing_Test)
 
     runStandardConnectWithDisconnect(&clientBase);
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -1678,9 +1678,9 @@ TEST_F(SessionTest, Pause_Disconnects_Previously_Established_Connection)
 
     runStandardConnect(&clientBase);
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -1724,9 +1724,9 @@ TEST_F(SessionTest,
 
     runConnectToClientOpen(&clientBase);
 
-    MaybeSecureSocketAdaptor clientSocket(d_ioService, d_client, false);
-    MaybeSecureSocketAdaptor serverSocket(d_ioService, d_server, false);
-    auto                     session = std::make_shared<Session>(d_ioService,
+    MaybeSecureSocketAdaptor clientSocket(d_ioContext, d_client, false);
+    MaybeSecureSocketAdaptor serverSocket(d_ioContext, d_server, false);
+    auto                     session = std::make_shared<Session>(d_ioContext,
                                              std::move(serverSocket),
                                              std::move(clientSocket),
                                              &d_selector,
@@ -1822,7 +1822,7 @@ Data coalesce(std::initializer_list<Data> input)
 }
 
 SessionTest::SessionTest()
-: d_ioService()
+: d_ioContext()
 , d_pool({32,
           64,
           128,
@@ -1838,7 +1838,7 @@ SessionTest::SessionTest()
 , d_backend2("backend2", "dc2", "localhost", "127.0.0.1", 5673)
 , d_backend3("backend3", "dc3", "localhost", "127.0.0.1", 5674)
 , d_mapper(new HostnameMapperMock)
-, d_dnsResolver(d_ioService)
+, d_dnsResolver(d_ioContext)
 , d_selector()
 , d_robinSelector()
 , d_cm()
@@ -1853,9 +1853,9 @@ SessionTest::SessionTest()
                    Constants::protocolHeader() +
                        Constants::protocolHeaderLength())
 , d_step(0)
-, d_authIntercept(std::make_shared<DefaultAuthIntercept>(d_ioService))
+, d_authIntercept(std::make_shared<DefaultAuthIntercept>(d_ioContext))
 , d_mockAuthIntercept(
-      std::make_shared<AuthInterceptInterfaceMock>(d_ioService))
+      std::make_shared<AuthInterceptInterfaceMock>(d_ioContext))
 {
     std::vector<BackendSet::Partition> partitions;
     partitions.push_back(
@@ -1876,8 +1876,8 @@ void SessionTest::driveTo(int targetStep)
         while (drive) {
             bool clientHadWork = d_clientState.drive();
             bool serverHadWork = d_serverState.drive();
-            bool ioloopHadWork = d_ioService.run() > 0;
-            d_ioService.restart();
+            bool ioloopHadWork = d_ioContext.run() > 0;
+            d_ioContext.restart();
             drive = clientHadWork || serverHadWork || ioloopHadWork;
         }
 

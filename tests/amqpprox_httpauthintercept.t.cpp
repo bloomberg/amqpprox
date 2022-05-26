@@ -28,20 +28,20 @@ using Bloomberg::amqpprox::HttpAuthIntercept;
 
 TEST(HttpAuthIntercept, Breathing)
 {
-    boost::asio::io_service ioService;
-    DNSResolver             dnsResolver(ioService);
+    boost::asio::io_context ioContext;
+    DNSResolver             dnsResolver(ioContext);
     HttpAuthIntercept       authIntercept(
-        ioService, "localhost", "8080", "/target", &dnsResolver);
-    ioService.run();
+        ioContext, "localhost", "8080", "/target", &dnsResolver);
+    ioContext.run();
 }
 
 TEST(HttpAuthIntercept, Print)
 {
-    boost::asio::io_service ioService;
-    DNSResolver             dnsResolver(ioService);
+    boost::asio::io_context ioContext;
+    DNSResolver             dnsResolver(ioContext);
     HttpAuthIntercept       authIntercept(
-        ioService, "localhost", "8080", "/target", &dnsResolver);
-    ioService.run();
+        ioContext, "localhost", "8080", "/target", &dnsResolver);
+    ioContext.run();
     std::ostringstream oss;
     authIntercept.print(oss);
     EXPECT_EQ(oss.str(),

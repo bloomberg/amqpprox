@@ -57,7 +57,7 @@ class Session : public std::enable_shared_from_this<Session> {
     using TimePoint =
         std::chrono::time_point<std::chrono::high_resolution_clock>;
 
-    boost::asio::io_service     &d_ioService;
+    boost::asio::io_context     &d_ioContext;
     MaybeSecureSocketAdaptor     d_serverSocket;
     MaybeSecureSocketAdaptor     d_clientSocket;
     BufferHandle                 d_serverDataHandle;
@@ -85,7 +85,7 @@ class Session : public std::enable_shared_from_this<Session> {
 
   public:
     // CREATORS
-    Session(boost::asio::io_service                       &ioservice,
+    Session(boost::asio::io_context                       &ioContext,
             MaybeSecureSocketAdaptor                     &&serverSocket,
             MaybeSecureSocketAdaptor                     &&clientSocket,
             ConnectionSelectorInterface                   *connectionSelector,

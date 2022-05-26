@@ -29,10 +29,10 @@ namespace amqpprox {
 
 DNSResolver::OverrideFunction DNSResolver::s_override;
 
-DNSResolver::DNSResolver(boost::asio::io_service &ioService)
-: d_ioService(ioService)
-, d_resolver(d_ioService)
-, d_timer(d_ioService)
+DNSResolver::DNSResolver(boost::asio::io_context &ioContext)
+: d_ioContext(ioContext)
+, d_resolver(d_ioContext)
+, d_timer(d_ioContext)
 , d_cacheTimeout(1000)
 , d_cacheTimerRunning(false)
 {

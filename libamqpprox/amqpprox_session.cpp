@@ -110,7 +110,7 @@ void logException(const std::string_view error,
 
 }
 
-Session::Session(boost::asio::io_service               &ioservice,
+Session::Session(boost::asio::io_context               &ioContext,
                  MaybeSecureSocketAdaptor             &&serverSocket,
                  MaybeSecureSocketAdaptor             &&clientSocket,
                  ConnectionSelectorInterface           *connectionSelector,
@@ -120,7 +120,7 @@ Session::Session(boost::asio::io_service               &ioservice,
                  const std::shared_ptr<HostnameMapper> &hostnameMapper,
                  std::string_view                       localHostname,
                  const std::shared_ptr<AuthInterceptInterface> &authIntercept)
-: d_ioService(ioservice)
+: d_ioContext(ioContext)
 , d_serverSocket(std::move(serverSocket))
 , d_clientSocket(std::move(clientSocket))
 , d_serverDataHandle()
@@ -168,7 +168,7 @@ bool Session::finished()
 void Session::start()
 {
     boost::system::error_code ecl, ecr;
-    d_sessionState.setIngress(d_ioService,
+    d_sessionState.setIngress(d_ioContext,
                               d_serverSocket.local_endpoint(ecl),
                               d_serverSocket.remote_endpoint(ecr));
 
@@ -340,7 +340,7 @@ void Session::attemptEndpointConnection(
             }
 
             d_sessionState.setEgress(
-                d_ioService, local_endpoint, remote_endpoint);
+                d_ioContext, local_endpoint, remote_endpoint);
 
             d_clientSocket.setDefaultOptions(ec);
             if (ec) {
@@ -596,7 +596,7 @@ void Session::disconnect(bool forcible)
         auto self(shared_from_this());
         d_sessionState.setDisconnected(
             SessionState::DisconnectType::DISCONNECTED_PROXY);
-        d_ioService.dispatch([this, self] {
+        d_ioContext.dispatch([this, self] {
             BOOST_LOG_SCOPED_THREAD_ATTR(
                 "Vhost",
                 boost::log::attributes::constant<std::string>(
@@ -618,7 +618,7 @@ void Session::disconnect(bool forcible)
 void Session::backendDisconnect()
 {
     auto self(shared_from_this());
-    d_ioService.dispatch([this, self] {
+    d_ioContext.dispatch([this, self] {
         BOOST_LOG_SCOPED_THREAD_ATTR(
             "Vhost",
             boost::log::attributes::constant<std::string>(

@@ -22,8 +22,8 @@ namespace Bloomberg {
 namespace amqpprox {
 
 AuthInterceptInterface::AuthInterceptInterface(
-    boost::asio::io_service &ioService)
-: d_ioService(ioService)
+    boost::asio::io_context &ioContext)
+: d_ioContext(ioContext)
 {
 }
 

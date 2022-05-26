@@ -61,21 +61,21 @@ void initTLS(boost::asio::ssl::context &context)
 Server::Server(ConnectionSelector *selector,
                EventSource        *eventSource,
                BufferPool         *bufferPool)
-: d_ioService()
+: d_ioContext()
 , d_ingressTlsContext(boost::asio::ssl::context::tlsv12)
 , d_egressTlsContext(boost::asio::ssl::context::tlsv12)
-, d_timer(d_ioService, boost::posix_time::time_duration(0, 0, 10, 0))
+, d_timer(d_ioContext, boost::posix_time::time_duration(0, 0, 10, 0))
 , d_sessions()
 , d_deletingSessions()
 , d_listeningSockets()
-, d_dnsResolver(d_ioService)
+, d_dnsResolver(d_ioContext)
 , d_connectionSelector_p(selector)
 , d_eventSource_p(eventSource)
 , d_bufferPool_p(bufferPool)
 , d_mutex()
 , d_hostnameMapper()
 , d_localHostname(boost::asio::ip::host_name())
-, d_authIntercept(std::make_shared<DefaultAuthIntercept>(d_ioService))
+, d_authIntercept(std::make_shared<DefaultAuthIntercept>(d_ioContext))
 {
     d_dnsResolver.setCacheTimeout(1000);
     d_dnsResolver.startCleanupTimer();
@@ -91,16 +91,16 @@ Server::~Server()
     d_dnsResolver.stopCleanupTimer();
     closeListeners();
 
-    // Ensure the io_service is stopped fully
-    if (!d_ioService.stopped()) {
-        d_ioService.stop();
+    // Ensure the io_context is stopped fully
+    if (!d_ioContext.stopped()) {
+        d_ioContext.stop();
     }
 }
 
 int Server::run()
 {
     try {
-        d_ioService.run();
+        d_ioContext.run();
     }
     catch (std::exception &e) {
         LOG_FATAL << "Exception: " << e.what();
@@ -121,12 +121,12 @@ void Server::closeListeners()
 
 void Server::stop()
 {
-    d_ioService.stop();
+    d_ioContext.stop();
 }
 
 void Server::startListening(int port, bool secure)
 {
-    d_ioService.dispatch([this, port, secure] {
+    d_ioContext.dispatch([this, port, secure] {
         {
             std::lock_guard<std::mutex> lg(d_mutex);
             auto                        it = d_listeningSockets.find(port);
@@ -135,7 +135,7 @@ void Server::startListening(int port, bool secure)
                 return;
             }
 
-            boost::asio::ip::tcp::acceptor acceptor(d_ioService);
+            boost::asio::ip::tcp::acceptor acceptor(d_ioContext);
             tcp::endpoint                  local_endpoint(tcp::v4(), port);
             acceptor.open(local_endpoint.protocol());
             acceptor.set_option(boost::asio::socket_base::reuse_address(true));
@@ -150,7 +150,7 @@ void Server::startListening(int port, bool secure)
 
 void Server::stopListening(int port)
 {
-    d_ioService.dispatch([this, port] {
+    d_ioContext.dispatch([this, port] {
         std::lock_guard<std::mutex> lg(d_mutex);
         auto                        it = d_listeningSockets.find(port);
         if (it != d_listeningSockets.end()) {
@@ -198,17 +198,17 @@ void Server::doAccept(int port, bool secure)
 
     std::shared_ptr<MaybeSecureSocketAdaptor> incomingSocket =
         std::make_shared<MaybeSecureSocketAdaptor>(
-            d_ioService, d_ingressTlsContext, secure);
+            d_ioContext, d_ingressTlsContext, secure);
 
     it->second.async_accept(
         incomingSocket->socket(),
         [this, port, secure, incomingSocket](error_code ec) {
             if (!ec) {
                 MaybeSecureSocketAdaptor clientSocket(
-                    d_ioService, d_egressTlsContext, false);
+                    d_ioContext, d_egressTlsContext, false);
 
                 auto session =
-                    std::make_shared<Session>(d_ioService,
+                    std::make_shared<Session>(d_ioContext,
                                               std::move(*incomingSocket),
                                               std::move(clientSocket),
                                               d_connectionSelector_p,
@@ -252,7 +252,7 @@ void Server::clearDefunctSessions()
     std::unordered_set<SessionPtr> deletionCopy(d_deletingSessions);
     d_deletingSessions.clear();
 
-    d_ioService.post([this, deletionCopy]() mutable {
+    d_ioContext.post([this, deletionCopy]() mutable {
         // Here we **post** onto the io loop so as to avoid recursively locking
         // the mutex. Although the mutex guards no data from this mutable
         // lambda, we use it to ensure the posted event does not occur before
@@ -326,9 +326,9 @@ boost::asio::ssl::context &Server::egressTlsContext()
     return d_egressTlsContext;
 }
 
-boost::asio::io_service &Server::ioService()
+boost::asio::io_context &Server::ioContext()
 {
-    return d_ioService;
+    return d_ioContext;
 }
 
 std::shared_ptr<AuthInterceptInterface> Server::getAuthIntercept() const

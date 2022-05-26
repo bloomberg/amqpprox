@@ -36,7 +36,7 @@ class HttpAuthIntercept
   public std::enable_shared_from_this<HttpAuthIntercept> {
     using tcp = boost::asio::ip::tcp;
 
-    boost::asio::io_service &d_ioService;
+    boost::asio::io_context &d_ioContext;
     std::string              d_hostname;
     std::string              d_port;
     std::string              d_target;
@@ -70,7 +70,7 @@ class HttpAuthIntercept
 
   public:
     // CREATORS
-    HttpAuthIntercept(boost::asio::io_service &ioService,
+    HttpAuthIntercept(boost::asio::io_context &ioContext,
                       const std::string       &hostname,
                       const std::string       &port,
                       const std::string       &target,

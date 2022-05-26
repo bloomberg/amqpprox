@@ -55,12 +55,12 @@ SessionState::SessionState(
 {
 }
 
-void SessionState::setEgress(boost::asio::io_service       &ioService,
+void SessionState::setEgress(boost::asio::io_context       &ioContext,
                              boost::asio::ip::tcp::endpoint local,
                              boost::asio::ip::tcp::endpoint remote)
 {
     if (d_hostnameMapper) {
-        d_hostnameMapper->prime(ioService, {local, remote});
+        d_hostnameMapper->prime(ioContext, {local, remote});
     }
 
     std::lock_guard<std::mutex> lg(d_lock);
@@ -68,12 +68,12 @@ void SessionState::setEgress(boost::asio::io_service       &ioService,
     d_egressRemoteEndpoint = remote;
 }
 
-void SessionState::setIngress(boost::asio::io_service       &ioService,
+void SessionState::setIngress(boost::asio::io_context       &ioContext,
                               boost::asio::ip::tcp::endpoint local,
                               boost::asio::ip::tcp::endpoint remote)
 {
     if (d_hostnameMapper) {
-        d_hostnameMapper->prime(ioService, {local, remote});
+        d_hostnameMapper->prime(ioContext, {local, remote});
     }
 
     std::lock_guard<std::mutex> lg(d_lock);
@@ -88,7 +88,7 @@ void SessionState::setVirtualHost(const std::string &vhost)
 }
 
 void SessionState::setHostnameMapper(
-    boost::asio::io_service               &ioService,
+    boost::asio::io_context               &ioContext,
     const std::shared_ptr<HostnameMapper> &hostnameMapper)
 {
     if (!hostnameMapper) {
@@ -96,7 +96,7 @@ void SessionState::setHostnameMapper(
     }
     std::lock_guard<std::mutex> lg(d_lock);
     d_hostnameMapper = hostnameMapper;
-    d_hostnameMapper->prime(ioService,
+    d_hostnameMapper->prime(ioContext,
                             {d_ingressLocalEndpoint,
                              d_ingressRemoteEndpoint,
                              d_egressLocalEndpoint,
