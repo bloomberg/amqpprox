@@ -36,7 +36,6 @@ namespace amqpprox {
 
 namespace {
 namespace beast = boost::beast;
-using tcp       = boost::asio::ip::tcp;
 
 const int TIMEOUT_SECONDS = 30;
 int       HTTP_VERSION    = 11;  // HTTP/1.1 version
@@ -210,7 +209,7 @@ void HttpAuthIntercept::onWrite(
 }
 
 void HttpAuthIntercept::onRead(
-    std::shared_ptr<beast::flat_buffer>,  // Buffer must persists between reads
+    std::shared_ptr<beast::flat_buffer>,  // Buffer must persist between reads
     std::shared_ptr<beast::tcp_stream>                               stream,
     std::shared_ptr<beast::http::response<beast::http::string_body>> response,
     const ReceiveResponseCb &responseCb,

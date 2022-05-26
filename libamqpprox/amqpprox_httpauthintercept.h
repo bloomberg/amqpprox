@@ -31,14 +31,11 @@
 namespace Bloomberg {
 namespace amqpprox {
 
-namespace {
-namespace beast = boost::beast;
-using tcp       = boost::asio::ip::tcp;
-}
-
 class HttpAuthIntercept
 : public AuthInterceptInterface,
   public std::enable_shared_from_this<HttpAuthIntercept> {
+    using tcp = boost::asio::ip::tcp;
+
     boost::asio::io_service &d_ioService;
     std::string              d_hostname;
     std::string              d_port;
@@ -46,34 +43,30 @@ class HttpAuthIntercept
     DNSResolver             *d_dnsResolver_p;
     mutable std::mutex       d_mutex;
 
-    void
-    onResolve(std::shared_ptr<beast::http::request<beast::http::string_body>>
-                                               request,
-              const ReceiveResponseCb         &responseCb,
-              const boost::system::error_code &ec,
-              std::vector<tcp::endpoint>       results);
-    void
-    onConnect(std::shared_ptr<beast::tcp_stream> stream,
-              std::shared_ptr<beast::http::request<beast::http::string_body>>
-                                       request,
-              const ReceiveResponseCb &responseCb,
-              beast::error_code        ec,
-              tcp::resolver::results_type::endpoint_type);
-    void
-    onWrite(std::shared_ptr<beast::tcp_stream> stream,
-            std::shared_ptr<beast::http::request<beast::http::string_body>>
-                                     request,
-            const ReceiveResponseCb &responseCb,
-            beast::error_code        ec,
-            std::size_t              bytes_transferred);
-    void
-    onRead(std::shared_ptr<beast::flat_buffer> buffer,
-           std::shared_ptr<beast::tcp_stream>  stream,
-           std::shared_ptr<beast::http::response<beast::http::string_body>>
-                                    response,
-           const ReceiveResponseCb &responseCb,
-           beast::error_code        ec,
-           std::size_t              bytes_transferred);
+    void onResolve(std::shared_ptr<boost::beast::http::request<
+                       boost::beast::http::string_body>> request,
+                   const ReceiveResponseCb              &responseCb,
+                   const boost::system::error_code      &ec,
+                   std::vector<tcp::endpoint>            results);
+    void onConnect(std::shared_ptr<boost::beast::tcp_stream> stream,
+                   std::shared_ptr<boost::beast::http::request<
+                       boost::beast::http::string_body>>     request,
+                   const ReceiveResponseCb                  &responseCb,
+                   boost::beast::error_code                  ec,
+                   tcp::resolver::results_type::endpoint_type);
+    void onWrite(std::shared_ptr<boost::beast::tcp_stream> stream,
+                 std::shared_ptr<boost::beast::http::request<
+                     boost::beast::http::string_body>>     request,
+                 const ReceiveResponseCb                  &responseCb,
+                 boost::beast::error_code                  ec,
+                 std::size_t                               bytes_transferred);
+    void onRead(std::shared_ptr<boost::beast::flat_buffer> buffer,
+                std::shared_ptr<boost::beast::tcp_stream>  stream,
+                std::shared_ptr<boost::beast::http::response<
+                    boost::beast::http::string_body>>      response,
+                const ReceiveResponseCb                   &responseCb,
+                boost::beast::error_code                   ec,
+                std::size_t                                bytes_transferred);
 
   public:
     // CREATORS
