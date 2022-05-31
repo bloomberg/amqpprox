@@ -41,7 +41,7 @@ class MaybeSecureSocketAdaptor {
     using endpoint    = boost::asio::ip::tcp::endpoint;
     using handshake_type = boost::asio::ssl::stream_base::handshake_type;
 
-    boost::asio::io_context                               &d_ioService;
+    boost::asio::io_context                               &d_ioContext;
     std::optional<std::reference_wrapper<SocketIntercept>> d_intercept;
     std::unique_ptr<stream_type>                           d_socket;
     bool                                                   d_secured;
@@ -53,10 +53,10 @@ class MaybeSecureSocketAdaptor {
     typedef typename stream_type::executor_type executor_type;
 
 #ifdef SOCKET_TESTING
-    MaybeSecureSocketAdaptor(boost::asio::io_context &ioService,
+    MaybeSecureSocketAdaptor(boost::asio::io_context &ioContext,
                              SocketIntercept         &intercept,
                              bool                     secured)
-    : d_ioService(ioService)
+    : d_ioContext(ioContext)
     , d_intercept(intercept)
     , d_socket()
     , d_secured(secured)
@@ -67,12 +67,12 @@ class MaybeSecureSocketAdaptor {
     }
 #endif
 
-    MaybeSecureSocketAdaptor(boost::asio::io_context   &ioService,
+    MaybeSecureSocketAdaptor(boost::asio::io_context   &ioContext,
                              boost::asio::ssl::context &context,
                              bool                       secured)
-    : d_ioService(ioService)
+    : d_ioContext(ioContext)
     , d_intercept()
-    , d_socket(std::make_unique<stream_type>(ioService, context))
+    , d_socket(std::make_unique<stream_type>(ioContext, context))
     , d_secured(secured)
     , d_handshook(false)
     , d_smallBuffer(0)
@@ -81,7 +81,7 @@ class MaybeSecureSocketAdaptor {
     }
 
     MaybeSecureSocketAdaptor(MaybeSecureSocketAdaptor &&src)
-    : d_ioService(src.d_ioService)
+    : d_ioContext(src.d_ioContext)
     , d_intercept(src.d_intercept)
     , d_socket(std::move(src.d_socket))
     , d_secured(src.d_secured)
@@ -96,7 +96,10 @@ class MaybeSecureSocketAdaptor {
         src.d_smallBufferSet = false;
     }
 
-    boost::asio::ip::tcp::socket &socket() { return d_socket->next_layer(); }
+    boost::asio::ip::tcp::socket &socket()
+    {
+        return d_socket->next_layer();
+    }
 
     void setSecure(bool secure)
     {
