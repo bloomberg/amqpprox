@@ -7,7 +7,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1.15.0", features = ["full"] }
+tokio = { version = "1.17.0", features = ["full"] }
 tokio-util = { version = "0.6", features = ["codec"] }
 
 # The latest amq-protocol is 7.0.0 but somewhere along the way the interface
@@ -23,3 +23,13 @@ futures = "0.3"
 rustls-pemfile = "0.2.1"
 tokio-rustls = "0.23.1"
 amiquip = { version = "0.4", default-features = false }
+
+rand = "*"
+
+# Begin required for lapin
+lapin = "2.1.1"
+tokio-executor-trait = "2.1.0"
+tokio-reactor-trait = "1.1.0"
+executor-trait = "*"
+
+# End required for lapin

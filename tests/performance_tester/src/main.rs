@@ -22,6 +22,7 @@ use std::time::Duration;
 use std::time::Instant;
 use tokio::runtime::Builder;
 
+mod async_client;
 mod client;
 mod server;
 
@@ -42,6 +43,13 @@ struct PerfTesterOpts {
 
     #[clap(long, default_value_t = 10)]
     num_messages: usize,
+
+    #[clap(
+        long,
+        default_value_t = 0,
+        help = "Milliseconds to wait between each message publish"
+    )]
+    publish_wait_ms: u64,
 
     #[clap(
         long,
@@ -68,6 +76,16 @@ struct PerfTesterOpts {
         help = "Routing key passed for sent messages"
     )]
     routing_key: String,
+
+    #[clap(long, help = "Run async client")]
+    async_client: bool,
+
+    #[clap(
+        long,
+        default_value_t = 0,
+        help = "Randomly start each client between 0ms and this value, to avoid overwhelming a single endpoint"
+    )]
+    delay_start_ms: u64,
 }
 
 fn main() -> Result<()> {
@@ -111,16 +129,35 @@ fn main() -> Result<()> {
                 let message_size = opts.message_size;
                 let num_messages = opts.num_messages;
                 let routing_key = opts.routing_key.clone();
+                let publish_wait_ms = opts.publish_wait_ms;
+                let delay_start_ms = opts.delay_start_ms;
 
-                let handle = tokio::task::spawn_blocking(move || {
-                    crate::client::run_sync_client(
-                        address,
-                        message_size,
-                        num_messages,
-                        &routing_key,
-                    )
-                });
-                handles.push(handle);
+                if opts.async_client {
+                    let handle = tokio::task::spawn(async move {
+                        crate::async_client::run_async_client(
+                            address,
+                            message_size,
+                            num_messages,
+                            &routing_key,
+                            publish_wait_ms,
+                            delay_start_ms,
+                        )
+                        .await
+                        .map_err(|_| anyhow::anyhow!("Client failed"))
+                    });
+                    handles.push(handle);
+                } else {
+                    let handle = tokio::task::spawn_blocking(move || {
+                        crate::client::run_sync_client(
+                            address,
+                            message_size,
+                            num_messages,
+                            &routing_key,
+                            publish_wait_ms,
+                        )
+                    });
+                    handles.push(handle);
+                }
             }
 
             for handle in handles {
