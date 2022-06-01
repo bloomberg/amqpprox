@@ -14,20 +14,32 @@
 ** limitations under the License.
 */
 
-use amiquip::{Connection, Exchange, Publish};
-use anyhow::Result;
+use lapin::{options::*, BasicProperties, Connection, ConnectionProperties, Result};
+
+use tokio_executor_trait;
+
+use rand::Rng;
 
 /// Start an AMQP client connecting to address, sending num_messages of message_size.
-pub(crate) fn run_sync_client(
+pub(crate) async fn run_async_client(
     address: String,
     message_size: usize,
     num_messages: usize,
     routing_key: &str,
     publish_wait_ms: u64,
+    delay_start_ms: u64,
 ) -> Result<()> {
-    let mut connection = Connection::insecure_open(&address)?;
-    let channel = connection.open_channel(None)?;
-    let exchange = Exchange::direct(&channel);
+    let start_delay = rand::thread_rng().gen_range(0..=delay_start_ms);
+
+    tokio::time::sleep(tokio::time::Duration::from_millis(start_delay)).await;
+
+    let options = ConnectionProperties::default()
+        .with_executor(tokio_executor_trait::Tokio::current())
+        .with_reactor(tokio_reactor_trait::Tokio);
+
+    let conn = Connection::connect(&address, options).await?;
+
+    let channel = conn.create_channel().await?;
 
     let mut arr = Vec::new();
     arr.resize(message_size, 0);
@@ -37,14 +49,24 @@ pub(crate) fn run_sync_client(
         if count >= num_messages {
             break;
         }
-        exchange.publish(Publish::new(&arr, routing_key))?;
 
-        std::thread::sleep(std::time::Duration::from_millis(publish_wait_ms));
+        let _confirm = channel
+            .basic_publish(
+                "",
+                routing_key,
+                BasicPublishOptions::default(),
+                &arr,
+                BasicProperties::default(),
+            )
+            .await?
+            .await?;
+
+        tokio::time::sleep(tokio::time::Duration::from_millis(publish_wait_ms)).await;
 
         count += 1;
     }
 
-    let _ = connection.close();
+    let _ = conn.close(200, "Closing").await;
 
     Ok(())
 }

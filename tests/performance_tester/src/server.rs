@@ -18,7 +18,10 @@ use amq_protocol::frame::AMQPFrame;
 use amq_protocol::frame::GenError;
 use amq_protocol::frame::WriteContext;
 use amq_protocol::protocol::channel;
+use amq_protocol::protocol::confirm;
 use amq_protocol::protocol::connection;
+use amq_protocol::protocol::exchange;
+use amq_protocol::protocol::queue;
 use amq_protocol::protocol::AMQPClass;
 use amq_protocol::types::AMQPValue;
 use anyhow::bail;
@@ -39,7 +42,7 @@ use tokio::net::TcpListener;
 use tokio::net::TcpSocket;
 use tokio_rustls::rustls::{self, Certificate, PrivateKey};
 use tokio_rustls::TlsAcceptor;
-use AMQPFrame::Method;
+use AMQPFrame::{Heartbeat, Method};
 
 fn load_certs(path: &Path) -> io::Result<Vec<Certificate>> {
     certs(&mut BufReader::new(File::open(path)?))
@@ -220,6 +223,45 @@ pub async fn process_connection<
                 framed.send(closeok).await?;
                 log::info!("Closing connection requested: {:?}. Sent CloseOk", closemsg);
                 return Ok(());
+            }
+            Ok(Method(channel, AMQPClass::Exchange(exchange::AMQPMethod::Declare(declaremsg)))) => {
+                log::debug!("Exchange Declare: {} {:?}", channel, declaremsg);
+                let declareok_method = exchange::AMQPMethod::DeclareOk(exchange::DeclareOk {});
+                let deckareok = Method(channel, AMQPClass::Exchange(declareok_method));
+                framed.send(deckareok).await?;
+            }
+            Ok(Method(channel, AMQPClass::Queue(queue::AMQPMethod::Declare(declaremsg)))) => {
+                log::debug!("Queue Declare: {} {:?}", channel, declaremsg);
+                let declareok_method = queue::AMQPMethod::DeclareOk(queue::DeclareOk {
+                    consumer_count: 0,
+                    message_count: 0,
+                    queue: amq_protocol::types::ShortString::from(declaremsg.queue),
+                });
+                let declareok = Method(channel, AMQPClass::Queue(declareok_method));
+                framed.send(declareok).await?;
+            }
+            Ok(Method(channel, AMQPClass::Exchange(exchange::AMQPMethod::Bind(bindmsg)))) => {
+                log::debug!("Exchange Bind: {} {:?}", channel, bindmsg);
+                let bindok_method = exchange::AMQPMethod::BindOk(exchange::BindOk {});
+                let bindok = Method(channel, AMQPClass::Exchange(bindok_method));
+                framed.send(bindok).await?;
+            }
+            Ok(Method(channel, AMQPClass::Queue(queue::AMQPMethod::Bind(bindmsg)))) => {
+                log::debug!("Queue Bind: {} {:?}", channel, bindmsg);
+                let bindok_method = queue::AMQPMethod::BindOk(queue::BindOk {});
+                let bindok = Method(channel, AMQPClass::Queue(bindok_method));
+                framed.send(bindok).await?;
+            }
+            Ok(Method(channel, AMQPClass::Confirm(confirm::AMQPMethod::Select(select)))) => {
+                log::debug!("Confirm Select: {} {:?}", channel, select);
+                let selectok_method = confirm::AMQPMethod::SelectOk(confirm::SelectOk {});
+                let selectok = Method(channel, AMQPClass::Confirm(selectok_method));
+                framed.send(selectok).await?;
+            }
+            Ok(Heartbeat(channel)) => {
+                log::debug!("Heartbeat received: {channel}");
+                let reply = Heartbeat(channel);
+                framed.send(reply).await?;
             }
             _ => {}
         }
