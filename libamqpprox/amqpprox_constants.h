@@ -97,6 +97,8 @@ class Constants {
     {
         return "authentication_failure_close";
     }
+
+    static constexpr std::size_t shortStringLimit() { return 255; }
 };
 
 }

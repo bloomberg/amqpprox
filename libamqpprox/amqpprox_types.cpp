@@ -16,6 +16,7 @@
 #include <amqpprox_types.h>
 
 #include <amqpprox_buffer.h>
+#include <amqpprox_constants.h>
 #include <amqpprox_fieldtable.h>
 #include <amqpprox_fieldvalue.h>
 #include <amqpprox_logging.h>
@@ -86,7 +87,7 @@ bool Types::encodeShortString(Buffer &buffer, const std::string &string)
         return false;
     }
 
-    if (string.size() > 255) {
+    if (string.size() > Constants::shortStringLimit()) {
         return false;
     }
 

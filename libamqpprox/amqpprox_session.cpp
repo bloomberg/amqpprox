@@ -582,9 +582,18 @@ void Session::disconnectUnauthClient(const FieldTable &clientProperties,
                 &fv, Constants::authenticationFailureClose()) &&
             fv.type() == 't') {
             bool authenticationFailureClose = fv.value<bool>();
+
+            // Truncate short string longer than 255 characters.
+            // reply-text(reason) field is defined as short string in AMQP
+            // 0.9.1 protocol.
+            const size_t sendSize =
+                std::min(reason.length(), Constants::shortStringLimit());
+
             if (authenticationFailureClose) {
                 d_connector.synthesizeCustomCloseError(
-                    true, Reply::Codes::access_refused, reason);
+                    true,
+                    Reply::Codes::access_refused,
+                    reason.substr(0, sendSize));
                 sendSyntheticData();
             }
         }
