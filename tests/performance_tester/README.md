@@ -70,7 +70,7 @@ It's important to build `amqpprox_perf_tester` in release mode, especially for t
 
 Run the perf tester with parameters which minimise the work required per connection, such as:
 ```
-$ RUST_LOG=warn cargo run --release -- --address <amqpprox host>:30672 --listen-address 0.0.0.0:5672 --clients 100000 --max-threads 100 --message-size 1 --num-messages 1
+$ RUST_LOG=warn cargo run --release -- --address amqp://<amqpprox host>:30672 --listen-address 0.0.0.0:5672 --clients 100000 --max-threads 100 --message-size 1 --num-messages 1
 100000 clients and 100000KB in 91.034013869seconds
 1857.9424459252837 connections/second, 0.0018579424459252835 MB/second
 ```
@@ -84,7 +84,7 @@ Just like connection throughput testing but with paramters which exercise more, 
 rather than connections.
 
 ```
-$ RUST_LOG=warn cargo run --release -- --address <amqpprox host>:30672 --listen-address 0.0.0.0:5672 --clients 10 --max-threads 10 --message-size 10000000 --num-messages 50
+$ RUST_LOG=warn cargo run --release -- --address amqp://<amqpprox host>:30672 --listen-address 0.0.0.0:5672 --clients 10 --max-threads 10 --message-size 10000000 --num-messages 50
 10 clients and 5000000000KB in 9.054987161seconds
 1.1043637966788278 connections/second, 552.1818983394139 MB/second
 ```

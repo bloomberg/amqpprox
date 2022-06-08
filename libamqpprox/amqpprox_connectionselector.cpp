@@ -18,6 +18,7 @@
 #include <amqpprox_backend.h>
 #include <amqpprox_backendset.h>
 #include <amqpprox_backendstore.h>
+#include <amqpprox_connectionlimitermanager.h>
 #include <amqpprox_connectionmanager.h>
 #include <amqpprox_farmstore.h>
 #include <amqpprox_logging.h>
@@ -29,13 +30,16 @@
 namespace Bloomberg {
 namespace amqpprox {
 
-ConnectionSelector::ConnectionSelector(FarmStore      *farmStore,
-                                       BackendStore   *backendStore,
-                                       ResourceMapper *resourceMapper)
+ConnectionSelector::ConnectionSelector(
+    FarmStore                *farmStore,
+    BackendStore             *backendStore,
+    ResourceMapper           *resourceMapper,
+    ConnectionLimiterManager *connectionLimiterManager)
 : d_farmStore_p(farmStore)
 , d_backendStore_p(backendStore)
 , d_resourceMapper_p(resourceMapper)
 , d_defaultFarmName("")
+, d_connectionLimiterManager_p(connectionLimiterManager)
 , d_mutex()
 {
 }
@@ -52,6 +56,16 @@ SessionState::ConnectionStatus ConnectionSelector::acquireConnection(
 
     bool        isFarm = false;
     std::string resourceName;
+
+    if (!(d_connectionLimiterManager_p->allowNewConnectionForVhost(
+            sessionState.getVirtualHost()))) {
+        // The current request will be limited based on different connection
+        // limiters
+        LOG_DEBUG << "The connection request for "
+                  << sessionState.getVirtualHost() << " is limited by proxy.";
+
+        return SessionState::ConnectionStatus::LIMIT;
+    }
 
     if (!d_resourceMapper_p->getResourceMap(
             &isFarm, &resourceName, sessionState)) {

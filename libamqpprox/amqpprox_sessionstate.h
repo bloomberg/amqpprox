@@ -44,6 +44,7 @@ class SessionState {
 
     enum class ConnectionStatus {
         SUCCESS = 0,
+        LIMIT,
         NO_FARM,
         ERROR_FARM,
         NO_BACKEND
@@ -69,6 +70,7 @@ class SessionState {
     std::atomic<bool>               d_readyToConnectOnUnpause;
     std::atomic<bool>               d_authDeniedConnection;
     std::atomic<bool>               d_ingressSecured;
+    std::atomic<bool>               d_limitedConnection;
     std::string                     d_virtualHost;
     DisconnectType                  d_disconnectedStatus;
     uint64_t                        d_id;
@@ -137,6 +139,12 @@ class SessionState {
      * enabled)
      */
     void setIngressSecured(bool secured);
+
+    /**
+     * \brief Set the current connection session is limited based on different
+     * configured limiters
+     */
+    void setLimitedConnection();
 
     /**
      * \brief Set session as disconnected, along with which type of disconnect
@@ -224,6 +232,12 @@ class SessionState {
     inline bool getIngressSecured() const;
 
     /**
+     * \return the state of the session connection, whether it is limited
+     * or not based on configured limiters
+     */
+    inline bool getLimitedConnection() const;
+
+    /**
      * \return session identifier
      */
     inline uint64_t id() const;
@@ -284,6 +298,11 @@ inline bool SessionState::getAuthDeniedConnection() const
 inline bool SessionState::getIngressSecured() const
 {
     return d_ingressSecured;
+}
+
+inline bool SessionState::getLimitedConnection() const
+{
+    return d_limitedConnection;
 }
 
 inline uint64_t SessionState::id() const

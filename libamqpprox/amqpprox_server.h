@@ -17,7 +17,7 @@
 #define BLOOMBERG_AMQPPROX_SERVER
 
 #include <amqpprox_authinterceptinterface.h>
-#include <amqpprox_connectionselector.h>
+#include <amqpprox_connectionselectorinterface.h>
 #include <amqpprox_dnsresolver.h>
 
 #include <boost/asio.hpp>
@@ -25,6 +25,7 @@
 
 #include <iosfwd>
 #include <mutex>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -52,7 +53,7 @@ class Server {
     std::unordered_set<SessionPtr>           d_deletingSessions;
     std::unordered_map<int, boost::asio::ip::tcp::acceptor> d_listeningSockets;
     DNSResolver                                             d_dnsResolver;
-    ConnectionSelector             *d_connectionSelector_p;  // HELD NOT OWNED
+    ConnectionSelectorInterface    *d_connectionSelector_p;  // HELD NOT OWNED
     EventSource                    *d_eventSource_p;         // HELD NOT OWNED
     BufferPool                     *d_bufferPool_p;          // HELD NOT OWNED
     std::mutex                      d_mutex;
@@ -61,9 +62,9 @@ class Server {
     std::shared_ptr<AuthInterceptInterface> d_authIntercept;
 
   public:
-    Server(ConnectionSelector *selector,
-           EventSource        *eventSource,
-           BufferPool         *bufferPool);
+    Server(ConnectionSelectorInterface *selector,
+           EventSource                 *eventSource,
+           BufferPool                  *bufferPool);
 
     ~Server();
 

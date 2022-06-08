@@ -145,6 +145,7 @@ Session::Session(boost::asio::io_context               &ioContext,
 , d_egressStartedAt()
 , d_resolvedEndpoints()
 , d_resolvedEndpointsIndex(0)
+, d_connectionRateLimitedTimer(ioContext)
 , d_authIntercept(authIntercept)
 {
     boost::system::error_code ec;
@@ -451,9 +452,29 @@ void Session::establishConnection()
     SessionState::ConnectionStatus     rc =
         d_connectionSelector_p->acquireConnection(&connectionManager,
                                                   d_sessionState);
+    auto self(shared_from_this());
     if (rc != SessionState::ConnectionStatus::SUCCESS) {
         // Failure reason logged within acquireConnection
         switch (rc) {
+        case SessionState::ConnectionStatus::LIMIT:
+            d_sessionState.setLimitedConnection();
+            // Async sleep before closing client connection, so the next client
+            // connection attempt has less chance to be limited. Because it
+            // might fall into next limit time window.
+            d_connectionRateLimitedTimer.expires_after(
+                std::chrono::milliseconds(750));
+            d_connectionRateLimitedTimer.async_wait(
+                [this, self](const boost::system::error_code &error) {
+                    d_connector.synthesizeCustomCloseError(
+                        true,
+                        Reply::Codes::resource_error,
+                        "The connection for " +
+                            d_sessionState.getVirtualHost() +
+                            ", is limited by proxy.");
+                    sendSyntheticData();
+                    disconnect(true);
+                });
+            break;
         case SessionState::ConnectionStatus::NO_FARM:
         case SessionState::ConnectionStatus::ERROR_FARM:
         case SessionState::ConnectionStatus::NO_BACKEND:
@@ -476,7 +497,6 @@ void Session::establishConnection()
         return;
     }
 
-    auto self(shared_from_this());
     auto authResponseCb = [this, self, connectionManager](
                               const authproto::AuthResponse
                                   &authResponseData) {
@@ -642,7 +662,8 @@ void Session::backendDisconnect()
             if (shutdownEc) {
                 LOG_INFO << "Backend Disconnect shutdown failed rc: "
                          << shutdownEc;
-                // Fall through: we still want to attempt to close the socket
+                // Fall through: we still want to attempt to close the
+                // socket
             }
             boost::system::error_code closeEc;
             d_clientSocket.close(closeEc);
@@ -754,8 +775,8 @@ void Session::readData(FlowType direction)
             auto &bufh      = bufferHandle(direction);
             auto &watermark = waterMark(direction);
 
-            // If there's data in the buffer we shouldn't reallocate a new one
-            // for this connection
+            // If there's data in the buffer we shouldn't reallocate a new
+            // one for this connection
             if (0 == watermark) {
                 d_bufferPool_p->acquireBuffer(&bufh, available);
             }
@@ -841,8 +862,8 @@ void Session::handleData(FlowType direction)
     }
     catch (CloseError &error) {
         methods::Close receivedClose = error.closeMethod();
-        // Send received Close method from server to client for better error
-        // handling
+        // Send received Close method from server to client for better
+        // error handling
         d_connector.synthesizeCustomCloseError(
             true, receivedClose.replyCode(), receivedClose.replyString());
         sendSyntheticData();

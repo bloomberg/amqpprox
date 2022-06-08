@@ -16,6 +16,7 @@
 #include <amqpprox_backendselectorstore.h>
 #include <amqpprox_backendstore.h>
 #include <amqpprox_bufferpool.h>
+#include <amqpprox_connectionlimitermanager.h>
 #include <amqpprox_connectionselector.h>
 #include <amqpprox_control.h>
 #include <amqpprox_cpumonitor.h>
@@ -49,6 +50,7 @@
 #include <amqpprox_exitcontrolcommand.h>
 #include <amqpprox_farmcontrolcommand.h>
 #include <amqpprox_helpcontrolcommand.h>
+#include <amqpprox_limitcontrolcommand.h>
 #include <amqpprox_listencontrolcommand.h>
 #include <amqpprox_mapcontrolcommand.h>
 #include <amqpprox_maphostnamecontrolcommand.h>
@@ -187,11 +189,12 @@ int main(int argc, char *argv[])
     StatCollector  statCollector;
     statCollector.setCpuMonitor(&monitor);
     statCollector.setBufferPool(&bufferPool);
-    VhostState           vhostState;
-    PartitionPolicyStore partitionPolicyStore;
-    BackendSelectorStore backendSelectorStore;
-    ConnectionSelector   connectionSelector(
-        &farmStore, &backendStore, &resourceMapper);
+    VhostState               vhostState;
+    PartitionPolicyStore     partitionPolicyStore;
+    BackendSelectorStore     backendSelectorStore;
+    ConnectionLimiterManager connectionLimiterManager;
+    ConnectionSelector       connectionSelector(
+        &farmStore, &backendStore, &resourceMapper, &connectionLimiterManager);
     SessionCleanup cleaner(&statCollector, &eventSource);
 
     Server  server(&connectionSelector, &eventSource, &bufferPool);
@@ -236,7 +239,8 @@ int main(int argc, char *argv[])
         CommandPtr(new StatControlCommand(&eventSource)),
         CommandPtr(new MapHostnameControlCommand()),
         CommandPtr(new TlsControlCommand),
-        CommandPtr(new AuthControlCommand)};
+        CommandPtr(new AuthControlCommand),
+        CommandPtr(new LimitControlCommand(&connectionLimiterManager))};
 
     for (auto &&command : commands) {
         control.addControlCommand(std::move(command));

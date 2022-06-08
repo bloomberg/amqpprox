@@ -21,12 +21,15 @@ DATACENTER SET name | PRINT
 EXIT Exit the program gracefully.
 FARM (ADD name selector backend* | PARTITION name policy | DELETE name | PRINT) - Change farms
 HELP Print this help text.
+LIMIT (CONN_RATE_ALARM | CONN_RATE) (VHOST vhostName numberOfConnections | DEFAULT numberOfConnections) - Configure connection rate limits (normal or alarmonly) for incoming clients connections
+LIMIT DISABLE (CONN_RATE_ALARM | CONN_RATE) (VHOST vhostName | DEFAULT) - Disable configured connection rate limits (normal or alarmonly) for incoming clients
+LIMIT PRINT [vhostName] - Print the configured default or specific connection rate limits for specified vhost
 LISTEN START port | START_SECURE port | STOP [port]
 LOG CONSOLE verbosity | FILE verbosity
 MAP (BACKEND vhost backend | FARM vhost name | UNMAP vhost | DEFAULT farmName | REMOVE_DEFAULT | PRINT) - Change mappings of resources to servers
 MAPHOSTNAME DNS - Set up mapping of IPs to hostnames
 SESSION  id# (PAUSE|DISCONNECT_GRACEFUL|FORCE_DISCONNECT) - Control a particular session
-STAT (STOP SEND | SEND <host> <port> | (LISTEN (json|human) (overall|vhost=foo|backend=bar|source=baz|all|process|bufferpool)) - Output statistics
+STAT (STOP SEND | SEND <host> <port> | (LISTEN (json|human) (overall|vhost=foo|backend=bar|source=baz|all|process|bufferpool))) - Output statistics
 TLS (INGRESS | EGRESS) (KEY_FILE file | CERT_CHAIN_FILE file | RSA_KEY_FILE file | TMP_DH_FILE file | CA_CERT_FILE file | VERIFY_MODE mode* | CIPHERS (PRINT | SET ciphersuite(:ciphersuite)*))
 VHOST PAUSE vhost | UNPAUSE vhost | PRINT | BACKEND_DISCONNECT vhost | FORCE_DISCONNECT vhost
 ```
@@ -120,6 +123,35 @@ Prints the list of farms registered with the proxy.
 #### HELP
 
 Prints command help text.
+
+## LIMIT commands
+
+#### LIMIT CONN_RATE_ALARM DEFAULT numberOfConnections
+
+Apply limit on allowed average number of connections per second in alarm only mode for all the vhosts. So whenever the in-coming connection violates the limit, the proxy will only emit log at warning level with AMQPPROX_CONNECTION_LIMIT as a substring and the relevant limiter details, instead of actively limiting any actual connection.
+
+#### LIMIT CONN_RATE_ALARM VHOST vhostName numberOfConnections
+
+Apply limit on allowed average number of connections per second in alarm only mode for specified vhost. The specific limit takes priority over the default limit for any vhost.
+
+#### LIMIT CONN_RATE DEFAULT numberOfConnections
+
+Apply limit on allowed average number of connections per second for all the vhosts. So whenever the in-coming connection violates the limit, the proxy will close that connection with appropriate error message and will not allow that client connection to connect to the broker.
+
+#### LIMIT CONN_RATE VHOST vhostName numberOfConnections
+Apply limit on allowed average number of connections per second for specified vhost. The specific limit takes priority over the default limit for any vhost.
+
+#### LIMIT DISABLE CONN_RATE_ALARM DEFAULT numberOfConnections
+
+Remove default connection rate limit (allowed average number of connections per second) in alarm only mode for all the vhosts.
+
+#### LIMIT DISABLE CONN_RATE VHOST vhostName numberOfConnections
+
+Remove specific connection rate limit (allowed average number of connections per second) for the specified vhost. The default limit will be applied to the specified vhost, if the default limit is already configured.
+
+#### LIMIT PRINT [vhostName]
+
+Print the configured limits in details for the specified vhost. If the vhostName is not specified, then the command will print all the configured default limits.
 
 ## LISTEN commands
 

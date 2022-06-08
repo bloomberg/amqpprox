@@ -1,5 +1,5 @@
 /*
-** Copyright 2020 Bloomberg Finance L.P.
+** Copyright 2022 Bloomberg Finance L.P.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -13,34 +13,32 @@
 ** See the License for the specific language governing permissions and
 ** limitations under the License.
 */
-#ifndef BLOOMBERG_AMQPPROX_VHOSTCONTROLCOMMAND
-#define BLOOMBERG_AMQPPROX_VHOSTCONTROLCOMMAND
+#ifndef BLOOMBERG_AMQPPROX_LIMITCONTROLCOMMAND
+#define BLOOMBERG_AMQPPROX_LIMITCONTROLCOMMAND
 
+#include <amqpprox_connectionlimitermanager.h>
+#include <amqpprox_control.h>
 #include <amqpprox_controlcommand.h>
+#include <amqpprox_server.h>
 
 #include <string>
-#include <unordered_map>
 
 namespace Bloomberg {
 namespace amqpprox {
 
-class VhostState;
-
-/**
- * \brief Control command to perform certain operations on a particular
- * vhost, implements the ControlCommand interface.
- *
- * Particular vhost will be identified based on vhost name. Permitted
- * operations are pause, unpause, backend disconnect and force disconnect.
- */
-class VhostControlCommand : public ControlCommand {
-    VhostState *d_vhostState_p;  // HELD NOT OWNED
+class LimitControlCommand : public ControlCommand {
+    ConnectionLimiterManager *d_connectionLimiterManager_p;  // HELD NOT OWNED
 
   public:
-    explicit VhostControlCommand(VhostState *vhostState);
+    // CREATORS
+    explicit LimitControlCommand(
+        ConnectionLimiterManager *connectionLimiterManager);
 
+    virtual ~LimitControlCommand() override = default;
+
+    // MANIPULATORS
     /**
-     * \return the command verb this handles
+     * \return the command verb this handle
      */
     virtual std::string commandVerb() const override;
 

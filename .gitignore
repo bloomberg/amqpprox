@@ -6,3 +6,4 @@ logs
 .clangd
 generated_docs/
 .vscode
+**/.DS_Store

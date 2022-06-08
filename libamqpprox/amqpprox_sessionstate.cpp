@@ -47,6 +47,7 @@ SessionState::SessionState(
 , d_readyToConnectOnUnpause(false)
 , d_authDeniedConnection(false)
 , d_ingressSecured(false)
+, d_limitedConnection(false)
 , d_virtualHost()
 , d_disconnectedStatus(DisconnectType::NOT_DISCONNECTED)
 , d_id(s_nextId++)  // This isn't a race because this is only on one thread
@@ -153,6 +154,11 @@ void SessionState::addEgressLatency(uint64_t latency)
 {
     d_egressLatencyTotal.fetch_add(latency, std::memory_order_relaxed);
     d_egressLatencyCount.fetch_add(1, std::memory_order_relaxed);
+}
+
+void SessionState::setLimitedConnection()
+{
+    d_limitedConnection = true;
 }
 
 std::string

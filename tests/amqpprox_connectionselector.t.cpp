@@ -15,9 +15,11 @@
 */
 
 #include <amqpprox_backendstore.h>
+#include <amqpprox_connectionlimitermanager.h>
 #include <amqpprox_connectionmanager.h>
 #include <amqpprox_connectionselector.h>
 #include <amqpprox_farmstore.h>
+#include <amqpprox_fixedwindowconnectionratelimiter.h>
 #include <amqpprox_resourcemapper.h>
 #include <amqpprox_robinbackendselector.h>
 #include <amqpprox_sessionstate.h>
@@ -31,33 +33,84 @@ using namespace testing;
 
 TEST(ConnectionSelector, Breathing)
 {
-    FarmStore          farmStore;
-    BackendStore       backendStore;
-    ResourceMapper     resourceMapper;
-    ConnectionSelector connectionSelector(
-        &farmStore, &backendStore, &resourceMapper);
+    FarmStore                farmStore;
+    BackendStore             backendStore;
+    ResourceMapper           resourceMapper;
+    ConnectionLimiterManager connectionLimiterManager;
+    ConnectionSelector       connectionSelector(
+        &farmStore, &backendStore, &resourceMapper, &connectionLimiterManager);
 }
 
 TEST(ConnectionSelector, Find_Nothing)
 {
-    FarmStore          farmStore;
-    BackendStore       backendStore;
-    ResourceMapper     resourceMapper;
-    ConnectionSelector connectionSelector(
-        &farmStore, &backendStore, &resourceMapper);
+    FarmStore                farmStore;
+    BackendStore             backendStore;
+    ResourceMapper           resourceMapper;
+    ConnectionLimiterManager connectionLimiterManager;
+    ConnectionSelector       connectionSelector(
+        &farmStore, &backendStore, &resourceMapper, &connectionLimiterManager);
     SessionState                       state;
     std::shared_ptr<ConnectionManager> out;
     EXPECT_EQ(connectionSelector.acquireConnection(&out, state),
               SessionState::ConnectionStatus::NO_FARM);
 }
 
+TEST(ConnectionSelector, Limited_Connection)
+{
+    FarmStore                farmStore;
+    BackendStore             backendStore;
+    ResourceMapper           resourceMapper;
+    ConnectionLimiterManager connectionLimiterManager;
+    uint32_t                 connectionLimit = 1;
+    std::string              vhostName       = "test-vhost";
+    connectionLimiterManager.addConnectionRateLimiter(vhostName,
+                                                      connectionLimit);
+    ConnectionSelector connectionSelector(
+        &farmStore, &backendStore, &resourceMapper, &connectionLimiterManager);
+    SessionState state;
+    state.setVirtualHost(vhostName);
+    std::shared_ptr<ConnectionManager> out;
+    EXPECT_EQ(connectionSelector.acquireConnection(&out, state),
+              SessionState::ConnectionStatus::NO_FARM);
+
+    // Acquiring second connection will be limited because of configured
+    // connection limit
+    EXPECT_EQ(connectionSelector.acquireConnection(&out, state),
+              SessionState::ConnectionStatus::LIMIT);
+}
+
+TEST(ConnectionSelector, Limited_Connection_Alarm_Only)
+{
+    FarmStore                farmStore;
+    BackendStore             backendStore;
+    ResourceMapper           resourceMapper;
+    ConnectionLimiterManager connectionLimiterManager;
+    uint32_t                 connectionLimit = 1;
+    std::string              vhostName       = "test-vhost";
+    connectionLimiterManager.addAlarmOnlyConnectionRateLimiter(
+        vhostName, connectionLimit);
+    ConnectionSelector connectionSelector(
+        &farmStore, &backendStore, &resourceMapper, &connectionLimiterManager);
+    SessionState state;
+    state.setVirtualHost(vhostName);
+    std::shared_ptr<ConnectionManager> out;
+    EXPECT_EQ(connectionSelector.acquireConnection(&out, state),
+              SessionState::ConnectionStatus::NO_FARM);
+
+    // Acquiring second connection will not be limited because of configured
+    // connection limit in alarm only mode
+    EXPECT_EQ(connectionSelector.acquireConnection(&out, state),
+              SessionState::ConnectionStatus::NO_FARM);
+}
+
 TEST(ConnectionSelector, Find_Nothing_Defaulted)
 {
-    FarmStore          farmStore;
-    BackendStore       backendStore;
-    ResourceMapper     resourceMapper;
-    ConnectionSelector connectionSelector(
-        &farmStore, &backendStore, &resourceMapper);
+    FarmStore                farmStore;
+    BackendStore             backendStore;
+    ResourceMapper           resourceMapper;
+    ConnectionLimiterManager connectionLimiterManager;
+    ConnectionSelector       connectionSelector(
+        &farmStore, &backendStore, &resourceMapper, &connectionLimiterManager);
 
     connectionSelector.setDefaultFarm("DEFAULT");
     SessionState                       state;
@@ -77,11 +130,12 @@ TEST(ConnectionSelector, Successful_Farm_Find)
     BackendStore             backendStore;
     ResourceMapper           resourceMapper;
     RobinBackendSelector     backendSelector;
+    ConnectionLimiterManager connectionLimiterManager;
     std::vector<std::string> members;
     farmStore.addFarm(std::make_unique<Farm>(
         "DEFAULT", members, &backendStore, &backendSelector));
     ConnectionSelector connectionSelector(
-        &farmStore, &backendStore, &resourceMapper);
+        &farmStore, &backendStore, &resourceMapper, &connectionLimiterManager);
 
     connectionSelector.setDefaultFarm("DEFAULT");
     SessionState                       state;
@@ -92,12 +146,12 @@ TEST(ConnectionSelector, Successful_Farm_Find)
 
 TEST(ConnectionSelector, Find_Nothing_Backend)
 {
-    FarmStore      farmStore;
-    BackendStore   backendStore;
-    ResourceMapper resourceMapper;
-
-    ConnectionSelector connectionSelector(
-        &farmStore, &backendStore, &resourceMapper);
+    FarmStore                farmStore;
+    BackendStore             backendStore;
+    ResourceMapper           resourceMapper;
+    ConnectionLimiterManager connectionLimiterManager;
+    ConnectionSelector       connectionSelector(
+        &farmStore, &backendStore, &resourceMapper, &connectionLimiterManager);
     SessionState state;
 
     state.setVirtualHost("/");
@@ -109,17 +163,18 @@ TEST(ConnectionSelector, Find_Nothing_Backend)
 
 TEST(ConnectionSelector, Successful_Backend_Find)
 {
-    FarmStore            farmStore;
-    BackendStore         backendStore;
-    ResourceMapper       resourceMapper;
-    RobinBackendSelector backendSelector;
+    FarmStore                farmStore;
+    BackendStore             backendStore;
+    ResourceMapper           resourceMapper;
+    RobinBackendSelector     backendSelector;
+    ConnectionLimiterManager connectionLimiterManager;
 
     Backend backend1(
         "backend1", "dc1", "backend1.bloomberg.com", "127.0.0.1", 5672, true);
     backendStore.insert(backend1);
 
     ConnectionSelector connectionSelector(
-        &farmStore, &backendStore, &resourceMapper);
+        &farmStore, &backendStore, &resourceMapper, &connectionLimiterManager);
     SessionState state;
 
     state.setVirtualHost("/");

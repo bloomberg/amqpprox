@@ -18,6 +18,8 @@
 
 #include <amqpprox_connectionselectorinterface.h>
 
+#include <amqpprox_connectionlimitermanager.h>
+#include <amqpprox_sessionstate.h>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -28,17 +30,20 @@ namespace amqpprox {
 class FarmStore;
 class BackendStore;
 class ResourceMapper;
+class ConnectionLimiterManager;
 
 /**
- * \brief Determines where to make the egress connection(proxy to broker),
+ * \brief Determines whether the incoming connection from client should be
+ * limited and then where to make the egress connection(proxy to broker),
  * implements the ConnectionSelectorInterface
  */
 class ConnectionSelector : public ConnectionSelectorInterface {
-    FarmStore         *d_farmStore_p;
-    BackendStore      *d_backendStore_p;
-    ResourceMapper    *d_resourceMapper_p;
-    std::string        d_defaultFarmName;
-    mutable std::mutex d_mutex;
+    FarmStore                *d_farmStore_p;
+    BackendStore             *d_backendStore_p;
+    ResourceMapper           *d_resourceMapper_p;
+    std::string               d_defaultFarmName;
+    ConnectionLimiterManager *d_connectionLimiterManager_p;
+    mutable std::mutex        d_mutex;
 
   public:
     // CREATORS
@@ -48,9 +53,10 @@ class ConnectionSelector : public ConnectionSelectorInterface {
      * \param backendStore
      * \param resourceMapper
      */
-    ConnectionSelector(FarmStore      *farmStore,
-                       BackendStore   *backendStore,
-                       ResourceMapper *resourceMapper);
+    ConnectionSelector(FarmStore                *farmStore,
+                       BackendStore             *backendStore,
+                       ResourceMapper           *resourceMapper,
+                       ConnectionLimiterManager *connectionLimiterManager);
 
     virtual ~ConnectionSelector();
 

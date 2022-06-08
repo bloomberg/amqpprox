@@ -21,6 +21,7 @@
 #include <amqpprox_buffer.h>
 #include <amqpprox_bufferhandle.h>
 #include <amqpprox_bufferpool.h>
+#include <amqpprox_connectionselectorinterface.h>
 #include <amqpprox_connector.h>
 #include <amqpprox_fieldtable.h>
 #include <amqpprox_flowtype.h>
@@ -29,6 +30,7 @@
 #include <amqpprox_sessionstate.h>
 
 #include <boost/asio.hpp>
+#include <boost/asio/steady_timer.hpp>
 
 #include <chrono>
 #include <iosfwd>
@@ -81,6 +83,7 @@ class Session : public std::enable_shared_from_this<Session> {
     TimePoint                    d_egressStartedAt;
     std::vector<boost::asio::ip::tcp::endpoint> d_resolvedEndpoints;
     uint32_t                                    d_resolvedEndpointsIndex;
+    boost::asio::steady_timer                   d_connectionRateLimitedTimer;
     std::shared_ptr<AuthInterceptInterface>     d_authIntercept;
 
   public:
