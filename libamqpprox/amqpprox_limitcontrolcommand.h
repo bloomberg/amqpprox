@@ -16,7 +16,6 @@
 #ifndef BLOOMBERG_AMQPPROX_LIMITCONTROLCOMMAND
 #define BLOOMBERG_AMQPPROX_LIMITCONTROLCOMMAND
 
-#include <amqpprox_connectionlimitermanager.h>
 #include <amqpprox_control.h>
 #include <amqpprox_controlcommand.h>
 #include <amqpprox_server.h>
@@ -25,6 +24,8 @@
 
 namespace Bloomberg {
 namespace amqpprox {
+
+class ConnectionLimiterManager;
 
 class LimitControlCommand : public ControlCommand {
     ConnectionLimiterManager *d_connectionLimiterManager_p;  // HELD NOT OWNED
