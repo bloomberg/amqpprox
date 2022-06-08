@@ -14,7 +14,7 @@ The service will receive POST request from amqpprox proxy with following fields 
 ### Response
 The service should respond to amqpprox proxy with following fields in [protobuf format](./authresponse.proto)
 - Auth Result - This will decide, whether to allow or deny clients. It is a enum type, takes ALLOW or DENY value only.
-- Reason - Reason for the returned auth result. It is an optional field, but good to specify.
+- Reason - Reason for the returned auth result. It is an optional field, but good to specify. The reason(reply-text) field is defined as short string in AMQP 0.9.1 protocol implementation. So it will be truncated before sending to the amqp clients, if the size of the string is more than 255 characters.
 - SASL auth data - It is an optional field. In case of absence, the START-OK AMQP connection method, received from clients will be sent to the broker without any modification during handshake.
     - Broker mechanism - Authentication mechanism field for START-OK AMQP connection method. This will be injected into START-OK AMQP connection method to send to the broker during handshake. E.g. PLAIN
     - Credentials - Response field for START-OK AMQP connection method. This will also be injectd into START-OK AMQP connection method to send to the broker during handshake. E.g.'\0user\0password'

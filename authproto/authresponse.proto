@@ -26,6 +26,8 @@ message AuthResponse {
         DENY = 1;
     }
     AuthResult result = 1;
+
+    // Maximum 255 characters
     string reason = 2;
     SASL authData = 3;
 }
