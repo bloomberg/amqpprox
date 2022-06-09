@@ -18,9 +18,9 @@
 
 #include <amqpprox_connectionlimiterinterface.h>
 
-#include <iostream>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -58,9 +58,9 @@ class ConnectionLimiterManager {
     ConnectionLimiters d_connectionRateLimitersPerVhost;
     ConnectionLimiters d_alarmOnlyConnectionRateLimitersPerVhost;
 
-    uint32_t           d_defaultConnectionRateLimit;
-    uint32_t           d_defaultAlarmOnlyConnectionRateLimit;
-    mutable std::mutex d_mutex;
+    std::optional<uint32_t> d_defaultConnectionRateLimit;
+    std::optional<uint32_t> d_defaultAlarmOnlyConnectionRateLimit;
+    mutable std::mutex      d_mutex;
 
   public:
     // CREATORS
@@ -142,6 +142,11 @@ class ConnectionLimiterManager {
      */
     bool allowNewConnectionForVhost(const std::string &vhostName);
 
+    /**
+     * \brief Called when a session is marked as disconnected.
+     */
+    void sessionClosedForVhost(const std::string &vhostName);
+
     // ACCESSORS
     /**
      * \brief Get particular connection rate limiter based on specified vhost
@@ -162,13 +167,13 @@ class ConnectionLimiterManager {
      * \brief Get default connection rate limit (allowed connections per
      * second) for all the connecting vhosts
      */
-    uint32_t getDefaultConnectionRateLimit() const;
+    std::optional<uint32_t> getDefaultConnectionRateLimit() const;
 
     /**
-     * \brief Get alarm onlt default connection rate limit (allowed connections
+     * \brief Get alarm only default connection rate limit (allowed connections
      * per second) for all the connecting vhosts
      */
-    uint32_t getAlarmOnlyDefaultConnectionRateLimit() const;
+    std::optional<uint32_t> getAlarmOnlyDefaultConnectionRateLimit() const;
 };
 
 }

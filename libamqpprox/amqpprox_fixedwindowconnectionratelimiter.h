@@ -20,7 +20,6 @@
 
 #include <chrono>
 #include <memory>
-#include <mutex>
 #include <string>
 
 namespace Bloomberg {
@@ -47,8 +46,8 @@ struct LimiterClock {
  * provided connection limit and time window. The connection rate limit will be
  * connection limit/timeWindow (average allowed connections in the specified
  * time window). allowNewConnection member function will return true or false
- * based on the rate limit calculation. Implements the LimiterInterface
- * interface
+ * based on the rate limit calculation. Implements the
+ * ConnectionLimiterInterface interface
  */
 class FixedWindowConnectionRateLimiter : public ConnectionLimiterInterface {
   protected:
@@ -97,7 +96,7 @@ class FixedWindowConnectionRateLimiter : public ConnectionLimiterInterface {
 
     // ACCESSORS
     /**
-     * \return Information about limiter as a string
+     * \return Information about connection limiter as a string
      */
     virtual std::string toString() const override;
 

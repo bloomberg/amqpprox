@@ -67,6 +67,7 @@ void handleConnectionLimitAlarm(
             output << "Default connection rate limit is set to "
                    << connectionLimiterManager
                           ->getAlarmOnlyDefaultConnectionRateLimit()
+                          .value()
                    << " connections per second in alarm only mode.\n";
             output << "The limiter will only log at warning level with "
                       "AMQPPROX_CONNECTION_LIMIT as a substring and the "
@@ -122,6 +123,7 @@ void handleConnectionLimit(
                 numberOfConnections);
             output << "Default connection rate limit is set to "
                    << connectionLimiterManager->getDefaultConnectionRateLimit()
+                          .value()
                    << " connections per second.\n";
         }
         else {
@@ -155,19 +157,19 @@ void printVhostLimits(
     }
 
     if (!alarmLimiter && !limiter) {
-        uint32_t alarmOnlyConnectionRateLimit =
+        std::optional<uint32_t> alarmOnlyConnectionRateLimit =
             connectionLimiterManager->getAlarmOnlyDefaultConnectionRateLimit();
-        uint32_t connectionRateLimit =
+        std::optional<uint32_t> connectionRateLimit =
             connectionLimiterManager->getDefaultConnectionRateLimit();
         if (alarmOnlyConnectionRateLimit || connectionRateLimit) {
             if (alarmOnlyConnectionRateLimit) {
                 output << "Alarm only limit, for vhost " << vhostName
-                       << ", allow average " << alarmOnlyConnectionRateLimit
+                       << ", allow average " << *alarmOnlyConnectionRateLimit
                        << " number of connections per second.\n";
             }
             if (connectionRateLimit) {
                 output << "For vhost " << vhostName << ", allow average "
-                       << connectionRateLimit
+                       << *connectionRateLimit
                        << " number of connections per second.\n";
             }
         }
@@ -182,19 +184,19 @@ void printAllLimits(
     ConnectionLimiterManager *connectionLimiterManager,
     ControlCommandOutput<ControlCommand::OutputFunctor> &output)
 {
-    uint32_t alarmOnlyConnectionRateLimit =
+    std::optional<uint32_t> alarmOnlyConnectionRateLimit =
         connectionLimiterManager->getAlarmOnlyDefaultConnectionRateLimit();
-    uint32_t connectionRateLimit =
+    std::optional<uint32_t> connectionRateLimit =
         connectionLimiterManager->getDefaultConnectionRateLimit();
     if (alarmOnlyConnectionRateLimit || connectionRateLimit) {
         if (alarmOnlyConnectionRateLimit) {
             output << "Default limit for any vhost, allow average "
-                   << alarmOnlyConnectionRateLimit
+                   << *alarmOnlyConnectionRateLimit
                    << " connections per second in alarm only mode.\n";
         }
         if (connectionRateLimit) {
             output << "Default limit for any vhost, allow average "
-                   << connectionRateLimit << " connections per second.\n";
+                   << *connectionRateLimit << " connections per second.\n";
         }
     }
     else {

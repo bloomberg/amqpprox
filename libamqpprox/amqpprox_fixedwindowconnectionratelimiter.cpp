@@ -20,7 +20,6 @@
 
 #include <chrono>
 #include <memory>
-#include <mutex>
 #include <sstream>
 
 namespace Bloomberg {
