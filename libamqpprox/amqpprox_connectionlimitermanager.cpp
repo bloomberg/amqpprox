@@ -21,6 +21,7 @@
 #include <amqpprox_logging.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace Bloomberg {
@@ -29,7 +30,7 @@ namespace amqpprox {
 namespace {
 void maybePopulateDefaultLimiters(
     const std::string                            &vhostName,
-    uint32_t                                      defaultLimit,
+    std::optional<uint32_t>                       defaultLimit,
     ConnectionLimiterManager::ConnectionLimiters &limitersPerVhost)
 {
     if (limitersPerVhost.find(vhostName) == limitersPerVhost.end()) {
@@ -37,7 +38,7 @@ void maybePopulateDefaultLimiters(
             limitersPerVhost[vhostName] = {
                 false,
                 std::make_shared<FixedWindowConnectionRateLimiter>(
-                    defaultLimit)};
+                    *defaultLimit)};
         }
     }
 }
@@ -46,8 +47,8 @@ void maybePopulateDefaultLimiters(
 ConnectionLimiterManager::ConnectionLimiterManager()
 : d_connectionRateLimitersPerVhost()
 , d_alarmOnlyConnectionRateLimitersPerVhost()
-, d_defaultConnectionRateLimit(0)
-, d_defaultAlarmOnlyConnectionRateLimit(0)
+, d_defaultConnectionRateLimit()
+, d_defaultAlarmOnlyConnectionRateLimit()
 , d_mutex()
 {
 }
@@ -95,7 +96,7 @@ void ConnectionLimiterManager::setDefaultConnectionRateLimit(
         if (!limiter.second.first) {
             limiter.second.second =
                 std::make_shared<FixedWindowConnectionRateLimiter>(
-                    d_defaultConnectionRateLimit);
+                    *d_defaultConnectionRateLimit);
         }
     }
 }
@@ -113,7 +114,7 @@ void ConnectionLimiterManager::setAlarmOnlyDefaultConnectionRateLimit(
         if (!limiter.second.first) {
             limiter.second.second =
                 std::make_shared<FixedWindowConnectionRateLimiter>(
-                    d_defaultAlarmOnlyConnectionRateLimit);
+                    *d_defaultAlarmOnlyConnectionRateLimit);
         }
     }
 }
@@ -127,7 +128,7 @@ void ConnectionLimiterManager::removeConnectionRateLimiter(
         d_connectionRateLimitersPerVhost[vhostName] = {
             false,
             std::make_shared<FixedWindowConnectionRateLimiter>(
-                d_defaultConnectionRateLimit)};
+                *d_defaultConnectionRateLimit)};
     }
     else {
         d_connectionRateLimitersPerVhost.erase(vhostName);
@@ -143,7 +144,7 @@ void ConnectionLimiterManager::removeAlarmOnlyConnectionRateLimiter(
         d_alarmOnlyConnectionRateLimitersPerVhost[vhostName] = {
             false,
             std::make_shared<FixedWindowConnectionRateLimiter>(
-                d_defaultAlarmOnlyConnectionRateLimit)};
+                *d_defaultAlarmOnlyConnectionRateLimit)};
     }
     else {
         d_alarmOnlyConnectionRateLimitersPerVhost.erase(vhostName);
@@ -154,7 +155,7 @@ void ConnectionLimiterManager::removeDefaultConnectionRateLimit()
 {
     std::lock_guard<std::mutex> lg(d_mutex);
 
-    d_defaultConnectionRateLimit = 0;
+    d_defaultConnectionRateLimit.reset();
     for (auto it = d_connectionRateLimitersPerVhost.cbegin();
          it != d_connectionRateLimitersPerVhost.cend();) {
         if (!it->second.first) {
@@ -170,7 +171,7 @@ void ConnectionLimiterManager::removeAlarmOnlyDefaultConnectionRateLimit()
 {
     std::lock_guard<std::mutex> lg(d_mutex);
 
-    d_defaultAlarmOnlyConnectionRateLimit = 0;
+    d_defaultAlarmOnlyConnectionRateLimit.reset();
     for (auto it = d_alarmOnlyConnectionRateLimitersPerVhost.cbegin();
          it != d_alarmOnlyConnectionRateLimitersPerVhost.cend();) {
         if (!it->second.first) {
@@ -263,12 +264,13 @@ ConnectionLimiterManager::getAlarmOnlyConnectionRateLimiter(
     return nullptr;
 }
 
-uint32_t ConnectionLimiterManager::getDefaultConnectionRateLimit() const
+std::optional<uint32_t>
+ConnectionLimiterManager::getDefaultConnectionRateLimit() const
 {
     return d_defaultConnectionRateLimit;
 }
 
-uint32_t
+std::optional<uint32_t>
 ConnectionLimiterManager::getAlarmOnlyDefaultConnectionRateLimit() const
 {
     return d_defaultAlarmOnlyConnectionRateLimit;

@@ -31,8 +31,8 @@ using namespace testing;
 TEST(ConnectionLimiterManagerTest, Breathing)
 {
     ConnectionLimiterManager limiterManager;
-    EXPECT_EQ(limiterManager.getAlarmOnlyDefaultConnectionRateLimit(), 0);
-    EXPECT_EQ(limiterManager.getDefaultConnectionRateLimit(), 0);
+    EXPECT_FALSE(limiterManager.getAlarmOnlyDefaultConnectionRateLimit());
+    EXPECT_FALSE(limiterManager.getDefaultConnectionRateLimit());
     EXPECT_TRUE(limiterManager.getAlarmOnlyConnectionRateLimiter(
                     "test-vhost") == nullptr);
     EXPECT_TRUE(limiterManager.getConnectionRateLimiter("test-vhost") ==
@@ -165,48 +165,52 @@ TEST(ConnectionLimiterManagerTest, AddGetRemoveAlarmOnlyConnectionRateLimiter)
 TEST(ConnectionLimiterManagerTest, SetGetRemoveDefaultConnectionRateLimiter)
 {
     ConnectionLimiterManager limiterManager;
-    EXPECT_EQ(limiterManager.getAlarmOnlyDefaultConnectionRateLimit(), 0);
-    EXPECT_EQ(limiterManager.getDefaultConnectionRateLimit(), 0);
+    EXPECT_FALSE(limiterManager.getAlarmOnlyDefaultConnectionRateLimit());
+    EXPECT_FALSE(limiterManager.getDefaultConnectionRateLimit());
 
     uint32_t connectionLimit1 = 100;
     // Setting default limiter
     limiterManager.setDefaultConnectionRateLimit(connectionLimit1);
 
     // Getting default limiter
-    EXPECT_EQ(limiterManager.getDefaultConnectionRateLimit(),
+    ASSERT_TRUE(limiterManager.getDefaultConnectionRateLimit());
+    EXPECT_EQ(*limiterManager.getDefaultConnectionRateLimit(),
               connectionLimit1);
-    EXPECT_EQ(limiterManager.getAlarmOnlyDefaultConnectionRateLimit(), 0);
+    EXPECT_FALSE(limiterManager.getAlarmOnlyDefaultConnectionRateLimit());
 
     uint32_t connectionLimit2 = 200;
     // Setting alarm only default limiter
     limiterManager.setAlarmOnlyDefaultConnectionRateLimit(connectionLimit2);
 
     // Getting alarm only default limiter
-    EXPECT_EQ(limiterManager.getAlarmOnlyDefaultConnectionRateLimit(),
+    ASSERT_TRUE(limiterManager.getAlarmOnlyDefaultConnectionRateLimit());
+    EXPECT_EQ(*limiterManager.getAlarmOnlyDefaultConnectionRateLimit(),
               connectionLimit2);
-    EXPECT_EQ(limiterManager.getDefaultConnectionRateLimit(),
+    ASSERT_TRUE(limiterManager.getDefaultConnectionRateLimit());
+    EXPECT_EQ(*limiterManager.getDefaultConnectionRateLimit(),
               connectionLimit1);
 
     // Removing default limiter
     limiterManager.removeDefaultConnectionRateLimit();
 
     // Getting default limiter
-    EXPECT_EQ(limiterManager.getDefaultConnectionRateLimit(), 0);
-    EXPECT_EQ(limiterManager.getAlarmOnlyDefaultConnectionRateLimit(),
+    EXPECT_FALSE(limiterManager.getDefaultConnectionRateLimit());
+    ASSERT_TRUE(limiterManager.getAlarmOnlyDefaultConnectionRateLimit());
+    EXPECT_EQ(*limiterManager.getAlarmOnlyDefaultConnectionRateLimit(),
               connectionLimit2);
 
     // Removing alarm only default limiter
     limiterManager.removeAlarmOnlyDefaultConnectionRateLimit();
 
     // Getting default limiter
-    EXPECT_EQ(limiterManager.getDefaultConnectionRateLimit(), 0);
-    EXPECT_EQ(limiterManager.getAlarmOnlyDefaultConnectionRateLimit(), 0);
+    EXPECT_FALSE(limiterManager.getDefaultConnectionRateLimit());
+    EXPECT_FALSE(limiterManager.getAlarmOnlyDefaultConnectionRateLimit());
 }
 
 TEST(ConnectionLimiterManagerTest, AllowNewConnectionForVhostWithoutAnyLimit)
 {
     ConnectionLimiterManager limiterManager;
-    EXPECT_EQ(limiterManager.getDefaultConnectionRateLimit(), 0);
+    EXPECT_FALSE(limiterManager.getDefaultConnectionRateLimit());
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost("test-vhost"));
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost("test-vhost"));
 }
@@ -216,13 +220,13 @@ TEST(ConnectionLimiterManagerTest,
 {
     ConnectionLimiterManager limiterManager;
     std::string              vhostName = "test-vhost";
-    EXPECT_EQ(limiterManager.getDefaultConnectionRateLimit(), 0);
+    EXPECT_FALSE(limiterManager.getDefaultConnectionRateLimit());
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
 
     uint32_t connectionLimit = 1;
     limiterManager.addConnectionRateLimiter(vhostName, connectionLimit);
-    EXPECT_EQ(limiterManager.getDefaultConnectionRateLimit(), 0);
+    EXPECT_FALSE(limiterManager.getDefaultConnectionRateLimit());
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
     EXPECT_FALSE(limiterManager.allowNewConnectionForVhost(vhostName));
 }
@@ -232,14 +236,14 @@ TEST(ConnectionLimiterManagerTest,
 {
     ConnectionLimiterManager limiterManager;
     std::string              vhostName = "test-vhost";
-    EXPECT_EQ(limiterManager.getAlarmOnlyDefaultConnectionRateLimit(), 0);
+    EXPECT_FALSE(limiterManager.getAlarmOnlyDefaultConnectionRateLimit());
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
 
     uint32_t connectionLimit = 1;
     limiterManager.addAlarmOnlyConnectionRateLimiter(vhostName,
                                                      connectionLimit);
-    EXPECT_EQ(limiterManager.getAlarmOnlyDefaultConnectionRateLimit(), 0);
+    EXPECT_FALSE(limiterManager.getAlarmOnlyDefaultConnectionRateLimit());
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
 }
@@ -249,13 +253,15 @@ TEST(ConnectionLimiterManagerTest,
 {
     ConnectionLimiterManager limiterManager;
     std::string              vhostName = "test-vhost";
-    EXPECT_EQ(limiterManager.getDefaultConnectionRateLimit(), 0);
+    EXPECT_FALSE(limiterManager.getDefaultConnectionRateLimit());
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
 
     uint32_t connectionLimit = 1;
     limiterManager.setDefaultConnectionRateLimit(connectionLimit);
-    EXPECT_EQ(limiterManager.getDefaultConnectionRateLimit(), connectionLimit);
+    ASSERT_TRUE(limiterManager.getDefaultConnectionRateLimit());
+    EXPECT_EQ(*limiterManager.getDefaultConnectionRateLimit(),
+              connectionLimit);
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
     EXPECT_FALSE(limiterManager.allowNewConnectionForVhost(vhostName));
 }
@@ -265,13 +271,14 @@ TEST(ConnectionLimiterManagerTest,
 {
     ConnectionLimiterManager limiterManager;
     std::string              vhostName = "test-vhost";
-    EXPECT_EQ(limiterManager.getAlarmOnlyDefaultConnectionRateLimit(), 0);
+    EXPECT_FALSE(limiterManager.getAlarmOnlyDefaultConnectionRateLimit());
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
 
     uint32_t connectionLimit = 1;
     limiterManager.setAlarmOnlyDefaultConnectionRateLimit(connectionLimit);
-    EXPECT_EQ(limiterManager.getAlarmOnlyDefaultConnectionRateLimit(),
+    ASSERT_TRUE(limiterManager.getAlarmOnlyDefaultConnectionRateLimit());
+    EXPECT_EQ(*limiterManager.getAlarmOnlyDefaultConnectionRateLimit(),
               connectionLimit);
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
@@ -283,24 +290,30 @@ TEST(ConnectionLimiterManagerTest,
     using namespace std::chrono_literals;
     ConnectionLimiterManager limiterManager;
     std::string              vhostName = "test-vhost";
-    EXPECT_EQ(limiterManager.getDefaultConnectionRateLimit(), 0);
+    EXPECT_FALSE(limiterManager.getDefaultConnectionRateLimit());
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
 
     uint32_t connectionLimit = 1;
     limiterManager.setDefaultConnectionRateLimit(connectionLimit);
-    EXPECT_EQ(limiterManager.getDefaultConnectionRateLimit(), connectionLimit);
+    ASSERT_TRUE(limiterManager.getDefaultConnectionRateLimit());
+    EXPECT_EQ(*limiterManager.getDefaultConnectionRateLimit(),
+              connectionLimit);
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
     EXPECT_FALSE(limiterManager.allowNewConnectionForVhost(vhostName));
 
     uint32_t newConnectionLimit = 2;
     limiterManager.addConnectionRateLimiter(vhostName, newConnectionLimit);
-    EXPECT_EQ(limiterManager.getDefaultConnectionRateLimit(), connectionLimit);
+    ASSERT_TRUE(limiterManager.getDefaultConnectionRateLimit());
+    EXPECT_EQ(*limiterManager.getDefaultConnectionRateLimit(),
+              connectionLimit);
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
 
     limiterManager.removeConnectionRateLimiter(vhostName);
-    EXPECT_EQ(limiterManager.getDefaultConnectionRateLimit(), connectionLimit);
+    ASSERT_TRUE(limiterManager.getDefaultConnectionRateLimit());
+    EXPECT_EQ(*limiterManager.getDefaultConnectionRateLimit(),
+              connectionLimit);
     EXPECT_TRUE(limiterManager.allowNewConnectionForVhost(vhostName));
     EXPECT_FALSE(limiterManager.allowNewConnectionForVhost(vhostName));
 }
