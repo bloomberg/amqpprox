@@ -22,7 +22,8 @@ EXIT Exit the program gracefully.
 FARM (ADD name selector backend* | PARTITION name policy | DELETE name | PRINT) - Change farms
 HELP Print this help text.
 LIMIT (CONN_RATE_ALARM | CONN_RATE) (VHOST vhostName numberOfConnections | DEFAULT numberOfConnections) - Configure connection rate limits (normal or alarmonly) for incoming clients connections
-LIMIT DISABLE (CONN_RATE_ALARM | CONN_RATE) (VHOST vhostName | DEFAULT) - Disable configured connection rate limits (normal or alarmonly) for incoming clients
+LIMIT (DATA_RATE_ALARM | DATA_RATE) (DEFAULT | VHOST vhostName) BytesPerSecond - Configure data rate limits or alarms for incoming client data
+LIMIT DISABLE (CONN_RATE_ALARM | CONN_RATE | DATA_RATE_ALARM | DATA_RATE) (VHOST vhostName | DEFAULT) - Disable configured limit thresholds
 LIMIT PRINT [vhostName] - Print the configured default or specific connection rate limits for specified vhost
 LISTEN START port | START_SECURE port | STOP [port]
 LOG CONSOLE verbosity | FILE verbosity
@@ -141,6 +142,21 @@ Apply limit on allowed average number of connections per second for all the vhos
 #### LIMIT CONN_RATE VHOST vhostName numberOfConnections
 Apply limit on allowed average number of connections per second for specified vhost. The specific limit takes priority over the default limit for any vhost.
 
+#### LIMIT DATA_RATE_ALARM DEFAULT BytesPerSecond
+
+Apply limit on allowed max bytes per second in alarm only mode for all the vhosts. So whenever any in-coming connection violates the data rate limit, the proxy will only emit log with Data Rate Alarm as a substring and the relevant limiter details, instead of actively limiting any data.
+
+#### LIMIT DATA_RATE_ALARM VHOST vhostName BytesPerSecond
+
+Apply limit on allowed max bytes per second in alarm only mode for specified vhost. The specific limit takes priority over the default limit for any vhost.
+
+#### LIMIT DATA_RATE DEFAULT numberOfConnections
+
+Apply limit on allowed max bytes per second for all the vhosts. So the data limit is enforced by counting the number of bytes read from the socket during each read operation, and pausing for one second before starting a read operation if the in-coming client connection violates the data.
+
+#### LIMIT DATA_RATE VHOST vhostName numberOfConnections
+Apply limit on allowed max bytes per second for specified vhost. The specific limit takes priority over the default limit for any vhost.
+
 #### LIMIT DISABLE CONN_RATE_ALARM DEFAULT numberOfConnections
 
 Remove default connection rate limit (allowed average number of connections per second) in alarm only mode for all the vhosts.
@@ -148,6 +164,14 @@ Remove default connection rate limit (allowed average number of connections per 
 #### LIMIT DISABLE CONN_RATE VHOST vhostName numberOfConnections
 
 Remove specific connection rate limit (allowed average number of connections per second) for the specified vhost. The default limit will be applied to the specified vhost, if the default limit is already configured.
+
+#### LIMIT DISABLE DATA_RATE_ALARM DEFAULT numberOfConnections
+
+Remove default data rate limit (allowed max bytes per second) in alarm only mode for all the vhosts.
+
+#### LIMIT DISABLE DATA_RATE VHOST vhostName numberOfConnections
+
+Remove specific data rate limit (allowed max bytes per second) for the specified vhost. The default data limit will be applied to the specified vhost, if the default data limit is already configured.
 
 #### LIMIT PRINT [vhostName]
 

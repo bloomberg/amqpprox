@@ -21,6 +21,7 @@
 #include <amqpprox_server.h>
 #include <amqpprox_session.h>
 
+#include <limits>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -246,68 +247,109 @@ void handleDataRateLimit(
 void printVhostLimits(
     const std::string        &vhostName,
     ConnectionLimiterManager *connectionLimiterManager,
+    DataRateLimitManager     *dataRateLimitManager,
     ControlCommandOutput<ControlCommand::OutputFunctor> &output)
 {
-    auto alarmLimiter =
+    bool anyConfiguredLimit = false;
+
+    auto alarmConnRateLimiter =
         connectionLimiterManager->getAlarmOnlyConnectionRateLimiter(vhostName);
-    if (alarmLimiter) {
+    if (alarmConnRateLimiter) {
         output << "Alarm only limit, for vhost " << vhostName << ", "
-               << alarmLimiter->toString() << ".\n";
+               << alarmConnRateLimiter->toString() << ".\n";
+        anyConfiguredLimit = true;
     }
-
-    auto limiter =
-        connectionLimiterManager->getConnectionRateLimiter(vhostName);
-    if (limiter) {
-        output << "For vhost " << vhostName << ", " << limiter->toString()
-               << ".\n";
-    }
-
-    if (!alarmLimiter && !limiter) {
-        std::optional<uint32_t> alarmOnlyConnectionRateLimit =
+    else {
+        std::optional<uint32_t> alarmConnRateLimit =
             connectionLimiterManager->getAlarmOnlyDefaultConnectionRateLimit();
-        std::optional<uint32_t> connectionRateLimit =
+        if (alarmConnRateLimit) {
+            output << "Alarm only limit, for vhost " << vhostName
+                   << ", allow average " << *alarmConnRateLimit
+                   << " number of connections per second.\n";
+            anyConfiguredLimit = true;
+        }
+    }
+    auto connRateLimiter =
+        connectionLimiterManager->getConnectionRateLimiter(vhostName);
+    if (connRateLimiter) {
+        output << "For vhost " << vhostName << ", "
+               << connRateLimiter->toString() << ".\n";
+        anyConfiguredLimit = true;
+    }
+    else {
+        std::optional<uint32_t> connRateLimit =
             connectionLimiterManager->getDefaultConnectionRateLimit();
-        if (alarmOnlyConnectionRateLimit || connectionRateLimit) {
-            if (alarmOnlyConnectionRateLimit) {
-                output << "Alarm only limit, for vhost " << vhostName
-                       << ", allow average " << *alarmOnlyConnectionRateLimit
-                       << " number of connections per second.\n";
-            }
-            if (connectionRateLimit) {
-                output << "For vhost " << vhostName << ", allow average "
-                       << *connectionRateLimit
-                       << " number of connections per second.\n";
-            }
+        if (connRateLimit) {
+            output << "For vhost " << vhostName << ", allow average "
+                   << *connRateLimit << " number of connections per second.\n";
+            anyConfiguredLimit = true;
         }
-        else {
-            output << "No default connection rate limit configured "
-                      "for any vhost.\n";
-        }
+    }
+
+    std::size_t alarmDataRateLimit =
+        dataRateLimitManager->getDataRateAlarm(vhostName);
+    if (alarmDataRateLimit != std::numeric_limits<std::size_t>::max()) {
+        output << "Alarm only data limit, for vhost " << vhostName
+               << ", allow max " << alarmDataRateLimit
+               << " bytes per second.\n";
+        anyConfiguredLimit = true;
+    }
+
+    std::size_t dataRateLimit =
+        dataRateLimitManager->getDataRateLimit(vhostName);
+    if (dataRateLimit != std::numeric_limits<std::size_t>::max()) {
+        output << "For vhost " << vhostName << ", allow max " << dataRateLimit
+               << " bytes per second.\n";
+        anyConfiguredLimit = true;
+    }
+
+    if (!anyConfiguredLimit) {
+        output << "No limit configured for vhost " << vhostName << ".\n";
     }
 }
 
 void printAllLimits(
     ConnectionLimiterManager *connectionLimiterManager,
+    DataRateLimitManager     *dataRateLimitManager,
     ControlCommandOutput<ControlCommand::OutputFunctor> &output)
 {
     std::optional<uint32_t> alarmOnlyConnectionRateLimit =
         connectionLimiterManager->getAlarmOnlyDefaultConnectionRateLimit();
     std::optional<uint32_t> connectionRateLimit =
         connectionLimiterManager->getDefaultConnectionRateLimit();
-    if (alarmOnlyConnectionRateLimit || connectionRateLimit) {
-        if (alarmOnlyConnectionRateLimit) {
-            output << "Default limit for any vhost, allow average "
-                   << *alarmOnlyConnectionRateLimit
-                   << " connections per second in alarm only mode.\n";
-        }
-        if (connectionRateLimit) {
-            output << "Default limit for any vhost, allow average "
-                   << *connectionRateLimit << " connections per second.\n";
-        }
+
+    std::size_t alarmOnlyDataRateLimit =
+        dataRateLimitManager->getDefaultDataRateAlarm();
+    std::size_t dataRateLimit =
+        dataRateLimitManager->getDefaultDataRateLimit();
+
+    bool anyConfiguredLimit = false;
+    if (alarmOnlyConnectionRateLimit) {
+        output << "Default limit for any vhost, allow average "
+               << *alarmOnlyConnectionRateLimit
+               << " connections per second in alarm only mode.\n";
+        anyConfiguredLimit = true;
     }
-    else {
-        output << "No default connection rate limit configured "
-                  "for any vhost.\n";
+    if (connectionRateLimit) {
+        output << "Default limit for any vhost, allow average "
+               << *connectionRateLimit << " connections per second.\n";
+        anyConfiguredLimit = true;
+    }
+
+    if (alarmOnlyDataRateLimit != std::numeric_limits<std::size_t>::max()) {
+        output << "Default data limit for any vhost, allow max "
+               << alarmOnlyDataRateLimit
+               << " bytes per second in alarm only mode.\n";
+        anyConfiguredLimit = true;
+    }
+    if (dataRateLimit != std::numeric_limits<std::size_t>::max()) {
+        output << "Default data limit for any vhost, allow max "
+               << dataRateLimit << " bytes per second.\n";
+        anyConfiguredLimit = true;
+    }
+
+    if (!anyConfiguredLimit) {
+        output << "No default limit configured for any vhost.\n";
     }
 }
 
@@ -389,10 +431,14 @@ void LimitControlCommand::handleCommand(const std::string & /* command */,
     if (subcommand == "PRINT") {
         std::string vhostName;
         if (iss >> vhostName) {
-            printVhostLimits(vhostName, d_connectionLimiterManager_p, output);
+            printVhostLimits(vhostName,
+                             d_connectionLimiterManager_p,
+                             d_dataRateLimitManager,
+                             output);
         }
         else {
-            printAllLimits(d_connectionLimiterManager_p, output);
+            printAllLimits(
+                d_connectionLimiterManager_p, d_dataRateLimitManager, output);
         }
         return;
     }
