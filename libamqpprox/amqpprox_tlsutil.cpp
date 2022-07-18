@@ -63,11 +63,14 @@ void TlsUtil::logTlsConnectionAlert(const SSL *s, int where, int ret)
             prefix = "SSL_accept";
 
             if (ret == 0) {
+                // Errors are reported with ret = 0
                 LOG_ERROR << prefix
                           << " failed in: " << SSL_state_string_long(s);
             }
             else if (ret < 0) {
-                LOG_ERROR << prefix
+                // These errors seem to be informational only (i.e. handshake
+                // reached a certain step)
+                LOG_DEBUG << prefix
                           << " error in: " << SSL_state_string_long(s);
             }
         }
