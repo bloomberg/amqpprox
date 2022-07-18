@@ -41,6 +41,7 @@ add_executable(amqpprox_tests
     amqpprox_defaultauthintercept.t.cpp
     amqpprox_httpauthintercept.t.cpp
     amqpprox_fixedwindowconnectionratelimiter.t.cpp
+    amqpprox_totalconnectionlimiter.t.cpp
     amqpprox_connectionlimitermanager.t.cpp
     )
 

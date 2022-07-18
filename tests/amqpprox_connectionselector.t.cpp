@@ -79,6 +79,30 @@ TEST(ConnectionSelector, Limited_Connection)
               SessionState::ConnectionStatus::LIMIT);
 }
 
+TEST(ConnectionSelector, Limited_Total_Connection)
+{
+    FarmStore                farmStore;
+    BackendStore             backendStore;
+    ResourceMapper           resourceMapper;
+    ConnectionLimiterManager connectionLimiterManager;
+    uint32_t                 connectionLimit = 1;
+    std::string              vhostName       = "test-vhost";
+    connectionLimiterManager.addTotalConnectionLimiter(vhostName,
+                                                       connectionLimit);
+    ConnectionSelector connectionSelector(
+        &farmStore, &backendStore, &resourceMapper, &connectionLimiterManager);
+    SessionState state;
+    state.setVirtualHost(vhostName);
+    std::shared_ptr<ConnectionManager> out;
+    EXPECT_EQ(connectionSelector.acquireConnection(&out, state),
+              SessionState::ConnectionStatus::NO_FARM);
+
+    // Acquiring second connection will be limited because of configured
+    // connection limit
+    EXPECT_EQ(connectionSelector.acquireConnection(&out, state),
+              SessionState::ConnectionStatus::LIMIT);
+}
+
 TEST(ConnectionSelector, Limited_Connection_Alarm_Only)
 {
     FarmStore                farmStore;

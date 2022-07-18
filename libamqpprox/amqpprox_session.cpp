@@ -899,6 +899,8 @@ void Session::handleSessionError(const char               *action,
     if (d_connector.state() == Connector::State::CLOSED) {
         d_sessionState.setDisconnected(
             SessionState::DisconnectType::DISCONNECTED_CLEANLY);
+        d_connectionSelector_p->notifyConnectionDisconnect(
+            d_sessionState.getVirtualHost());
     }
     else if (direction == FlowType::INGRESS &&
              d_connector.state() == Connector::State::CLIENT_CLOSE_SENT) {
@@ -929,6 +931,8 @@ void Session::handleSessionError(const char               *action,
             d_sessionState.setDisconnected(
                 SessionState::DisconnectType::DISCONNECTED_SERVER);
         }
+        d_connectionSelector_p->notifyConnectionDisconnect(
+            d_sessionState.getVirtualHost());
     }
 
     if (ec != boost::asio::error::operation_aborted) {

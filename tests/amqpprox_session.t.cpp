@@ -96,6 +96,8 @@ struct SelectorMock : public ConnectionSelectorInterface {
         acquireConnection,
         SessionState::ConnectionStatus(std::shared_ptr<ConnectionManager> *,
                                        const SessionState &));
+
+    MOCK_METHOD1(notifyConnectionDisconnect, void(const std::string &));
 };
 
 struct HostnameMapperMock : public HostnameMapper {
