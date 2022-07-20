@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
         CommandPtr(new VhostControlCommand(&vhostState)),
         CommandPtr(new ListenControlCommand),
         CommandPtr(new LoggingControlCommand),
-        CommandPtr(new StatControlCommand(&eventSource)),
+        CommandPtr(new StatControlCommand(&eventSource, &statCollector)),
         CommandPtr(new MapHostnameControlCommand()),
         CommandPtr(new TlsControlCommand),
         CommandPtr(new AuthControlCommand),
