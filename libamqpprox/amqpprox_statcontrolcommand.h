@@ -40,9 +40,11 @@ class StatControlCommand : public ControlCommand {
     std::list<std::pair<StatFunctor, bool>> d_functors;
     EventSubscriptionHandle                 d_statisticsAvailableSignal;
     EventSource                            *d_eventSource_p;  // HELD NOT OWNED
+    StatCollector *d_statCollector_p;                         // HELD NOT OWNED
 
   public:
-    explicit StatControlCommand(EventSource *eventSource);
+    explicit StatControlCommand(EventSource   *eventSource,
+                                StatCollector *statCollector);
 
     /**
      * \return the command verb this handles

@@ -152,6 +152,7 @@ MAP (BACKEND vhost backend | FARM vhost name | UNMAP vhost | DEFAULT farmName | 
 MAPHOSTNAME DNS - Set up mapping of IPs to hostnames
 SESSION  id# (PAUSE|DISCONNECT_GRACEFUL|FORCE_DISCONNECT) - Control a particular session
 STAT (STOP SEND | SEND <host> <port> | (LISTEN (json|human) (overall|vhost=foo|backend=bar|source=baz|all|process|bufferpool))) - Output statistics
+STAT (DISABLE|ENABLE) per-source - Enable/Disable internal collection of per-source statistics. Applies to all send/listeners
 TLS (INGRESS | EGRESS) (KEY_FILE file | CERT_CHAIN_FILE file | RSA_KEY_FILE file | TMP_DH_FILE file | CA_CERT_FILE file | VERIFY_MODE mode* | CIPHERS (PRINT | SET ciphersuite(:ciphersuite)*))
 VHOST PAUSE vhost | UNPAUSE vhost | PRINT | BACKEND_DISCONNECT vhost | FORCE_DISCONNECT vhost
 ```
