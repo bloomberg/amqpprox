@@ -71,6 +71,7 @@ class SessionState {
     std::atomic<bool>               d_authDeniedConnection;
     std::atomic<bool>               d_ingressSecured;
     std::atomic<bool>               d_limitedConnection;
+    bool                            d_totalConnnectionIncremented;
     std::string                     d_virtualHost;
     DisconnectType                  d_disconnectedStatus;
     uint64_t                        d_id;
@@ -145,6 +146,12 @@ class SessionState {
      * configured limiters
      */
     void setLimitedConnection();
+
+    /**
+     * \brief Set the current connection session is counted in total connection
+     * limit
+     */
+    void setTotalConnectionIncremented();
 
     /**
      * \brief Set session as disconnected, along with which type of disconnect
@@ -238,6 +245,12 @@ class SessionState {
     inline bool getLimitedConnection() const;
 
     /**
+     * \return the state of the current connection session, whether it is
+     * counted in total connection limit
+     */
+    inline bool getTotalConnectionIncremented() const;
+
+    /**
      * \return session identifier
      */
     inline uint64_t id() const;
@@ -303,6 +316,11 @@ inline bool SessionState::getIngressSecured() const
 inline bool SessionState::getLimitedConnection() const
 {
     return d_limitedConnection;
+}
+
+inline bool SessionState::getTotalConnectionIncremented() const
+{
+    return d_totalConnnectionIncremented;
 }
 
 inline uint64_t SessionState::id() const

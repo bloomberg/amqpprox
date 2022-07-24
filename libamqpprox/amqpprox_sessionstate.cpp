@@ -161,6 +161,11 @@ void SessionState::setLimitedConnection()
     d_limitedConnection = true;
 }
 
+void SessionState::setTotalConnectionIncremented()
+{
+    d_totalConnnectionIncremented = true;
+}
+
 std::string
 SessionState::hostname(const boost::asio::ip::tcp::endpoint &endpoint) const
 {

@@ -168,6 +168,10 @@ Session::Session(boost::asio::io_context               &ioContext,
 
 Session::~Session()
 {
+    if (d_sessionState.getTotalConnectionIncremented()) {
+        d_connectionSelector_p->notifyConnectionDisconnect(
+            d_sessionState.getVirtualHost());
+    }
 }
 
 bool Session::finished()
@@ -488,6 +492,7 @@ void Session::establishConnection()
         case SessionState::ConnectionStatus::NO_FARM:
         case SessionState::ConnectionStatus::ERROR_FARM:
         case SessionState::ConnectionStatus::NO_BACKEND:
+            d_sessionState.setTotalConnectionIncremented();
             d_connector.synthesizeCustomCloseError(
                 true,
                 Reply::Codes::resource_error,
@@ -498,6 +503,7 @@ void Session::establishConnection()
             break;
 
         default:
+            d_sessionState.setTotalConnectionIncremented();
             LOG_INFO << "Failed to acquire connection for vhost "
                      << d_sessionState.getVirtualHost()
                      << ", rc: " << static_cast<int>(rc);
@@ -506,6 +512,7 @@ void Session::establishConnection()
 
         return;
     }
+    d_sessionState.setTotalConnectionIncremented();
 
     auto authResponseCb = [this, self, connectionManager](
                               const authproto::AuthResponse
@@ -899,8 +906,6 @@ void Session::handleSessionError(const char               *action,
     if (d_connector.state() == Connector::State::CLOSED) {
         d_sessionState.setDisconnected(
             SessionState::DisconnectType::DISCONNECTED_CLEANLY);
-        d_connectionSelector_p->notifyConnectionDisconnect(
-            d_sessionState.getVirtualHost());
     }
     else if (direction == FlowType::INGRESS &&
              d_connector.state() == Connector::State::CLIENT_CLOSE_SENT) {
@@ -931,8 +936,6 @@ void Session::handleSessionError(const char               *action,
             d_sessionState.setDisconnected(
                 SessionState::DisconnectType::DISCONNECTED_SERVER);
         }
-        d_connectionSelector_p->notifyConnectionDisconnect(
-            d_sessionState.getVirtualHost());
     }
 
     if (ec != boost::asio::error::operation_aborted) {
