@@ -19,6 +19,7 @@
 #include <amqpprox_connectionstats.h>
 #include <amqpprox_statsnapshot.h>
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -52,6 +53,8 @@ class StatCollector {
     StatSnapshot d_previous;
     CpuMonitor  *d_cpuMonitor_p;  // HELD NOT OWNED
     BufferPool  *d_bufferPool_p;  // HELD NOT OWNED
+
+    std::atomic<bool> d_collectPerSourceStats;
 
   public:
     // CREATORS
@@ -89,6 +92,11 @@ class StatCollector {
      * \param pool pointer to `BuffrePool`
      */
     void setBufferPool(BufferPool *pool);
+
+    /**
+     * \brief Enable/Disable per-source statistics
+     */
+    void collectPerSourceStats(bool enabled);
 
     // ACCESSORS
     /**

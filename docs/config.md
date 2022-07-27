@@ -297,6 +297,13 @@ Stops sending metrics to all configured endpoints.
 
 Streams metrics to stdout. Pass `json` or `human` to specify output format. Metrics can be filtered by passing `overall|vhost=foo|backend=bar|source=baz|all|process|bufferpool`.
 
+#### STAT ENABLE/DISABLE
+
+Disable internal collection of certain types of metrics. This is different from the filtering available under `STAT LISTEN` because this completely skips collection
+of these metrics. Where possible, use this instead of filters.
+
+At the moment, only `STAT DISABLE per-source` (or enable equivalent) is available.
+
 ## TLS commands
 
 `TLS` command is used to configure TLS-enabled connections for both ingress (client => proxy) and egress (proxy => broker). See [TLS usage documentation](https://github.com/bloomberg/amqpprox/blob/main/docs/tls.md).

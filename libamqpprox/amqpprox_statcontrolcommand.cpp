@@ -138,10 +138,12 @@ void stopSendStats(std::list<std::pair<StatFunctor, bool>> *d_functors)
 
 }
 
-StatControlCommand::StatControlCommand(EventSource *eventSource)
+StatControlCommand::StatControlCommand(EventSource   *eventSource,
+                                       StatCollector *statCollector)
 : d_functors()
 , d_statisticsAvailableSignal()
 , d_eventSource_p(eventSource)
+, d_statCollector_p(statCollector)
 {
     d_statisticsAvailableSignal =
         d_eventSource_p->statisticsAvailable().subscribe(std::bind(
@@ -173,9 +175,13 @@ std::string StatControlCommand::commandVerb() const
 std::string StatControlCommand::helpText() const
 {
     return "(STOP SEND | SEND <host> <port> | (LISTEN (json|human) "
-           "(overall|vhost=foo|backend=bar|source=baz|all|process|bufferpool))"
+           "(overall|vhost=foo|backend=bar|source=baz|all|all-except-per-"
+           "source|process|bufferpool))"
            " - "
-           "Output statistics";
+           "Output statistics\n"
+           "STAT (DISABLE|ENABLE) per-source - Enable/Disable internal "
+           "collection of per-source statistics. Applies to all "
+           "send/listeners";
 }
 
 void StatControlCommand::handleCommand(const std::string   &command,
@@ -233,9 +239,34 @@ void StatControlCommand::handleCommand(const std::string   &command,
         }
         return;
     }
+    else if (subcommand == "DISABLE" || subcommand == "ENABLE") {
+        std::string type;
+        if (!(iss >> type)) {
+            outputFunctor("Missing enable/disable type.\n", true);
+            return;
+        }
+
+        boost::to_upper(type);
+
+        if (type == "PER-SOURCE") {
+            d_statCollector_p->collectPerSourceStats(subcommand == "ENABLE");
+            outputFunctor(subcommand + " per-source applied.\n", true);
+            return;
+        }
+        else {
+            outputFunctor(
+                "Only LISTEN, SEND, STOP, ENABLE, and DISABLE subcommands are "
+                "supported.\n",
+                true);
+            return;
+        }
+        return;
+    }
     else {
         outputFunctor(
-            "Only LISTEN, SEND and STOP subcommands are supported.\n", true);
+            "Only LISTEN, SEND, STOP, ENABLE, and DISABLE subcommands are "
+            "supported.\n",
+            true);
         return;
     }
 
@@ -287,11 +318,11 @@ void StatControlCommand::handleCommand(const std::string   &command,
     }
     else {
         if (filterType != "ALL") {
-            outputFunctor(
-                "Filters are currently not supported when sending metrics.\n",
-                true);
+            outputFunctor("Filters aren't supported when sending metrics.\n",
+                          true);
             return;
         }
+
         std::shared_ptr<StatsDPublisher> publisher =
             std::make_shared<StatsDPublisher>(
                 &controlHandle->ioContext(), outputHost, outputPort);
@@ -306,6 +337,5 @@ void StatControlCommand::handleCommand(const std::string   &command,
                       true);
     }
 }
-
 }
 }

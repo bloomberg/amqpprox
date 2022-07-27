@@ -29,6 +29,7 @@ StatCollector::StatCollector()
 , d_previous()
 , d_cpuMonitor_p(nullptr)
 , d_bufferPool_p(nullptr)
+, d_collectPerSourceStats(true)
 {
 }
 
@@ -51,23 +52,6 @@ void StatCollector::setBufferPool(BufferPool *pool)
 
 void StatCollector::collect(const SessionState &session)
 {
-    auto vhost = session.getVirtualHost();
-
-    // For backends we care about the broker's port to disambiguate
-    // the different brokers running on a host.  Note that we are
-    // using '_' as the separator, as ':' is not compatible with
-    // statsD.
-    auto backend =
-        session.hostname(session.getEgress().second) + "_" +
-        boost::lexical_cast<std::string>(session.getEgress().second.port());
-
-    // For sources we only look at the machine, not the ephemeral port
-    auto source = session.hostname(session.getIngress().second);
-
-    auto &vhostStats   = d_current.vhosts()[vhost];
-    auto &backendStats = d_current.backends()[backend];
-    auto &sourceStats  = d_current.sources()[source];
-
     uint64_t ingressPackets, ingressFrames, ingressBytes, ingressLatencyCount,
         ingressLatencyTotal, egressPackets, egressFrames, egressBytes,
         egressLatencyCount, egressLatencyTotal;
@@ -139,9 +123,28 @@ void StatCollector::collect(const SessionState &session)
         }
     };
 
+    auto  vhost      = session.getVirtualHost();
+    auto &vhostStats = d_current.vhosts()[vhost];
     addStats(vhostStats);
+
+    // For backends we care about the broker's port to disambiguate
+    // the different brokers running on a host.  Note that we are
+    // using '_' as the separator, as ':' is not compatible with
+    // statsD.
+    auto backend =
+        session.hostname(session.getEgress().second) + "_" +
+        boost::lexical_cast<std::string>(session.getEgress().second.port());
+    auto &backendStats = d_current.backends()[backend];
     addStats(backendStats);
-    addStats(sourceStats);
+
+    if (d_collectPerSourceStats) {
+        // For sources we only look at the machine, not the ephemeral port
+        auto source = session.hostname(session.getIngress().second);
+
+        auto &sourceStats = d_current.sources()[source];
+        addStats(sourceStats);
+    }
+
     addStats(d_current.overall());
 }
 
@@ -304,6 +307,11 @@ void StatCollector::populateMap(StatSnapshot::StatsMap       *map,
     }
 
     map->swap(output);
+}
+
+void StatCollector::collectPerSourceStats(bool enabled)
+{
+    d_collectPerSourceStats = enabled;
 }
 
 }
