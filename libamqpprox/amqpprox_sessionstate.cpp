@@ -48,6 +48,7 @@ SessionState::SessionState(
 , d_authDeniedConnection(false)
 , d_ingressSecured(false)
 , d_limitedConnection(false)
+, d_totalConnnectionIncremented(false)
 , d_virtualHost()
 , d_disconnectedStatus(DisconnectType::NOT_DISCONNECTED)
 , d_id(s_nextId++)  // This isn't a race because this is only on one thread
