@@ -35,6 +35,12 @@ class ConnectionLimiterInterface {
      */
     virtual bool allowNewConnection() = 0;
 
+    /**
+     * \brief Called when an aquired connection is closed. Useful for changing
+     * the state of the limiter based on close connection event.
+     */
+    virtual void connectionClosed() {}
+
     // ACCESSORS
     /**
      * \return information about connection limiter as a string

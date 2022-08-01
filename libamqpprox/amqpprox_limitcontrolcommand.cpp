@@ -40,50 +40,78 @@ void handleConnectionLimitAlarm(
     ConnectionLimiterManager *connectionLimiterManager,
     bool                      isDefault,
     const std::string        &vhostName,
-    bool                      isDisable)
+    bool                      isDisable,
+    bool                      isTotalConnLimit)
 {
+    std::string limitType =
+        (isTotalConnLimit ? "total connection" : "connection rate");
     if (isDisable) {
         if (isDefault) {
-            connectionLimiterManager
-                ->removeAlarmOnlyDefaultConnectionRateLimit();
-            output << "Successfully disabled default alarm only "
-                      "connection rate limit\n ";
+            isTotalConnLimit
+                ? connectionLimiterManager
+                      ->removeAlarmOnlyDefaultTotalConnectionLimit()
+                : connectionLimiterManager
+                      ->removeAlarmOnlyDefaultConnectionRateLimit();
+            output << "Successfully disabled default alarm only " << limitType
+                   << " limit\n ";
         }
         else {
-            connectionLimiterManager->removeAlarmOnlyConnectionRateLimiter(
-                vhostName);
-            output << "Successfully disabled specific alarm only "
-                      "connection rate limit for vhost "
-                   << vhostName << "\n";
+            isTotalConnLimit
+                ? connectionLimiterManager
+                      ->removeAlarmOnlyTotalConnectionLimiter(vhostName)
+                : connectionLimiterManager
+                      ->removeAlarmOnlyConnectionRateLimiter(vhostName);
+            output << "Successfully disabled specific alarm only " << limitType
+                   << " limit for vhost " << vhostName << "\n";
         }
     }
     else {
         uint32_t numberOfConnections;
         if (!(iss >> numberOfConnections)) {
-            output << "Invalid numberOfConnections provided.\n";
+            output << "Invalid numberOfConnections provided for " << limitType
+                   << " limit.\n";
             return;
         }
 
         if (isDefault) {
-            connectionLimiterManager->setAlarmOnlyDefaultConnectionRateLimit(
-                numberOfConnections);
-            output << "Default connection rate limit is set to "
-                   << connectionLimiterManager
-                          ->getAlarmOnlyDefaultConnectionRateLimit()
-                          .value()
-                   << " connections per second in alarm only mode.\n";
-            output << "The limiter will only log at warning level with "
-                      "AMQPPROX_CONNECTION_LIMIT as a substring and the "
-                      "relevant limit details, when the new incoming "
-                      "connection violates the default limit for all "
-                      "vhosts.\n";
+            if (isTotalConnLimit) {
+                connectionLimiterManager
+                    ->setAlarmOnlyDefaultConnectionRateLimit(
+                        numberOfConnections);
+                output << "Default " << limitType << " limit is set to "
+                       << connectionLimiterManager
+                              ->getAlarmOnlyDefaultTotalConnectionLimit()
+                              .value()
+                       << " total connections in alarm only mode.\n";
+            }
+            else {
+                connectionLimiterManager
+                    ->setAlarmOnlyDefaultTotalConnectionLimit(
+                        numberOfConnections);
+                output << "Default " << limitType << " limit is set to "
+                       << connectionLimiterManager
+                              ->getAlarmOnlyDefaultConnectionRateLimit()
+                              .value()
+                       << " connections per second in alarm only mode.\n";
+            }
+
+            output
+                << "The limiter will only log at warning level with "
+                   "AMQPPROX_CONNECTION_LIMIT as a substring and the "
+                   "relevant limit details, when the new incoming client "
+                   "connection violates the default limit for all vhosts.\n";
         }
         else {
             output << "For vhost " << vhostName << ", "
-                   << connectionLimiterManager
-                          ->addAlarmOnlyConnectionRateLimiter(
-                              vhostName, numberOfConnections)
-                          ->toString()
+                   << (isTotalConnLimit
+                           ? connectionLimiterManager
+                                 ->addAlarmOnlyTotalConnectionLimiter(
+                                     vhostName, numberOfConnections)
+                                 ->toString()
+                           : connectionLimiterManager
+                                 ->addAlarmOnlyConnectionRateLimiter(
+                                     vhostName, numberOfConnections)
+                                 ->toString())
                    << " in alarm only mode.\n";
             output << "The limiter will only log at warning level with "
                       "AMQPPROX_CONNECTION_LIMIT as a substring and the "
@@ -99,42 +127,69 @@ void handleConnectionLimit(
     ConnectionLimiterManager *connectionLimiterManager,
     bool                      isDefault,
     const std::string        &vhostName,
-    bool                      isDisable)
+    bool                      isDisable,
+    bool                      isTotalConnLimit)
 {
+    std::string limitType =
+        (isTotalConnLimit ? "total connection" : "connection rate");
     if (isDisable) {
         if (isDefault) {
-            connectionLimiterManager->removeDefaultConnectionRateLimit();
-            output << "Successfully disabled default connection rate "
-                      "limit\n ";
+            isTotalConnLimit
+                ? connectionLimiterManager->removeDefaultConnectionRateLimit()
+                : connectionLimiterManager
+                      ->removeDefaultTotalConnectionLimit();
+            output << "Successfully disabled default " << limitType
+                   << " limit\n ";
         }
         else {
-            connectionLimiterManager->removeConnectionRateLimiter(vhostName);
-            output << "Successfully disabled specific connection rate "
-                      "limit for vhost "
-                   << vhostName << "\n";
+            isTotalConnLimit
+                ? connectionLimiterManager->removeTotalConnectionLimiter(
+                      vhostName)
+                : connectionLimiterManager->removeConnectionRateLimiter(
+                      vhostName);
+            output << "Successfully disabled specific " << limitType
+                   << " limit for vhost " << vhostName << "\n";
         }
     }
     else {
         uint32_t numberOfConnections;
         if (!(iss >> numberOfConnections)) {
-            output << "Invalid numberOfConnections provided.\n";
+            output << "Invalid numberOfConnections provided for " << limitType
+                   << " limit\n";
             return;
         }
 
         if (isDefault) {
-            connectionLimiterManager->setDefaultConnectionRateLimit(
-                numberOfConnections);
-            output << "Default connection rate limit is set to "
-                   << connectionLimiterManager->getDefaultConnectionRateLimit()
-                          .value()
-                   << " connections per second.\n";
+            if (isTotalConnLimit) {
+                connectionLimiterManager->setDefaultTotalConnectionLimit(
+                    numberOfConnections);
+                output << "Default " << limitType << " limit is set to "
+                       << connectionLimiterManager
+                              ->getDefaultTotalConnectionLimit()
+                              .value()
+                       << " total connections.\n";
+            }
+            else {
+                connectionLimiterManager->setDefaultConnectionRateLimit(
+                    numberOfConnections);
+                output << "Default " << limitType << " limit is set to "
+                       << connectionLimiterManager
+                              ->getDefaultConnectionRateLimit()
+                              .value()
+                       << " connections per second.\n";
+            }
         }
         else {
             output << "For vhost " << vhostName << ", "
-                   << connectionLimiterManager
-                          ->addConnectionRateLimiter(vhostName,
-                                                     numberOfConnections)
-                          ->toString()
+                   << (isTotalConnLimit
+                           ? connectionLimiterManager
+                                 ->addTotalConnectionLimiter(
+                                     vhostName, numberOfConnections)
+                                 ->toString()
+                           : connectionLimiterManager
+                                 ->addConnectionRateLimiter(
+                                     vhostName, numberOfConnections)
+                                 ->toString())
                    << "\n";
         }
     }
@@ -286,6 +341,40 @@ void printVhostLimits(
         }
     }
 
+    auto alarmTotalConnLimiter =
+        connectionLimiterManager->getAlarmOnlyTotalConnectionLimiter(
+            vhostName);
+    if (alarmTotalConnLimiter) {
+        output << "Alarm only limit, for vhost " << vhostName << ", "
+               << alarmTotalConnLimiter->toString() << ".\n";
+        anyConfiguredLimit = true;
+    }
+    else {
+        std::optional<uint32_t> alarmTotalConnLimit =
+            connectionLimiterManager->getAlarmOnlyDefaultConnectionRateLimit();
+        if (alarmTotalConnLimit) {
+            output << "Alarm only limit, for vhost " << vhostName << ", allow "
+                   << *alarmTotalConnLimit << " total connections.\n";
+            anyConfiguredLimit = true;
+        }
+    }
+    auto totalConnLimiter =
+        connectionLimiterManager->getTotalConnectionLimiter(vhostName);
+    if (totalConnLimiter) {
+        output << "For vhost " << vhostName << ", "
+               << totalConnLimiter->toString() << ".\n";
+        anyConfiguredLimit = true;
+    }
+    else {
+        std::optional<uint32_t> totalConnLimit =
+            connectionLimiterManager->getDefaultTotalConnectionLimit();
+        if (totalConnLimit) {
+            output << "For vhost " << vhostName << ", allow "
+                   << *totalConnLimit << " total connections.\n";
+            anyConfiguredLimit = true;
+        }
+    }
+
     std::size_t alarmDataRateLimit =
         dataRateLimitManager->getDataRateAlarm(vhostName);
     if (alarmDataRateLimit != std::numeric_limits<std::size_t>::max()) {
@@ -318,6 +407,11 @@ void printAllLimits(
     std::optional<uint32_t> connectionRateLimit =
         connectionLimiterManager->getDefaultConnectionRateLimit();
 
+    std::optional<uint32_t> alarmOnlyTotalConnectionLimit =
+        connectionLimiterManager->getAlarmOnlyDefaultTotalConnectionLimit();
+    std::optional<uint32_t> totalConnectionLimit =
+        connectionLimiterManager->getDefaultTotalConnectionLimit();
+
     std::size_t alarmOnlyDataRateLimit =
         dataRateLimitManager->getDefaultDataRateAlarm();
     std::size_t dataRateLimit =
@@ -333,6 +427,18 @@ void printAllLimits(
     if (connectionRateLimit) {
         output << "Default limit for any vhost, allow average "
                << *connectionRateLimit << " connections per second.\n";
+        anyConfiguredLimit = true;
+    }
+
+    if (alarmOnlyTotalConnectionLimit) {
+        output << "Default limit for any vhost, allow "
+               << *alarmOnlyTotalConnectionLimit
+               << " total connections in alarm only mode.\n";
+        anyConfiguredLimit = true;
+    }
+    if (totalConnectionLimit) {
+        output << "Default limit for any vhost, allow "
+               << *totalConnectionLimit << " total connections.\n";
         anyConfiguredLimit = true;
     }
 
@@ -394,18 +500,21 @@ std::string LimitControlCommand::commandVerb() const
 
 std::string LimitControlCommand::helpText() const
 {
-    return "(CONN_RATE_ALARM | CONN_RATE) (VHOST vhostName "
-           "numberOfConnections | DEFAULT numberOfConnections) - Configure "
-           "connection rate limits (normal or alarmonly) for incoming clients "
-           "connections\n"
+    return "(CONN_RATE_ALARM | CONN_RATE) (DEFAULT | VHOST vhostName) "
+           "numberOfConnections - Configure connection rate limits (normal or "
+           "alarmonly) for incoming clients connections\n"
+
+           "LIMIT (TOTAL_CONN_ALARM | TOTAL_CONN) (DEFAULT | VHOST vhostName) "
+           "numberOfConnections - Configure total connection limits or alarms "
+           "for incoming client connections\n"
 
            "LIMIT (DATA_RATE_ALARM | DATA_RATE) (DEFAULT | VHOST vhostName) "
            "BytesPerSecond - Configure data rate limits or alarms for "
            "incoming client data\n"
 
-           "LIMIT DISABLE (CONN_RATE_ALARM | CONN_RATE | DATA_RATE_ALARM | "
-           "DATA_RATE) (VHOST vhostName | DEFAULT) - Disable configured limit "
-           "thresholds\n"
+           "LIMIT DISABLE (CONN_RATE_ALARM | CONN_RATE | TOTAL_CONN_ALARM | "
+           "TOTAL_CONN | DATA_RATE_ALARM | DATA_RATE) (VHOST vhostName | "
+           "DEFAULT) - Disable configured limit thresholds\n"
 
            "LIMIT PRINT [vhostName] - Print the configured default limits or "
            "specific vhost limits";
@@ -468,7 +577,8 @@ void LimitControlCommand::handleCommand(const std::string & /* command */,
                                    d_connectionLimiterManager_p,
                                    isDefault,
                                    vhostName,
-                                   isDisable);
+                                   isDisable,
+                                   false);
     }
     else if (subcommand == "CONN_RATE") {
         handleConnectionLimit(iss,
@@ -476,7 +586,26 @@ void LimitControlCommand::handleCommand(const std::string & /* command */,
                               d_connectionLimiterManager_p,
                               isDefault,
                               vhostName,
-                              isDisable);
+                              isDisable,
+                              false);
+    }
+    else if (subcommand == "TOTAL_CONN_ALARM") {
+        handleConnectionLimitAlarm(iss,
+                                   output,
+                                   d_connectionLimiterManager_p,
+                                   isDefault,
+                                   vhostName,
+                                   isDisable,
+                                   true);
+    }
+    else if (subcommand == "TOTAL_CONN") {
+        handleConnectionLimit(iss,
+                              output,
+                              d_connectionLimiterManager_p,
+                              isDefault,
+                              vhostName,
+                              isDisable,
+                              true);
     }
     else if (subcommand == "DATA_RATE_ALARM") {
         handleDataRateAlarmLimit(serverHandle,

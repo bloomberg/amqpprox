@@ -96,6 +96,8 @@ struct SelectorMock : public ConnectionSelectorInterface {
         acquireConnection,
         SessionState::ConnectionStatus(std::shared_ptr<ConnectionManager> *,
                                        const SessionState &));
+
+    MOCK_METHOD1(notifyConnectionDisconnect, void(const std::string &));
 };
 
 struct HostnameMapperMock : public HostnameMapper {
@@ -643,6 +645,7 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Disconnect)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm),
                         Return(SessionState::ConnectionStatus::SUCCESS)));
+    EXPECT_CALL(d_selector, notifyConnectionDisconnect(_)).Times(1);
 
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
@@ -734,6 +737,7 @@ TEST_F(SessionTest, BadServerHandshake)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm),
                         Return(SessionState::ConnectionStatus::SUCCESS)));
+    EXPECT_CALL(d_selector, notifyConnectionDisconnect(_)).Times(1);
 
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
@@ -930,6 +934,7 @@ TEST_F(SessionTest, Connect_Multiple_Dns)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm),
                         Return(SessionState::ConnectionStatus::SUCCESS)));
+    EXPECT_CALL(d_selector, notifyConnectionDisconnect(_)).Times(1);
 
     EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
     EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
@@ -1064,6 +1069,7 @@ TEST_F(SessionTest, Failover_Dns_Failure)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm),
                         Return(SessionState::ConnectionStatus::SUCCESS)));
+    EXPECT_CALL(d_selector, notifyConnectionDisconnect(_)).Times(1);
 
     EXPECT_CALL(*d_mapper, prime(_, _)).Times(AtLeast(1));
     EXPECT_CALL(*d_mapper, mapToHostname(makeEndpoint("2.3.4.5", 2345)))
@@ -1152,6 +1158,7 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Force_Disconnect)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm),
                         Return(SessionState::ConnectionStatus::SUCCESS)));
+    EXPECT_CALL(d_selector, notifyConnectionDisconnect(_)).Times(1);
 
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
@@ -1200,6 +1207,7 @@ TEST_F(SessionTest, Connection_Then_Ping_Then_Backend_Disconnect)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm),
                         Return(SessionState::ConnectionStatus::SUCCESS)));
+    EXPECT_CALL(d_selector, notifyConnectionDisconnect(_)).Times(1);
 
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
@@ -1255,6 +1263,7 @@ TEST_F(SessionTest, Authorized_Client_Test)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm),
                         Return(SessionState::ConnectionStatus::SUCCESS)));
+    EXPECT_CALL(d_selector, notifyConnectionDisconnect(_)).Times(1);
 
     std::string             modifiedMechanism   = "TEST_MECHANISM";
     std::string             modifiedCredentials = "credentials";
@@ -1327,6 +1336,7 @@ TEST_F(
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm),
                         Return(SessionState::ConnectionStatus::SUCCESS)));
+    EXPECT_CALL(d_selector, notifyConnectionDisconnect(_)).Times(1);
 
     authproto::AuthResponse authResponseData;
     authResponseData.set_result(authproto::AuthResponse::DENY);
@@ -1373,6 +1383,7 @@ TEST_F(SessionTest,
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm),
                         Return(SessionState::ConnectionStatus::SUCCESS)));
+    EXPECT_CALL(d_selector, notifyConnectionDisconnect(_)).Times(1);
 
     authproto::AuthResponse authResponseData;
     authResponseData.set_result(authproto::AuthResponse::DENY);
@@ -1431,6 +1442,7 @@ TEST_F(SessionTest, Forward_Received_Close_Method_To_Client_During_Handshake)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm),
                         Return(SessionState::ConnectionStatus::SUCCESS)));
+    EXPECT_CALL(d_selector, notifyConnectionDisconnect(_)).Times(1);
 
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
@@ -1488,6 +1500,7 @@ TEST_F(SessionTest, Close_Connection_No_Broker_Mapping)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm),
                         Return(SessionState::ConnectionStatus::NO_BACKEND)));
+    EXPECT_CALL(d_selector, notifyConnectionDisconnect(_)).Times(1);
 
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
@@ -1534,6 +1547,7 @@ TEST_F(SessionTest, Close_Limited_Connection)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm),
                         Return(SessionState::ConnectionStatus::LIMIT)));
+    EXPECT_CALL(d_selector, notifyConnectionDisconnect(_)).Times(0);
 
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
@@ -1582,6 +1596,7 @@ TEST_F(SessionTest, Printing_Breathing_Test)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm),
                         Return(SessionState::ConnectionStatus::SUCCESS)));
+    EXPECT_CALL(d_selector, notifyConnectionDisconnect(_)).Times(1);
 
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
@@ -1626,6 +1641,7 @@ TEST_F(SessionTest, Pause_Disconnects_Previously_Established_Connection)
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm),
                         Return(SessionState::ConnectionStatus::SUCCESS)));
+    EXPECT_CALL(d_selector, notifyConnectionDisconnect(_)).Times(1);
 
     TestSocketState::State base, clientBase;
     testSetupHostnameMapperForServerClientBase(base, clientBase);
@@ -1725,6 +1741,7 @@ TEST_F(SessionTest,
     EXPECT_CALL(d_selector, acquireConnection(_, _))
         .WillOnce(DoAll(SetArgPointee<0>(d_cm),
                         Return(SessionState::ConnectionStatus::SUCCESS)));
+    EXPECT_CALL(d_selector, notifyConnectionDisconnect(_)).Times(1);
 
     // Run the tests through to completion
     driveTo(16);

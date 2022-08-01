@@ -118,6 +118,12 @@ SessionState::ConnectionStatus ConnectionSelector::acquireConnection(
     return SessionState::ConnectionStatus::SUCCESS;
 }
 
+void ConnectionSelector::notifyConnectionDisconnect(
+    const std::string &vhostName)
+{
+    d_connectionLimiterManager_p->connectionClosed(vhostName);
+}
+
 void ConnectionSelector::setDefaultFarm(const std::string &farmName)
 {
     std::lock_guard<std::mutex> lg(d_mutex);

@@ -73,6 +73,12 @@ class ConnectionSelector : public ConnectionSelectorInterface {
                       const SessionState                 &state) override;
 
     /**
+     * \brief Notify connection disconnect event
+     */
+    virtual void
+    notifyConnectionDisconnect(const std::string &vhostName) override;
+
+    /**
      * \brief Set the default farm if a mapping is not found
      */
     void setDefaultFarm(const std::string &farmName);

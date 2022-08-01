@@ -90,6 +90,7 @@ add_library(libamqpprox STATIC
     amqpprox_connectionlimiterinterface.cpp
     amqpprox_connectionlimitermanager.cpp
     amqpprox_fixedwindowconnectionratelimiter.cpp
+    amqpprox_totalconnectionlimiter.cpp
     amqpprox_limitcontrolcommand.cpp
     amqpprox_closeerror.cpp)
 

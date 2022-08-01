@@ -43,6 +43,11 @@ class ConnectionSelectorInterface {
     virtual SessionState::ConnectionStatus
     acquireConnection(std::shared_ptr<ConnectionManager> *connectionOut,
                       const SessionState                 &state) = 0;
+
+    /**
+     * \brief Notify connection disconnect event
+     */
+    virtual void notifyConnectionDisconnect(const std::string &vhostName) = 0;
 };
 
 }
