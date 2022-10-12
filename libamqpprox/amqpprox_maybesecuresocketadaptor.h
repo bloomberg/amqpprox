@@ -27,6 +27,7 @@
 
 #include <chrono>
 #include <functional>
+#include <memory>
 
 namespace Bloomberg {
 namespace amqpprox {
@@ -43,7 +44,9 @@ template <typename StreamType =
           typename TimerType  = boost::asio::steady_timer,
           typename IoContext  = boost::asio::io_context,
           typename TlsContext = boost::asio::ssl::context>
-class MaybeSecureSocketAdaptor {
+class MaybeSecureSocketAdaptor
+: public std::enable_shared_from_this<
+      MaybeSecureSocketAdaptor<StreamType, TimerType, IoContext, TlsContext>> {
     using endpoint       = boost::asio::ip::tcp::endpoint;
     using handshake_type = boost::asio::ssl::stream_base::handshake_type;
 
@@ -57,9 +60,12 @@ class MaybeSecureSocketAdaptor {
 
     DataRateLimit d_dataRateLimit;
     DataRateLimit d_dataRateAlarm;
-    TimerType     d_dataRateTimer;
-    bool          d_alarmed;
-    bool          d_dataRateTimerStarted;
+
+    // Asio requires that the timer object lives at least as long as any
+    // handler So we need to give ownership of this to the handler
+    std::shared_ptr<TimerType> d_dataRateTimer;
+    bool                       d_alarmed;
+    bool                       d_dataRateTimerStarted;
 
   public:
     typedef typename StreamType::executor_type executor_type;
@@ -77,7 +83,7 @@ class MaybeSecureSocketAdaptor {
     , d_smallBufferSet(false)
     , d_dataRateLimit()
     , d_dataRateAlarm()
-    , d_dataRateTimer(d_ioContext)
+    , d_dataRateTimer(std::make_shared<TimerType>(d_ioContext))
     , d_alarmed(false)
     , d_dataRateTimerStarted(false)
     {
@@ -96,7 +102,7 @@ class MaybeSecureSocketAdaptor {
     , d_smallBufferSet(false)
     , d_dataRateLimit()
     , d_dataRateAlarm()
-    , d_dataRateTimer(d_ioContext)
+    , d_dataRateTimer(std::make_shared<TimerType>(d_ioContext))
     , d_alarmed(false)
     , d_dataRateTimerStarted(false)
     {
@@ -112,7 +118,7 @@ class MaybeSecureSocketAdaptor {
     , d_smallBufferSet(src.d_smallBufferSet)
     , d_dataRateLimit(src.d_dataRateLimit)
     , d_dataRateAlarm(src.d_dataRateAlarm)
-    , d_dataRateTimer(d_ioContext)
+    , d_dataRateTimer(std::make_shared<TimerType>(d_ioContext))
     , d_alarmed(false)
     , d_dataRateTimerStarted(false)
     {
@@ -122,8 +128,10 @@ class MaybeSecureSocketAdaptor {
         src.d_smallBuffer    = 0;
         src.d_smallBufferSet = false;
 
-        src.d_dataRateTimer.cancel();
+        src.d_dataRateTimer->cancel();
     }
+
+    ~MaybeSecureSocketAdaptor() { d_dataRateTimer->cancel(); }
 
     boost::asio::ip::tcp::socket &socket() { return d_socket->next_layer(); }
 
@@ -401,13 +409,34 @@ class MaybeSecureSocketAdaptor {
 
         if (d_dataRateLimit.remainingQuota() == 0) {
             if (d_dataRateTimerStarted) {
-                d_dataRateTimer.cancel();
-                d_dataRateTimer.expires_at(d_dataRateTimer.expiry());
-                d_dataRateTimer.async_wait(
-                    [this, null_buffer, handler](
+                d_dataRateTimer->cancel();
+                d_dataRateTimer->expires_at(d_dataRateTimer->expiry());
+                std::weak_ptr<MaybeSecureSocketAdaptor> weakSelf =
+                    this->weak_from_this();
+                d_dataRateTimer->async_wait(
+                    [weakSelf,
+                     null_buffer,
+                     handler,
+                     dataRateTimer = d_dataRateTimer](
                         const boost::system::error_code &error) {
-                        this->onTimer(error);
-                        this->async_read_some(null_buffer, handler);
+                        // Pass d_dataRateTimer in by value only to extend
+                        // lifetime
+                        (void)dataRateTimer;
+
+                        if (error == boost::asio::error::operation_aborted) {
+                            return;
+                        }
+
+                        std::shared_ptr<MaybeSecureSocketAdaptor> self =
+                            weakSelf.lock();
+                        if (!self) {
+                            // This timer callback is being invoked after we've
+                            // been destructed.
+                            return;
+                        }
+
+                        self->onTimer(error);
+                        self->async_read_some(null_buffer, handler);
                     });
 
                 return;
@@ -472,10 +501,24 @@ class MaybeSecureSocketAdaptor {
         d_dataRateAlarm.onTimer();
         d_alarmed = false;
 
-        d_dataRateTimer.expires_after(std::chrono::milliseconds(1000));
-        d_dataRateTimer.async_wait(
-            [this](const boost::system::error_code &error) {
-                this->onTimer(error);
+        d_dataRateTimer->expires_after(std::chrono::milliseconds(1000));
+
+        std::weak_ptr<MaybeSecureSocketAdaptor> weakSelf =
+            this->weak_from_this();
+        d_dataRateTimer->async_wait(
+            [weakSelf, dataRateTimer = d_dataRateTimer](
+                const boost::system::error_code &error) {
+                // Pass d_dataRateTimer in by value only to extend
+                // lifetime
+                (void)dataRateTimer;
+
+                std::shared_ptr<MaybeSecureSocketAdaptor> self =
+                    weakSelf.lock();
+                if (!self) {
+                    return;
+                }
+
+                self->onTimer(error);
             });
         d_dataRateTimerStarted = true;
     }

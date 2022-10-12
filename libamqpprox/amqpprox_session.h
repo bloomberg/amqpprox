@@ -34,6 +34,7 @@
 
 #include <chrono>
 #include <iosfwd>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -60,17 +61,17 @@ class Session : public std::enable_shared_from_this<Session> {
     using TimePoint =
         std::chrono::time_point<std::chrono::high_resolution_clock>;
 
-    boost::asio::io_context     &d_ioContext;
-    MaybeSecureSocketAdaptor<>   d_serverSocket;
-    MaybeSecureSocketAdaptor<>   d_clientSocket;
-    BufferHandle                 d_serverDataHandle;
-    BufferHandle                 d_serverWriteDataHandle;
-    BufferHandle                 d_clientDataHandle;
-    BufferHandle                 d_clientWriteDataHandle;
-    std::size_t                  d_serverWaterMark;
-    std::size_t                  d_clientWaterMark;
-    SessionState                 d_sessionState;
-    Connector                    d_connector;
+    boost::asio::io_context                  &d_ioContext;
+    std::shared_ptr<MaybeSecureSocketAdaptor<>> d_serverSocket;
+    std::shared_ptr<MaybeSecureSocketAdaptor<>> d_clientSocket;
+    BufferHandle                              d_serverDataHandle;
+    BufferHandle                              d_serverWriteDataHandle;
+    BufferHandle                              d_clientDataHandle;
+    BufferHandle                              d_clientWriteDataHandle;
+    std::size_t                               d_serverWaterMark;
+    std::size_t                               d_clientWaterMark;
+    SessionState                              d_sessionState;
+    Connector                                 d_connector;
     ConnectionSelectorInterface *d_connectionSelector_p;  // HELD NOT OWNED
     EventSource                 *d_eventSource_p;         // HELD NOT OWNED
     BufferPool                  *d_bufferPool_p;          // HELD NOT OWNED
@@ -89,9 +90,9 @@ class Session : public std::enable_shared_from_this<Session> {
     DataRateLimitManager *d_limitManager;  // HELD NOT OWNED
   public:
     // CREATORS
-    Session(boost::asio::io_context                       &ioContext,
-            MaybeSecureSocketAdaptor<>                   &&serverSocket,
-            MaybeSecureSocketAdaptor<>                   &&clientSocket,
+    Session(boost::asio::io_context                         &ioContext,
+            const std::shared_ptr<MaybeSecureSocketAdaptor<>> &serverSocket,
+            const std::shared_ptr<MaybeSecureSocketAdaptor<>> &clientSocket,
             ConnectionSelectorInterface                   *connectionSelector,
             EventSource                                   *eventSource,
             BufferPool                                    *bufferPool,
@@ -331,7 +332,8 @@ class Session : public std::enable_shared_from_this<Session> {
 
 inline MaybeSecureSocketAdaptor<> &Session::readSocket(FlowType direction)
 {
-    return (direction == FlowType::INGRESS) ? d_serverSocket : d_clientSocket;
+    return (direction == FlowType::INGRESS) ? *d_serverSocket
+                                            : *d_clientSocket;
 }
 
 inline void Session::copyRemaining(FlowType direction, const Buffer &remaining)
