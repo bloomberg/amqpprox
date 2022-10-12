@@ -111,9 +111,9 @@ void logException(const std::string_view error,
 
 }
 
-Session::Session(boost::asio::io_context               &ioContext,
-                 MaybeSecureSocketAdaptor<>           &&serverSocket,
-                 MaybeSecureSocketAdaptor<>           &&clientSocket,
+Session::Session(boost::asio::io_context                         &ioContext,
+                 const std::shared_ptr<MaybeSecureSocketAdaptor<>> &serverSocket,
+                 const std::shared_ptr<MaybeSecureSocketAdaptor<>> &clientSocket,
                  ConnectionSelectorInterface           *connectionSelector,
                  EventSource                           *eventSource,
                  BufferPool                            *bufferPool,
@@ -124,8 +124,8 @@ Session::Session(boost::asio::io_context               &ioContext,
                  bool                  isIngressSecure,
                  DataRateLimitManager *limitManager)
 : d_ioContext(ioContext)
-, d_serverSocket(std::move(serverSocket))
-, d_clientSocket(std::move(clientSocket))
+, d_serverSocket(serverSocket)
+, d_clientSocket(clientSocket)
 , d_serverDataHandle()
 , d_serverWriteDataHandle()
 , d_clientDataHandle()
@@ -152,7 +152,7 @@ Session::Session(boost::asio::io_context               &ioContext,
 , d_limitManager(limitManager)
 {
     boost::system::error_code ec;
-    d_serverSocket.setDefaultOptions(ec);
+    d_serverSocket->setDefaultOptions(ec);
 
     if (ec) {
         LOG_ERROR << "Setting options onto listening socket failed with: "
@@ -162,8 +162,10 @@ Session::Session(boost::asio::io_context               &ioContext,
     d_sessionState.setIngressSecured(isIngressSecure);
 
     // Set data rate limits before we get the vhost
-    d_serverSocket.setReadRateLimit(d_limitManager->getDefaultDataRateLimit());
-    d_serverSocket.setReadRateAlarm(d_limitManager->getDefaultDataRateAlarm());
+    d_serverSocket->setReadRateLimit(
+        d_limitManager->getDefaultDataRateLimit());
+    d_serverSocket->setReadRateAlarm(
+        d_limitManager->getDefaultDataRateAlarm());
 }
 
 Session::~Session()
@@ -180,8 +182,8 @@ void Session::start()
 {
     boost::system::error_code ecl, ecr;
     d_sessionState.setIngress(d_ioContext,
-                              d_serverSocket.local_endpoint(ecl),
-                              d_serverSocket.remote_endpoint(ecr));
+                              d_serverSocket->local_endpoint(ecl),
+                              d_serverSocket->remote_endpoint(ecr));
 
     if (ecl || ecr) {
         LOG_WARN << "Failed to get ingress socket endpoints: local=" << ecl
@@ -202,8 +204,8 @@ void Session::start()
         // Expect data from the clients first
         readData(FlowType::INGRESS);
     };
-    d_serverSocket.async_handshake(boost::asio::ssl::stream_base::server,
-                                   handshake_cb);
+    d_serverSocket->async_handshake(boost::asio::ssl::stream_base::server,
+                                    handshake_cb);
 }
 
 void Session::attemptConnection(
@@ -320,7 +322,7 @@ void Session::attemptEndpointConnection(
     const std::shared_ptr<ConnectionManager> &connectionManager)
 {
     auto self(shared_from_this());
-    d_clientSocket.async_connect(
+    d_clientSocket->async_connect(
         endpoint, [this, self, connectionManager](error_code ec) {
             BOOST_LOG_SCOPED_THREAD_ATTR(
                 "Vhost",
@@ -336,13 +338,13 @@ void Session::attemptEndpointConnection(
                 return;
             }
 
-            auto local_endpoint = d_clientSocket.local_endpoint(ec);
+            auto local_endpoint = d_clientSocket->local_endpoint(ec);
             if (ec) {
                 handleConnectionError("local_endpoint", ec, connectionManager);
                 return;
             }
 
-            auto remote_endpoint = d_clientSocket.remote_endpoint(ec);
+            auto remote_endpoint = d_clientSocket->remote_endpoint(ec);
             if (ec) {
                 handleConnectionError(
                     "remote_endpoint", ec, connectionManager);
@@ -352,7 +354,7 @@ void Session::attemptEndpointConnection(
             d_sessionState.setEgress(
                 d_ioContext, local_endpoint, remote_endpoint);
 
-            d_clientSocket.setDefaultOptions(ec);
+            d_clientSocket->setDefaultOptions(ec);
             if (ec) {
                 handleConnectionError(
                     "setDefaultOptions", ec, connectionManager);
@@ -363,7 +365,7 @@ void Session::attemptEndpointConnection(
             auto currentBackend =
                 connectionManager->getConnection(d_egressRetryCounter);
 
-            d_clientSocket.setSecure(currentBackend->tlsEnabled());
+            d_clientSocket->setSecure(currentBackend->tlsEnabled());
 
             LOG_INFO << "Starting "
                      << (currentBackend->tlsEnabled() ? "secured " : "")
@@ -391,11 +393,11 @@ void Session::attemptEndpointConnection(
 
                 d_connector.synthesizeProtocolHeader();
                 handleWriteData(
-                    FlowType::EGRESS, d_clientSocket, d_connector.outBuffer());
+                    FlowType::EGRESS, *d_clientSocket, d_connector.outBuffer());
             };
 
             if (!currentBackend->proxyProtocolEnabled()) {
-                d_clientSocket.async_handshake(
+                d_clientSocket->async_handshake(
                     boost::asio::ssl::stream_base::client, handshake_cb);
             }
             else {
@@ -414,12 +416,12 @@ void Session::attemptEndpointConnection(
                             return;
                         }
 
-                        d_clientSocket.async_handshake(
+                        d_clientSocket->async_handshake(
                             boost::asio::ssl::stream_base::client, hscb);
                     };
 
                 boost::asio::async_write(
-                    d_clientSocket,
+                    *d_clientSocket,
                     boost::asio::buffer(data.ptr(), data.available()),
                     writeHandler);
             }
@@ -668,7 +670,7 @@ void Session::backendDisconnect()
             "ConnID",
             boost::log::attributes::constant<uint64_t>(d_sessionState.id()));
 
-        d_clientSocket.async_shutdown([this, self](error_code shutdownEc) {
+        d_clientSocket->async_shutdown([this, self](error_code shutdownEc) {
             if (shutdownEc) {
                 LOG_INFO << "Backend Disconnect shutdown failed rc: "
                          << shutdownEc;
@@ -676,7 +678,7 @@ void Session::backendDisconnect()
                 // socket
             }
             boost::system::error_code closeEc;
-            d_clientSocket.close(closeEc);
+            d_clientSocket->close(closeEc);
             if (closeEc) {
                 LOG_WARN << "Backend Disconnect close failed rc: " << closeEc;
             }
@@ -821,8 +823,8 @@ void Session::sendSyntheticData()
 {
     const Buffer outBuffer = d_connector.outBuffer();
     if (outBuffer.size()) {
-        auto &writeSocket =
-            d_connector.sendToIngressSide() ? d_serverSocket : d_clientSocket;
+        auto &writeSocket = d_connector.sendToIngressSide() ? *d_serverSocket
+                                                            : *d_clientSocket;
         handleWriteData(d_connector.sendToIngressSide() ? FlowType::INGRESS
                                                         : FlowType::EGRESS,
                         writeSocket,
@@ -850,12 +852,12 @@ void Session::handleData(FlowType direction)
         bool isOpen = d_connector.state() == Connector::State::OPEN;
         if (ingressWrite.size()) {
             handleWriteData(isOpen ? FlowType::EGRESS : FlowType::INGRESS,
-                            d_serverSocket,
+                            *d_serverSocket,
                             ingressWrite);
         }
         else if (egressWrite.size()) {
             handleWriteData(isOpen ? FlowType::INGRESS : FlowType::EGRESS,
-                            d_clientSocket,
+                            *d_clientSocket,
                             egressWrite);
         }
         else {
@@ -947,8 +949,8 @@ void Session::handleSessionError(const char               *action,
         }
 
         boost::system::error_code clientCloseEc, serverCloseEc;
-        d_clientSocket.close(clientCloseEc);
-        d_serverSocket.close(serverCloseEc);
+        d_clientSocket->close(clientCloseEc);
+        d_serverSocket->close(serverCloseEc);
 
         if (clientCloseEc || serverCloseEc) {
             LOG_WARN << "Socket close failed: client=" << clientCloseEc
@@ -978,24 +980,24 @@ void Session::handleConnectionError(
 void Session::performDisconnectBoth()
 {
     auto self(shared_from_this());
-    d_clientSocket.async_shutdown([this, self](error_code shutdownEc) {
+    d_clientSocket->async_shutdown([this, self](error_code shutdownEc) {
         if (shutdownEc) {
             LOG_INFO << "Client shutdown failed rc: " << shutdownEc;
             // Fall through: we still want to attempt to close the socket
         }
         boost::system::error_code closeEc;
-        d_clientSocket.close(closeEc);
+        d_clientSocket->close(closeEc);
         if (closeEc) {
             LOG_INFO << "Client close failed rc: " << closeEc;
         }
     });
-    d_serverSocket.async_shutdown([this, self](error_code shutdownEc) {
+    d_serverSocket->async_shutdown([this, self](error_code shutdownEc) {
         if (shutdownEc) {
             LOG_INFO << "Server shutdown failed rc: " << shutdownEc;
             // Fall through: we still want to attempt to close the socket
         }
         boost::system::error_code closeEc;
-        d_serverSocket.close(closeEc);
+        d_serverSocket->close(closeEc);
         if (closeEc) {
             LOG_INFO << "Server close failed rc: " << closeEc;
         }
@@ -1008,12 +1010,12 @@ void Session::updateDataRateLimits()
 
     const std::size_t limit =
         d_limitManager->getDataRateLimit(d_sessionState.getVirtualHost());
-    d_serverSocket.setReadRateLimit(limit);
+    d_serverSocket->setReadRateLimit(limit);
 
     const std::size_t alarm =
         d_limitManager->getDataRateAlarm(d_sessionState.getVirtualHost());
 
-    d_serverSocket.setReadRateAlarm(alarm);
+    d_serverSocket->setReadRateAlarm(alarm);
 
     LOG_DEBUG << "Set data rate limit: " << limit << " alarm: " << alarm;
 }

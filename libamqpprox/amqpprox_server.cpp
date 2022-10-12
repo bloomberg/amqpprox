@@ -207,13 +207,14 @@ void Server::doAccept(int port, bool secure)
         incomingSocket->socket(),
         [this, port, secure, incomingSocket](error_code ec) {
             if (!ec) {
-                MaybeSecureSocketAdaptor<> clientSocket(
-                    d_ioContext, d_egressTlsContext, false);
+                std::shared_ptr<MaybeSecureSocketAdaptor<>> clientSocket =
+                    std::make_shared<MaybeSecureSocketAdaptor<>>(
+                        d_ioContext, d_egressTlsContext, false);
 
                 auto session =
                     std::make_shared<Session>(d_ioContext,
-                                              std::move(*incomingSocket),
-                                              std::move(clientSocket),
+                                              incomingSocket,
+                                              clientSocket,
                                               d_connectionSelector_p,
                                               d_eventSource_p,
                                               d_bufferPool_p,
