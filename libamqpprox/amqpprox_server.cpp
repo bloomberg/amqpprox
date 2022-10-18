@@ -199,15 +199,15 @@ void Server::doAccept(int port, bool secure)
         return;
     }
 
-    std::shared_ptr<MaybeSecureSocketAdaptor> incomingSocket =
-        std::make_shared<MaybeSecureSocketAdaptor>(
+    std::shared_ptr<MaybeSecureSocketAdaptor<>> incomingSocket =
+        std::make_shared<MaybeSecureSocketAdaptor<>>(
             d_ioContext, d_ingressTlsContext, secure);
 
     it->second.async_accept(
         incomingSocket->socket(),
         [this, port, secure, incomingSocket](error_code ec) {
             if (!ec) {
-                MaybeSecureSocketAdaptor clientSocket(
+                MaybeSecureSocketAdaptor<> clientSocket(
                     d_ioContext, d_egressTlsContext, false);
 
                 auto session =

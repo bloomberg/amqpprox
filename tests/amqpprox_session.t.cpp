@@ -156,8 +156,8 @@ class SessionTest : public ::testing::Test {
     SessionTest();
 
     std::shared_ptr<Session>
-    makeSession(MaybeSecureSocketAdaptor              &&clientSocket,
-                MaybeSecureSocketAdaptor              &&serverSocket,
+    makeSession(MaybeSecureSocketAdaptor<>              &&clientSocket,
+                MaybeSecureSocketAdaptor<>              &&serverSocket,
                 std::shared_ptr<AuthInterceptInterface> authIntercept = 0);
 
     void driveTo(int targetStep);
@@ -222,8 +222,8 @@ class SessionTest : public ::testing::Test {
 };
 
 std::shared_ptr<Session>
-SessionTest::makeSession(MaybeSecureSocketAdaptor              &&clientSocket,
-                         MaybeSecureSocketAdaptor              &&serverSocket,
+SessionTest::makeSession(MaybeSecureSocketAdaptor<>              &&clientSocket,
+                         MaybeSecureSocketAdaptor<>              &&serverSocket,
                          std::shared_ptr<AuthInterceptInterface> authIntercept)
 {
     if (!authIntercept) {

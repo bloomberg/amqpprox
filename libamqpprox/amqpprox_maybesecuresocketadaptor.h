@@ -38,32 +38,36 @@ namespace amqpprox {
  * not secured, or the top level functions which pass through openssl if it is
  * secured.
  */
+template <typename StreamType =
+              boost::asio::ssl::stream<boost::asio::ip::tcp::socket>,
+          typename TimerType  = boost::asio::steady_timer,
+          typename IoContext  = boost::asio::io_context,
+          typename TlsContext = boost::asio::ssl::context>
 class MaybeSecureSocketAdaptor {
-    using stream_type = boost::asio::ssl::stream<boost::asio::ip::tcp::socket>;
-    using endpoint    = boost::asio::ip::tcp::endpoint;
+    using endpoint       = boost::asio::ip::tcp::endpoint;
     using handshake_type = boost::asio::ssl::stream_base::handshake_type;
 
-    boost::asio::io_context                               &d_ioContext;
+    IoContext                                             &d_ioContext;
     std::optional<std::reference_wrapper<SocketIntercept>> d_intercept;
-    std::unique_ptr<stream_type>                           d_socket;
+    std::unique_ptr<StreamType>                            d_socket;
     bool                                                   d_secured;
     bool                                                   d_handshook;
     char                                                   d_smallBuffer;
     bool                                                   d_smallBufferSet;
 
-    DataRateLimit             d_dataRateLimit;
-    DataRateLimit             d_dataRateAlarm;
-    boost::asio::steady_timer d_dataRateTimer;
-    bool                      d_alarmed;
-    bool                      d_dataRateTimerStarted;
+    DataRateLimit d_dataRateLimit;
+    DataRateLimit d_dataRateAlarm;
+    TimerType     d_dataRateTimer;
+    bool          d_alarmed;
+    bool          d_dataRateTimerStarted;
 
   public:
-    typedef typename stream_type::executor_type executor_type;
+    typedef typename StreamType::executor_type executor_type;
 
 #ifdef SOCKET_TESTING
-    MaybeSecureSocketAdaptor(boost::asio::io_context &ioContext,
-                             SocketIntercept         &intercept,
-                             bool                     secured)
+    MaybeSecureSocketAdaptor(IoContext       &ioContext,
+                             SocketIntercept &intercept,
+                             bool             secured)
     : d_ioContext(ioContext)
     , d_intercept(intercept)
     , d_socket()
@@ -80,12 +84,12 @@ class MaybeSecureSocketAdaptor {
     }
 #endif
 
-    MaybeSecureSocketAdaptor(boost::asio::io_context   &ioContext,
-                             boost::asio::ssl::context &context,
-                             bool                       secured)
+    MaybeSecureSocketAdaptor(IoContext  &ioContext,
+                             TlsContext &context,
+                             bool        secured)
     : d_ioContext(ioContext)
     , d_intercept()
-    , d_socket(std::make_unique<stream_type>(ioContext, context))
+    , d_socket(std::make_unique<StreamType>(ioContext, context))
     , d_secured(secured)
     , d_handshook(false)
     , d_smallBuffer(0)
@@ -112,7 +116,7 @@ class MaybeSecureSocketAdaptor {
     , d_alarmed(false)
     , d_dataRateTimerStarted(false)
     {
-        src.d_socket         = std::unique_ptr<stream_type>();
+        src.d_socket         = std::unique_ptr<StreamType>();
         src.d_secured        = false;
         src.d_handshook      = false;
         src.d_smallBuffer    = 0;

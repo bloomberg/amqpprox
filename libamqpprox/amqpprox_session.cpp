@@ -112,8 +112,8 @@ void logException(const std::string_view error,
 }
 
 Session::Session(boost::asio::io_context               &ioContext,
-                 MaybeSecureSocketAdaptor             &&serverSocket,
-                 MaybeSecureSocketAdaptor             &&clientSocket,
+                 MaybeSecureSocketAdaptor<>           &&serverSocket,
+                 MaybeSecureSocketAdaptor<>           &&clientSocket,
                  ConnectionSelectorInterface           *connectionSelector,
                  EventSource                           *eventSource,
                  BufferPool                            *bufferPool,
@@ -684,9 +684,9 @@ void Session::backendDisconnect()
     });
 }
 
-void Session::handleWriteData(FlowType                  direction,
-                              MaybeSecureSocketAdaptor &writeSocket,
-                              Buffer                    data)
+void Session::handleWriteData(FlowType                    direction,
+                              MaybeSecureSocketAdaptor<> &writeSocket,
+                              Buffer                      data)
 {
     auto self(shared_from_this());
     auto writeHandler = [this, self, direction](error_code ec, std::size_t) {
