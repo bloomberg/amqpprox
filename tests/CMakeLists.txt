@@ -18,14 +18,19 @@ add_executable(amqpprox_tests
     amqpprox_bufferhandle.t.cpp
     amqpprox_bufferpool.t.cpp
     amqpprox_buffersource.t.cpp
+    amqpprox_connectionlimitermanager.t.cpp
+    amqpprox_connectionselector.t.cpp
     amqpprox_connectionstats.t.cpp
     amqpprox_dataratelimit.t.cpp
+    amqpprox_defaultauthintercept.t.cpp
     amqpprox_dnsresolver.t.cpp
     amqpprox_eventsourcesignal.t.cpp
     amqpprox_farmstore.t.cpp
-    amqpprox_frame.t.cpp
+    amqpprox_fixedwindowconnectionratelimiter.t.cpp
     amqpprox_flowtype.t.cpp
-    amqpprox_connectionselector.t.cpp
+    amqpprox_frame.t.cpp
+    amqpprox_httpauthintercept.t.cpp
+    amqpprox_maybesecuresocketadaptor.t.cpp
     amqpprox_methods_start.t.cpp
     amqpprox_packetprocessor.t.cpp
     amqpprox_partitionpolicystore.t.cpp
@@ -38,10 +43,6 @@ add_executable(amqpprox_tests
     amqpprox_statsnapshot.t.cpp
     amqpprox_types.t.cpp
     amqpprox_vhoststate.t.cpp
-    amqpprox_defaultauthintercept.t.cpp
-    amqpprox_httpauthintercept.t.cpp
-    amqpprox_fixedwindowconnectionratelimiter.t.cpp
-    amqpprox_connectionlimitermanager.t.cpp
     )
 
 target_include_directories(amqpprox_tests PRIVATE ${PROTO_HDR_PATH})

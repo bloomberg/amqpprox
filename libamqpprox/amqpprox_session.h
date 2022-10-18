@@ -61,8 +61,8 @@ class Session : public std::enable_shared_from_this<Session> {
         std::chrono::time_point<std::chrono::high_resolution_clock>;
 
     boost::asio::io_context     &d_ioContext;
-    MaybeSecureSocketAdaptor     d_serverSocket;
-    MaybeSecureSocketAdaptor     d_clientSocket;
+    MaybeSecureSocketAdaptor<>   d_serverSocket;
+    MaybeSecureSocketAdaptor<>   d_clientSocket;
     BufferHandle                 d_serverDataHandle;
     BufferHandle                 d_serverWriteDataHandle;
     BufferHandle                 d_clientDataHandle;
@@ -90,8 +90,8 @@ class Session : public std::enable_shared_from_this<Session> {
   public:
     // CREATORS
     Session(boost::asio::io_context                       &ioContext,
-            MaybeSecureSocketAdaptor                     &&serverSocket,
-            MaybeSecureSocketAdaptor                     &&clientSocket,
+            MaybeSecureSocketAdaptor<>                   &&serverSocket,
+            MaybeSecureSocketAdaptor<>                   &&clientSocket,
             ConnectionSelectorInterface                   *connectionSelector,
             EventSource                                   *eventSource,
             BufferPool                                    *bufferPool,
@@ -238,9 +238,9 @@ class Session : public std::enable_shared_from_this<Session> {
      * \param writeSocket to write the data
      * \param data to be written onto the outgoing socket
      */
-    void handleWriteData(FlowType                  direction,
-                         MaybeSecureSocketAdaptor &writeSocket,
-                         Buffer                    data);
+    void handleWriteData(FlowType                    direction,
+                         MaybeSecureSocketAdaptor<> &writeSocket,
+                         Buffer                      data);
 
     /**
      * \brief Handle errors on an established connection
@@ -280,7 +280,7 @@ class Session : public std::enable_shared_from_this<Session> {
      * \param direction specifies direction of the data flow (ingress/egress)
      * \return a mutable reference to the socket to read from
      */
-    inline MaybeSecureSocketAdaptor &readSocket(FlowType direction);
+    inline MaybeSecureSocketAdaptor<> &readSocket(FlowType direction);
 
     /**
      * \param direction specifies direction of the data flow (ingress/egress)
@@ -329,7 +329,7 @@ class Session : public std::enable_shared_from_this<Session> {
     inline bool &currentlyReading(FlowType direction);
 };
 
-inline MaybeSecureSocketAdaptor &Session::readSocket(FlowType direction)
+inline MaybeSecureSocketAdaptor<> &Session::readSocket(FlowType direction)
 {
     return (direction == FlowType::INGRESS) ? d_serverSocket : d_clientSocket;
 }
