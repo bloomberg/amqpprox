@@ -205,3 +205,98 @@ TEST(MaybeSecureSocketAdaptorDataRateLimit, LimitEventuallyHit)
             });
     }
 }
+
+TEST(MaybeSecureSocketAdaptorDataRateLimit, TimerHandlerLifetimes)
+{
+    DummyIoContext  ioContext  = 5;
+    DummyTlsContext tlsContext = 5;
+
+    std::function<void(const boost::system::error_code &error)> timerHandler;
+
+    {
+        MaybeSecureSocketAdaptor<MockSocket,
+                                 MockTimer,
+                                 DummyIoContext,
+                                 DummyTlsContext>
+            socket(ioContext, tlsContext, false);
+
+        // This test requires a few timer methods. At this point we don't
+        // explicitly test these, but the fact they are called is still worth
+        // asserting
+        EXPECT_CALL(*MockTimer::instance, expires_at(_))
+            .WillRepeatedly(Return(0));
+        EXPECT_CALL(*MockTimer::instance, expires_after(_))
+            .WillRepeatedly(Return(0));
+        EXPECT_CALL(*MockTimer::instance, expiry())
+            .WillRepeatedly(Return(std::chrono::steady_clock::time_point()));
+        EXPECT_CALL(*MockTimer::instance, async_wait(_))
+            .WillRepeatedly(SaveArg<0>(&timerHandler));
+        EXPECT_CALL(*MockTimer::instance, cancel()).WillRepeatedly(Return());
+
+        socket.setReadRateLimit(50);
+
+        std::function<void(const boost::system::error_code &, size_t)>
+            asyncReadHandler;
+
+        std::vector<uint8_t> data;
+        data.resize(128);
+        boost::asio::mutable_buffers_1 buffer(&data, 128);
+
+        {
+            // this will be invoked because we definitely haven't hit the limit
+            // yet
+            EXPECT_CALL(*MockSocket::instance,
+                        async_read_some(An<boost::asio::null_buffers>(), _))
+                .WillOnce(SaveArg<1>(&asyncReadHandler));
+
+            socket.async_read_some(
+                boost::asio::null_buffers(),
+                [&](const boost::system::error_code &error, size_t numBytes) {
+
+                });
+
+            asyncReadHandler(boost::system::error_code(), 55);
+
+            EXPECT_CALL(*MockSocket::instance, read_some(_, _))
+                .WillOnce(Return(55));
+
+            boost::system::error_code ec;
+            EXPECT_EQ(55, socket.read_some(buffer, ec));
+        }
+
+        {
+            // MockSocket.async_read_some will be invoked here because we do
+            // not trigger any data limiting on the first limit breach. This
+            // call will start the timers etc preparing to rate limit for real
+            // the next time this limit is hit
+            EXPECT_CALL(*MockSocket::instance,
+                        async_read_some(An<boost::asio::null_buffers>(), _))
+                .WillOnce(SaveArg<1>(&asyncReadHandler));
+            socket.async_read_some(
+                boost::asio::null_buffers(),
+                [&](const boost::system::error_code &error, size_t numBytes) {
+
+                });
+
+            EXPECT_CALL(*MockSocket::instance, read_some(_, _))
+                .WillOnce(Return(55));
+            boost::system::error_code ec;
+            EXPECT_EQ(55, socket.read_some(buffer, ec));
+        }
+
+        {
+            // We are expecting that MockSocket.async_read_some will not be
+            // invoked again because we've read_some'd up to our data rate
+            // limit without invoking the timer handler
+            socket.async_read_some(
+                boost::asio::null_buffers(),
+                [&](const boost::system::error_code &error, size_t numBytes) {
+
+                });
+        }
+    }
+    // MaybeSecureSocketAdaptor destructed above
+
+    // This shouldn't crash / report an error in valgrind
+    timerHandler(boost::asio::error::operation_aborted);
+}
