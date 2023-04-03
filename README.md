@@ -3,6 +3,10 @@
 amqpprox is an AMQP 0.9.1 proxy server, it is designed for use in front of an
 AMQP 0.9.1 compliant message queue broker such as RabbitMQ.
 
+## 
+[![OpenSSF
+Scorecard](https://api.securityscorecards.dev/projects/github.com/bloomberg/amqpprox/badge)](https://api.securityscorecards.dev/projects/github.com/bloomberg/amqpprox)
+
 ## Menu
 
 - [Rationale](#rationale)
