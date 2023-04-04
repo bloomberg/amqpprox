@@ -24,7 +24,9 @@ jobs:
     steps:
       - name: Install Conan
         id: conan
-        uses: turtlebrowser/get-conan@v1.0
+        uses: turtlebrowser/get-conan@v1.1
+        with:
+          version: 1.59.0
     
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
