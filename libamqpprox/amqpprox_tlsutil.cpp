@@ -31,7 +31,9 @@ std::string TlsUtil::augmentTlsError(const boost::system::error_code &ec)
 
     if (ec.category() == boost::asio::error::get_ssl_category()) {
         err += " (" + std::to_string(ERR_GET_LIB(ec.value())) + "," +
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
                std::to_string(ERR_GET_FUNC(ec.value())) + "," +
+#endif
                std::to_string(ERR_GET_REASON(ec.value())) + ") ";
 
         char tempBuf[128];
