@@ -342,8 +342,10 @@ inline void Session::copyRemaining(FlowType direction, const Buffer &remaining)
         if (remaining.size()) {
             d_serverWaterMark = remaining.size();
             d_serverWriteDataHandle.swap(d_serverDataHandle);
-            d_bufferPool_p->acquireBuffer(&d_serverDataHandle,
-                                          Frame::getMaxFrameSize());
+            d_bufferPool_p->acquireBuffer(
+                &d_serverDataHandle,
+                std::max(d_serverWaterMark, Frame::getMaxFrameSize()));
+
             memcpy(
                 d_serverDataHandle.data(), remaining.ptr(), d_serverWaterMark);
         }
@@ -355,8 +357,9 @@ inline void Session::copyRemaining(FlowType direction, const Buffer &remaining)
         if (remaining.size()) {
             d_clientWaterMark = remaining.size();
             d_clientWriteDataHandle.swap(d_clientDataHandle);
-            d_bufferPool_p->acquireBuffer(&d_clientDataHandle,
-                                          Frame::getMaxFrameSize());
+            d_bufferPool_p->acquireBuffer(
+                &d_clientDataHandle,
+                std::max(d_clientWaterMark, Frame::getMaxFrameSize()));
             memcpy(
                 d_clientDataHandle.data(), remaining.ptr(), d_clientWaterMark);
         }
