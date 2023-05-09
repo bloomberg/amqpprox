@@ -206,3 +206,22 @@ TEST(Frame, Cant_Encode_Payload_Too_Large) {
     EXPECT_FALSE(Frame::encode(output, &sz, f1));
 }
 
+TEST(Frame, BadFrameLength)
+{
+    std::vector<uint8_t> buffer(Frame::getMaxFrameSize());
+    const void          *endOfFrame = nullptr;
+    std::size_t          remaining  = 11111;
+
+    // This frame claims to have a length of 0xff000002 which is bigger than
+    // amqpprox's max supported frame size. We expect a decode error here.
+    const char *hugeFrame = "\x08\x00\x01\x0FF\x00\x00\x02\xFF\xFF\xCD\xFF";
+
+    buffer.assign(hugeFrame, hugeFrame + 11);
+    Frame f1;
+    EXPECT_THROW(
+        Frame::decode(&f1, &endOfFrame, &remaining, buffer.data(), 11),
+        std::runtime_error);
+
+    EXPECT_EQ(remaining, 11111);
+    EXPECT_EQ(endOfFrame, nullptr);
+}

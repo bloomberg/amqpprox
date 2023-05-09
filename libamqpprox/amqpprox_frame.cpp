@@ -54,6 +54,14 @@ bool Frame::decode(Frame       *frame,
     memcpy(&frame->length, &buffer[3], sizeof frame->length);
 
     if ((frameOverhead() + frame->length) > bufferLen) {
+        if ((frameOverhead() + frame->length) > getMaxFrameSize()) {
+            LOG_ERROR << "Frame: " << (int)frame->type << " " << frame->channel
+                      << " was declared to be longer than max frame size ("
+                      << frame->length << " vs " << getMaxFrameSize()
+                      << "). Cannot decode.";
+            throw std::runtime_error(
+                "Cannot decode huge frame. See log for details");
+        }
         return false;
     }
 
