@@ -40,8 +40,8 @@ std::string BackendControlCommand::commandVerb() const
 
 std::string BackendControlCommand::helpText() const
 {
-    return "(ADD name datacenter host port [SEND-PROXY] [TLS] | ADD_DNS name "
-           "datacenter address port [SEND-PROXY] [TLS] | DELETE name | "
+    return "(ADD name datacenter host[/vhost] port [SEND-PROXY] [TLS] | ADD_DNS name "
+           "datacenter address[/vhost] port [SEND-PROXY] [TLS] | DELETE name | "
            "PRINT) - Change backend servers";
 }
 
@@ -63,6 +63,7 @@ void BackendControlCommand::handleCommand(const std::string & /* command */,
         std::string name;
         std::string datacenter;
         std::string host;
+        std::string virtualHost;
         int         port = 0;
         std::string arg1, arg2;
         iss >> name;
@@ -75,6 +76,12 @@ void BackendControlCommand::handleCommand(const std::string & /* command */,
         boost::to_upper(arg2);
 
         if (!name.empty() && !datacenter.empty() && !host.empty() && port) {
+            std::string::size_type vhostPos = host.find("/");
+            if (vhostPos != std::string::npos) {
+                virtualHost = host.substr(vhostPos + 1);
+                host = host.substr(0, vhostPos);
+            }
+            
             std::string ip;
             if (!isDns) {
                 auto &ioContext = controlHandle->ioContext();
@@ -99,6 +106,7 @@ void BackendControlCommand::handleCommand(const std::string & /* command */,
                       datacenter,
                       host,
                       ip,
+                      virtualHost,
                       port,
                       isSendProxy,
                       isSecure,

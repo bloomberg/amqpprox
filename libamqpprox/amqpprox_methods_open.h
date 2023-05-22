@@ -35,6 +35,10 @@ class Open {
   public:
     const std::string &virtualHost() const { return d_virtualHost; }
 
+    void setVirtualHost(const std::string& virtualHost) {
+      d_virtualHost = virtualHost;
+    }
+
     /**
      * \brief Decode specified buffer and copy the data into open method
      */

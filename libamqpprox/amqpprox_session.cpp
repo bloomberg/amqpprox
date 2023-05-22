@@ -249,6 +249,12 @@ void Session::attemptConnection(
         auto currentBackend =
             connectionManager->getConnection(d_egressRetryCounter);
 
+        if (currentBackend != nullptr) {
+            d_sessionState.setBackendVirtualHost(currentBackend->virtualHost());
+        } else {
+            d_sessionState.setBackendVirtualHost("");
+        }
+
         // With Boost ASIO it sometimes on Linux returns a good error code,
         // but no items in the list. This catches this case as well as the
         // regular error return.
@@ -550,7 +556,7 @@ void Session::establishConnection()
 
     // Initialize auth request data
     authproto::AuthRequest authRequestData;
-    authRequestData.set_vhostname(d_sessionState.getVirtualHost());
+    authRequestData.set_vhostname(d_sessionState.getBackendVirtualHost());
     authproto::SASL *saslPtr = authRequestData.mutable_authdata();
     saslPtr->set_authmechanism(sasl.first);
     saslPtr->set_credentials(sasl.second);
