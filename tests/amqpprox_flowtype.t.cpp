@@ -23,13 +23,15 @@
 using namespace Bloomberg;
 using namespace amqpprox;
 
-TEST(FlowType, StringStreamIngress) {
+TEST(FlowType, StringStreamIngress)
+{
     std::ostringstream ss;
     ss << FlowType::INGRESS;
     EXPECT_EQ(ss.str(), "INGRESS");
 }
 
-TEST(FlowType, StringStreamEgress) {
+TEST(FlowType, StringStreamEgress)
+{
     std::ostringstream ss;
     ss << FlowType::EGRESS;
     EXPECT_EQ(ss.str(), "EGRESS");

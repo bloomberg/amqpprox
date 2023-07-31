@@ -17,8 +17,8 @@
 #include <amqpprox_dataratelimitmanager.h>
 
 #include <limits>
-#include <string>
 #include <mutex>
+#include <string>
 
 namespace Bloomberg {
 namespace amqpprox {

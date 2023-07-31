@@ -36,7 +36,7 @@ namespace amqpprox {
  * documentation for that will not be duplicated here.
  */
 class SocketInterceptTestAdaptor : public SocketInterceptInterface {
-    TestSocketState &      d_state;
+    TestSocketState       &d_state;
     AsyncReadHandler       d_readHandler;
     AsyncConnectHandler    d_connectionHandler;
     AsyncHandshakeHandler  d_handshakeHandler;
@@ -93,7 +93,7 @@ class SocketInterceptTestAdaptor : public SocketInterceptInterface {
 
     virtual void async_shutdown(AsyncShutdownHandler handler) override;
 
-    virtual void async_connect(const endpoint &    peer_endpoint,
+    virtual void async_connect(const endpoint     &peer_endpoint,
                                AsyncConnectHandler handler) override;
 
     virtual void async_handshake(handshake_type        type,
@@ -105,7 +105,7 @@ class SocketInterceptTestAdaptor : public SocketInterceptInterface {
 
     virtual std::size_t
     read_some(const std::vector<std::pair<void *, size_t>> &buffers,
-              boost::system::error_code &                   ec) override;
+              boost::system::error_code                    &ec) override;
 
     virtual void
     async_read_some(const std::vector<std::pair<void *, size_t>> &buffers,

@@ -21,10 +21,10 @@
 #include <amqpprox_control.h>
 #include <amqpprox_cpumonitor.h>
 #include <amqpprox_datacenter.h>
+#include <amqpprox_dataratelimitmanager.h>
 #include <amqpprox_eventsource.h>
 #include <amqpprox_farmstore.h>
 #include <amqpprox_frame.h>
-#include <amqpprox_dataratelimitmanager.h>
 #include <amqpprox_logging.h>
 #include <amqpprox_loggingcontrolcommand.h>
 #include <amqpprox_partitionpolicy.h>

@@ -111,18 +111,19 @@ void logException(const std::string_view error,
 
 }
 
-Session::Session(boost::asio::io_context                         &ioContext,
-                 const std::shared_ptr<MaybeSecureSocketAdaptor<>> &serverSocket,
-                 const std::shared_ptr<MaybeSecureSocketAdaptor<>> &clientSocket,
-                 ConnectionSelectorInterface           *connectionSelector,
-                 EventSource                           *eventSource,
-                 BufferPool                            *bufferPool,
-                 DNSResolver                           *dnsResolver,
-                 const std::shared_ptr<HostnameMapper> &hostnameMapper,
-                 std::string_view                       localHostname,
-                 const std::shared_ptr<AuthInterceptInterface> &authIntercept,
-                 bool                  isIngressSecure,
-                 DataRateLimitManager *limitManager)
+Session::Session(
+    boost::asio::io_context                           &ioContext,
+    const std::shared_ptr<MaybeSecureSocketAdaptor<>> &serverSocket,
+    const std::shared_ptr<MaybeSecureSocketAdaptor<>> &clientSocket,
+    ConnectionSelectorInterface                       *connectionSelector,
+    EventSource                                       *eventSource,
+    BufferPool                                        *bufferPool,
+    DNSResolver                                       *dnsResolver,
+    const std::shared_ptr<HostnameMapper>             &hostnameMapper,
+    std::string_view                                   localHostname,
+    const std::shared_ptr<AuthInterceptInterface>     &authIntercept,
+    bool                                               isIngressSecure,
+    DataRateLimitManager                              *limitManager)
 : d_ioContext(ioContext)
 , d_serverSocket(serverSocket)
 , d_clientSocket(clientSocket)
@@ -372,29 +373,30 @@ void Session::attemptEndpointConnection(
                      << "connection for: " << d_sessionState;
 
             auto self(shared_from_this());
-            auto handshake_cb = [this, self, connectionManager](
-                                    const error_code &ec) {
-                BOOST_LOG_SCOPED_THREAD_ATTR(
-                    "Vhost",
-                    boost::log::attributes::constant<std::string>(
-                        d_sessionState.getVirtualHost()));
-                BOOST_LOG_SCOPED_THREAD_ATTR(
-                    "ConnID",
-                    boost::log::attributes::constant<uint64_t>(
-                        d_sessionState.id()));
+            auto handshake_cb =
+                [this, self, connectionManager](const error_code &ec) {
+                    BOOST_LOG_SCOPED_THREAD_ATTR(
+                        "Vhost",
+                        boost::log::attributes::constant<std::string>(
+                            d_sessionState.getVirtualHost()));
+                    BOOST_LOG_SCOPED_THREAD_ATTR(
+                        "ConnID",
+                        boost::log::attributes::constant<uint64_t>(
+                            d_sessionState.id()));
 
-                if (ec) {
-                    handleSessionError("ssl", FlowType::INGRESS, ec);
-                    return;
-                }
+                    if (ec) {
+                        handleSessionError("ssl", FlowType::INGRESS, ec);
+                        return;
+                    }
 
-                LOG_TRACE << "Post-handshake sending protocol header for:"
-                          << d_sessionState;
+                    LOG_TRACE << "Post-handshake sending protocol header for:"
+                              << d_sessionState;
 
-                d_connector.synthesizeProtocolHeader();
-                handleWriteData(
-                    FlowType::EGRESS, *d_clientSocket, d_connector.outBuffer());
-            };
+                    d_connector.synthesizeProtocolHeader();
+                    handleWriteData(FlowType::EGRESS,
+                                    *d_clientSocket,
+                                    d_connector.outBuffer());
+                };
 
             if (!currentBackend->proxyProtocolEnabled()) {
                 d_clientSocket->async_handshake(

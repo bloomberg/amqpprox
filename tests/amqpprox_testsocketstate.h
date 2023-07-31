@@ -227,11 +227,11 @@ std::ostream &operator<<(std::ostream &os, const TestSocketState::Call &data);
 std::ostream &operator<<(std::ostream &os, const TestSocketState::State &data);
 std::ostream &operator<<(std::ostream &os, const TestSocketState::Error &data);
 std::ostream &operator<<(std::ostream &os, const TestSocketState::Func &data);
-std::ostream &operator<<(std::ostream &                            os,
+std::ostream &operator<<(std::ostream                             &os,
                          const TestSocketState::HandshakeComplete &data);
-std::ostream &operator<<(std::ostream &                        os,
+std::ostream &operator<<(std::ostream                         &os,
                          const TestSocketState::WriteComplete &data);
-std::ostream &operator<<(std::ostream &                          os,
+std::ostream &operator<<(std::ostream                           &os,
                          const TestSocketState::ConnectComplete &data);
 
 }

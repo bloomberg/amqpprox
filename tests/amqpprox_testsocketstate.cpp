@@ -140,20 +140,20 @@ std::ostream &operator<<(std::ostream &os, const TestSocketState::Func &data)
     os << "Func[]";
     return os;
 }
-std::ostream &operator<<(std::ostream &                            os,
+std::ostream &operator<<(std::ostream                             &os,
                          const TestSocketState::HandshakeComplete &data)
 {
     os << "HandshakeComplete[" << data.d_ec << "]";
     return os;
 }
 
-std::ostream &operator<<(std::ostream &                        os,
+std::ostream &operator<<(std::ostream                         &os,
                          const TestSocketState::WriteComplete &data)
 {
     os << "WriteComplete[" << data.d_ec << "]";
     return os;
 }
-std::ostream &operator<<(std::ostream &                          os,
+std::ostream &operator<<(std::ostream                           &os,
                          const TestSocketState::ConnectComplete &data)
 {
     os << "ConnectComplete[" << data.d_ec << "]";

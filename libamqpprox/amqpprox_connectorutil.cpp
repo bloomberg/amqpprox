@@ -51,14 +51,14 @@ FieldTable ConnectorUtil::generateServerProperties()
 
     auto capabilitiesTable = std::make_shared<FieldTable>();
     auto capabilities      = {"publisher_confirms",
-                         "exchange_exchange_bindings",
-                         "basic.nack",
-                         "consumer_cancel_notify",
-                         "connection.blocked",
-                         "consumer_priorities",
-                         Constants::authenticationFailureClose(),
-                         "per_consumer_qos",
-                         "direct_reply_to"};
+                              "exchange_exchange_bindings",
+                              "basic.nack",
+                              "consumer_cancel_notify",
+                              "connection.blocked",
+                              "consumer_priorities",
+                              Constants::authenticationFailureClose(),
+                              "per_consumer_qos",
+                              "direct_reply_to"};
 
     for (const auto &cap : capabilities) {
         capabilitiesTable->pushField(cap, FieldValue('t', true));
