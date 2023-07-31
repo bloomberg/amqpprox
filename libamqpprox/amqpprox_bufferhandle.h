@@ -50,10 +50,10 @@ class BufferHandle {
      */
     BufferHandle();
 
-    BufferHandle(const BufferHandle &buffer) = delete;
+    BufferHandle(const BufferHandle &buffer)      = delete;
     BufferHandle &operator=(const BufferHandle &) = delete;
     BufferHandle(BufferHandle &&)                 = delete;
-    BufferHandle &operator=(BufferHandle &&) = delete;
+    BufferHandle &operator=(BufferHandle &&)      = delete;
 
     /**
      * \brief Release the held data, if the buffer handle is set

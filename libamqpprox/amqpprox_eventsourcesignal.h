@@ -83,7 +83,7 @@ class EventSubscriptionHandle {
     EventSubscriptionHandle &
     operator=(const EventSubscriptionHandle &) = default;
 
-    EventSubscriptionHandle(EventSubscriptionHandle &&) = default;
+    EventSubscriptionHandle(EventSubscriptionHandle &&)            = default;
     EventSubscriptionHandle &operator=(EventSubscriptionHandle &&) = default;
 
     /**
