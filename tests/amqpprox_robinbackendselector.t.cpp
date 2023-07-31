@@ -31,9 +31,9 @@ using Bloomberg::amqpprox::RobinBackendSelector;
 
 namespace {
 
-void testRetrySelection(const RobinBackendSelector &        selector,
-                        BackendSet *                        backendSet,
-                        const std::vector<uint64_t> &       markers,
+void testRetrySelection(const RobinBackendSelector         &selector,
+                        BackendSet                         *backendSet,
+                        const std::vector<uint64_t>        &markers,
                         uint64_t                            maxRetries,
                         const std::vector<const Backend *> &expectedOrder)
 {

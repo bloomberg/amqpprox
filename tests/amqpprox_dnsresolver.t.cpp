@@ -77,7 +77,7 @@ TEST(DNSResolver, Override_And_Return)
     resolver.startCleanupTimer();
     auto cb = [local_ipv4,
                local_ipv6](const boost::system::error_code &ec,
-                           const std::vector<TcpEndpoint> & endpoints) {
+                           const std::vector<TcpEndpoint>  &endpoints) {
         ASSERT_EQ(ec, boost::system::error_code());
         ASSERT_EQ(endpoints.size(), 2);
         EXPECT_THAT(endpoints, UnorderedElementsAre(local_ipv4, local_ipv6));
@@ -115,7 +115,7 @@ TEST(DNSResolver, Cache_Removes_Multiple_Resolutions)
     resolver.startCleanupTimer();
     auto cb = [local_ipv4,
                local_ipv6](const boost::system::error_code &ec,
-                           const std::vector<TcpEndpoint> & endpoints) {
+                           const std::vector<TcpEndpoint>  &endpoints) {
         ASSERT_EQ(ec, boost::system::error_code());
         ASSERT_EQ(endpoints.size(), 2);
         EXPECT_THAT(endpoints, UnorderedElementsAre(local_ipv4, local_ipv6));
@@ -158,7 +158,7 @@ TEST(DNSResolver, Multiple_Resolutions_Needed_After_Cache_Cleanup)
     DNSResolver             resolver(ioContext);
     auto                    cb = [local_ipv4,
                local_ipv6](const boost::system::error_code &ec,
-                           const std::vector<TcpEndpoint> & endpoints) {
+                           const std::vector<TcpEndpoint>  &endpoints) {
         ASSERT_EQ(ec, boost::system::error_code());
         ASSERT_EQ(endpoints.size(), 2);
         EXPECT_THAT(endpoints, UnorderedElementsAre(local_ipv4, local_ipv6));
@@ -217,13 +217,13 @@ TEST(DNSResolver, Independent_Resolutions_Get_Cached_Indpendently)
     resolver.startCleanupTimer();
     auto cb1 = [local_ipv4,
                 local_ipv6](const boost::system::error_code &ec,
-                            const std::vector<TcpEndpoint> & endpoints) {
+                            const std::vector<TcpEndpoint>  &endpoints) {
         ASSERT_EQ(ec, boost::system::error_code());
         ASSERT_EQ(endpoints.size(), 2);
         EXPECT_THAT(endpoints, UnorderedElementsAre(local_ipv4, local_ipv6));
     };
     auto cb2 = [ip2](const boost::system::error_code &ec,
-                     const std::vector<TcpEndpoint> & endpoints) {
+                     const std::vector<TcpEndpoint>  &endpoints) {
         ASSERT_EQ(ec, boost::system::error_code());
         ASSERT_EQ(endpoints.size(), 1);
         EXPECT_THAT(endpoints, UnorderedElementsAre(ip2));
@@ -263,7 +263,7 @@ TEST(DNSResolver, No_Underlying_Call_When_Cached)
     resolver.startCleanupTimer();
     auto cb1 = [local_ipv4,
                 local_ipv6](const boost::system::error_code &ec,
-                            const std::vector<TcpEndpoint> & endpoints) {
+                            const std::vector<TcpEndpoint>  &endpoints) {
         ASSERT_EQ(ec, boost::system::error_code());
         ASSERT_EQ(endpoints.size(), 2);
         EXPECT_THAT(endpoints, UnorderedElementsAre(local_ipv4, local_ipv6));
@@ -304,7 +304,7 @@ TEST(DNSResolver, Cache_Clear_Means_Multiple_Resolutions)
     resolver.startCleanupTimer();
     auto cb = [local_ipv4,
                local_ipv6](const boost::system::error_code &ec,
-                           const std::vector<TcpEndpoint> & endpoints) {
+                           const std::vector<TcpEndpoint>  &endpoints) {
         ASSERT_EQ(ec, boost::system::error_code());
         ASSERT_EQ(endpoints.size(), 2);
         EXPECT_THAT(endpoints, UnorderedElementsAre(local_ipv4, local_ipv6));
@@ -331,7 +331,7 @@ TEST(DNSResolver, Real_Resolver_For_IP)
     DNSResolver             resolver(ioContext);
     resolver.startCleanupTimer();
     auto cb = [local_ipv4](const boost::system::error_code &ec,
-                           const std::vector<TcpEndpoint> & endpoints) {
+                           const std::vector<TcpEndpoint>  &endpoints) {
         ASSERT_EQ(ec, boost::system::error_code());
         ASSERT_EQ(endpoints.size(), 1);
         EXPECT_THAT(endpoints, UnorderedElementsAre(local_ipv4));

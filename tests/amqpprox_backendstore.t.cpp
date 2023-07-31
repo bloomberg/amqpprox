@@ -31,7 +31,7 @@ TEST(BackendStore, Breathing)
 TEST(BackendStore, BasicInsert)
 {
     BackendStore store;
-    Backend backend1(
+    Backend      backend1(
         "backend1", "dc1", "backend1.bloomberg.com", "127.0.0.1", 5672, true);
     Backend backend2(
         "backend2", "dc2", "backend2.bloomberg.com", "127.0.0.2", 5672, true);
@@ -49,7 +49,7 @@ TEST(BackendStore, LookupEmpty)
 TEST(BackendStore, Lookup_Items_By_Name)
 {
     BackendStore store;
-    Backend backend1(
+    Backend      backend1(
         "backend1", "dc1", "backend1.bloomberg.com", "127.0.0.1", 5672, true);
     Backend backend2(
         "backend2", "dc2", "backend2.bloomberg.com", "127.0.0.2", 5672, true);
@@ -69,9 +69,10 @@ TEST(BackendStore, Lookup_Items_By_Name)
     EXPECT_EQ(*b2, backend2);
 }
 
-TEST(BackendStore, CollidingItems) {
+TEST(BackendStore, CollidingItems)
+{
     BackendStore store;
-    Backend backend1(
+    Backend      backend1(
         "backend1", "dc1", "backend1.bloomberg.com", "127.0.0.1", 5672, true);
     Backend backend2(
         "backend1", "dc2", "backend2.bloomberg.com", "127.0.0.2", 5672, true);
@@ -83,7 +84,7 @@ TEST(BackendStore, CollidingItems) {
 TEST(BackendStore, Print_Breathing_Test)
 {
     BackendStore store;
-    Backend backend1(
+    Backend      backend1(
         "backend1", "dc1", "backend1.bloomberg.com", "127.0.0.1", 5672, true);
     Backend backend2(
         "backend2", "dc2", "backend2.bloomberg.com", "127.0.0.2", 5672, true);
@@ -99,9 +100,10 @@ TEST(BackendStore, Print_Breathing_Test)
     EXPECT_GT(oss.str().length(), 0);
 }
 
-TEST(BackendStore, Removals) {
+TEST(BackendStore, Removals)
+{
     BackendStore store;
-    Backend backend1(
+    Backend      backend1(
         "backend1", "dc1", "backend1.bloomberg.com", "127.0.0.1", 5672, true);
     Backend backend2(
         "backend2", "dc2", "backend2.bloomberg.com", "127.0.0.2", 5672, true);
@@ -133,5 +135,4 @@ TEST(BackendStore, Removals) {
     // Check both backends are missing
     EXPECT_EQ(store.lookup("backend1"), nullptr);
     EXPECT_EQ(store.lookup("backend2"), nullptr);
-
 }

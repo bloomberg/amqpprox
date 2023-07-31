@@ -60,7 +60,8 @@ TEST(Buffer, Equality)
     EXPECT_NE(b, b4);
 }
 
-TEST(Buffer, EqualContents) {
+TEST(Buffer, EqualContents)
+{
     constexpr static const char buf[]  = "HELLO";
     constexpr static const char buf2[] = "HELLO";
     Buffer                      b(buf, 6);
@@ -71,12 +72,13 @@ TEST(Buffer, EqualContents) {
     EXPECT_FALSE(b.equalContents(b3));
 }
 
-TEST(Buffer, Assign) {
-    constexpr static const char buf[]  = "HELLO";
-    std::vector<char> target(11);
-    Buffer dst(target.data(), target.size());
+TEST(Buffer, Assign)
+{
+    constexpr static const char buf[] = "HELLO";
+    std::vector<char>           target(11);
+    Buffer                      dst(target.data(), target.size());
     Buffer                      src(buf, 6);
-    
+
     bool rc = dst.assign(src);
     dst.skip(src.size());
     EXPECT_TRUE(rc);

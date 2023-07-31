@@ -117,7 +117,7 @@ void SocketInterceptTestAdaptor::async_write_some(
 
 std::size_t SocketInterceptTestAdaptor::read_some(
     const std::vector<std::pair<void *, size_t>> &buffers,
-    boost::system::error_code &                   ec)
+    boost::system::error_code                    &ec)
 {
     d_state.recordCall("read_some");
 
@@ -126,7 +126,7 @@ std::size_t SocketInterceptTestAdaptor::read_some(
     }
 
     std::size_t sz  = 0;
-    auto &      src = d_currentData->d_value;
+    auto       &src = d_currentData->d_value;
 
     for (auto &buf : buffers) {
         auto copySize = std::min(src.size(), buf.second);

@@ -48,13 +48,13 @@ TEST(Frame, Equality_Mismatch)
 
     EXPECT_NE(f1, f2);
 
-    f2.type = 8;
+    f2.type    = 8;
     f2.channel = 1;
 
     EXPECT_NE(f1, f2);
 
     f2.channel = 0;
-    f2.length = 1;
+    f2.length  = 1;
 
     EXPECT_NE(f1, f2);
 
@@ -93,9 +93,9 @@ TEST(Frame, HeartbeatFrame)
 TEST(Frame, CantFitHeartBeat)
 {
     std::vector<uint8_t> buffer(Frame::getMaxFrameSize());
-    const void *         endOfFrame  = nullptr;
+    const void          *endOfFrame  = nullptr;
     std::size_t          remaining   = 11111;
-    const char *         almostFrame = "\x08\x00\x00\x00\x00\x00\x00";
+    const char          *almostFrame = "\x08\x00\x00\x00\x00\x00\x00";
     buffer.assign(almostFrame, almostFrame + 7);
     Frame f1;
     bool  decodable =
@@ -107,9 +107,9 @@ TEST(Frame, CantFitHeartBeat)
 TEST(Frame, CantFitHeartBeatBy2)
 {
     std::vector<uint8_t> buffer(Frame::getMaxFrameSize());
-    const void *         endOfFrame  = nullptr;
+    const void          *endOfFrame  = nullptr;
     std::size_t          remaining   = 11111;
-    const char *         almostFrame = "\x08\x00\x00\x00\x00\x00";
+    const char          *almostFrame = "\x08\x00\x00\x00\x00\x00";
     buffer.assign(almostFrame, almostFrame + 6);
     Frame f1;
     bool  decodable =
@@ -121,9 +121,9 @@ TEST(Frame, CantFitHeartBeatBy2)
 TEST(Frame, OverSpillHeartBeat)
 {
     std::vector<uint8_t> buffer(Frame::getMaxFrameSize());
-    const void *         endOfFrame  = nullptr;
+    const void          *endOfFrame  = nullptr;
     std::size_t          remaining   = 11111;
-    const char *         almostFrame = "\x08\x00\x00\x00\x00\x00\x00\xCE\xFF";
+    const char          *almostFrame = "\x08\x00\x00\x00\x00\x00\x00\xCE\xFF";
     buffer.assign(almostFrame, almostFrame + 9);
     Frame f1;
     bool  decodable =
@@ -140,7 +140,7 @@ TEST(Frame, OverSpillHeartBeat)
 TEST(Frame, OverSpillFakePayload)
 {
     std::vector<uint8_t> buffer(Frame::getMaxFrameSize());
-    const void *         endOfFrame = nullptr;
+    const void          *endOfFrame = nullptr;
     std::size_t          remaining  = 11111;
     const char *almostFrame = "\x08\x00\x01\x00\x00\x00\x02\xFF\xFF\xCE\xFF";
     buffer.assign(almostFrame, almostFrame + 11);
@@ -161,7 +161,7 @@ TEST(Frame, OverSpillFakePayload)
 TEST(Frame, OneByteTooLittle)
 {
     std::vector<uint8_t> buffer(Frame::getMaxFrameSize());
-    const void *         endOfFrame = nullptr;
+    const void          *endOfFrame = nullptr;
     std::size_t          remaining  = 11111;
     const char *almostFrame = "\x08\x00\x01\x00\x00\x00\x02\xFF\xFF\xCE\xFF";
     buffer.assign(almostFrame, almostFrame + 11);
@@ -180,7 +180,7 @@ TEST(Frame, OneByteTooLittle)
 TEST(Frame, BadSentinelChar)
 {
     std::vector<uint8_t> buffer(Frame::getMaxFrameSize());
-    const void *         endOfFrame = nullptr;
+    const void          *endOfFrame = nullptr;
     std::size_t          remaining  = 11111;
     const char *almostFrame = "\x08\x00\x01\x00\x00\x00\x02\xFF\xFF\xCD\xFF";
     //   ^^
@@ -194,14 +194,15 @@ TEST(Frame, BadSentinelChar)
     EXPECT_EQ(endOfFrame, nullptr);
 }
 
-TEST(Frame, Cant_Encode_Payload_Too_Large) {
+TEST(Frame, Cant_Encode_Payload_Too_Large)
+{
     Frame f1;
     f1.type    = 8;
     f1.channel = 0;
     f1.length  = Frame::getMaxFrameSize() - Frame::frameOverhead() + 1;
     f1.payload = nullptr;
 
-    void* output;
+    void       *output;
     std::size_t sz = 0;
     EXPECT_FALSE(Frame::encode(output, &sz, f1));
 }

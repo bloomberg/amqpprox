@@ -36,8 +36,8 @@ TEST(BufferHandle, Swap)
     BufferSource bs1(1);
     BufferSource bs2(2);
 
-    void *       data1 = bs1.acquire();
-    void *       data2 = bs2.acquire();
+    void        *data1 = bs1.acquire();
+    void        *data2 = bs2.acquire();
     BufferHandle handle1(data1, 1, &bs1);
     BufferHandle handle2(data2, 2, &bs2);
 
@@ -55,7 +55,7 @@ TEST(BufferHandle, Swap)
 TEST(BufferHandle, Explicit_Release)
 {
     BufferSource bs1(1);
-    void *       data1 = bs1.acquire();
+    void        *data1 = bs1.acquire();
     BufferHandle handle1(data1, 1, &bs1);
 
     EXPECT_EQ(handle1.data(), data1);
@@ -72,7 +72,7 @@ TEST(BufferHandle, Explicit_Release)
 TEST(BufferHandle, Explicit_Assign_From_Empty)
 {
     BufferSource bs1(1);
-    void *       data1 = bs1.acquire();
+    void        *data1 = bs1.acquire();
     BufferHandle handle1;
 
     EXPECT_EQ(handle1.data(), nullptr);
@@ -90,8 +90,8 @@ TEST(BufferHandle, Explicit_Assign_From_Filled)
 {
     BufferSource bs1(1);
     BufferSource bs2(2);
-    void *       data1 = bs1.acquire();
-    void *       data2 = bs2.acquire();
+    void        *data1 = bs1.acquire();
+    void        *data2 = bs2.acquire();
     BufferHandle handle1(data2, 2, &bs2);
 
     EXPECT_EQ(handle1.data(), data2);

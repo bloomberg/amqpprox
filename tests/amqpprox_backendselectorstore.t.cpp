@@ -14,7 +14,6 @@
 ** limitations under the License.
 */
 
-
 #include <amqpprox_backendselector.h>
 #include <amqpprox_backendselectorstore.h>
 #include <amqpprox_robinbackendselector.h>
@@ -22,13 +21,13 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-
 using namespace Bloomberg;
 using namespace amqpprox;
 using namespace testing;
 
-TEST(BackendSelectorStore, Breathing) {
-    BackendSelectorStore store;
+TEST(BackendSelectorStore, Breathing)
+{
+    BackendSelectorStore             store;
     std::unique_ptr<BackendSelector> selector(new RobinBackendSelector());
     store.addSelector(std::move(selector));
 
