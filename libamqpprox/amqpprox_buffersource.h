@@ -42,7 +42,7 @@ class BufferSource {
     // CREATORS
     explicit BufferSource(std::size_t bufferSize);
 
-    BufferSource(const BufferSource &) = delete;
+    BufferSource(const BufferSource &)            = delete;
     BufferSource &operator=(const BufferSource &) = delete;
 
     // MANIPULATORS

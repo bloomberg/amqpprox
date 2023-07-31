@@ -55,10 +55,10 @@ class BufferPool {
      */
     explicit BufferPool(const std::vector<std::size_t> &buckets);
 
-    BufferPool(const BufferPool &buffer) = delete;
+    BufferPool(const BufferPool &buffer)      = delete;
     BufferPool &operator=(const BufferPool &) = delete;
     BufferPool(BufferPool &&)                 = delete;
-    BufferPool &operator=(BufferPool &&) = delete;
+    BufferPool &operator=(BufferPool &&)      = delete;
 
     // MANIPULATORS
     /**
