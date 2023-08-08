@@ -89,6 +89,16 @@ using ConnectComplete   = TestSocketState::ConnectComplete;
 
 const char LOCAL_HOSTNAME[] = "amqpprox-host";
 
+// To fix compilation error (gtest ver >=1.12.1) in EXPECT_THAT macro when
+// validating TestSocketState::Item. Since TestSocketState::Item is a variant,
+// googletest requires operator<< / PrintTo to be defined for every member of
+// the variant.
+void PrintTo(const TestSocketState::Func &, std::ostream *stream)
+{
+    *stream << "invoked PrintTo for object of type 'const "
+               "TestSocketState::Func'\n";
+}
+
 struct SelectorMock : public ConnectionSelectorInterface {
     virtual ~SelectorMock() {}
 
