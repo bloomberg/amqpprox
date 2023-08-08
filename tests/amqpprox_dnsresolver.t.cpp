@@ -17,7 +17,6 @@
 #include <amqpprox_dnsresolver.h>
 
 #include <chrono>
-#include <gmock/gmock-generated-matchers.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <thread>
