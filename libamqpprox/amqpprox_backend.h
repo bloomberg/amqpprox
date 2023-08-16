@@ -30,6 +30,7 @@ class Backend {
     std::string d_datacenterTag;
     std::string d_host;
     std::string d_ip;
+    std::string d_virtualHost;
     int         d_port;
     bool        d_proxyProtocolEnabled;
     bool        d_tlsEnabled;
@@ -40,14 +41,28 @@ class Backend {
             const std::string &datacenterTag,
             const std::string &host,
             const std::string &ip,
+            const std::string &virtualHost,
             int                port,
             bool               proxyProtocolEnabled = false,
             bool               tlsEnabled           = false,
             bool               dnsBasedEntry        = false);
 
+        Backend(const std::string &name,
+            const std::string &datacenterTag,
+            const std::string &host,
+            const std::string &ip,
+            int                port,
+            bool               proxyProtocolEnabled = false,
+            bool               tlsEnabled           = false,
+            bool               dnsBasedEntry        = false)
+            : Backend(name, datacenterTag, host, ip, "", port, proxyProtocolEnabled, tlsEnabled, dnsBasedEntry)
+            {
+            }
+
     Backend();
 
     inline const std::string &host() const;
+    inline const std::string &virtualHost() const;
     inline const std::string &ip() const;
     inline int                port() const;
     inline const std::string &datacenterTag() const;
@@ -60,6 +75,11 @@ class Backend {
 inline const std::string &Backend::host() const
 {
     return d_host;
+}
+
+inline const std::string &Backend::virtualHost() const
+{
+    return d_virtualHost;
 }
 
 inline const std::string &Backend::ip() const

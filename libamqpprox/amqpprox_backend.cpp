@@ -25,6 +25,7 @@ Backend::Backend(const std::string &name,
                  const std::string &datacenterTag,
                  const std::string &host,
                  const std::string &ip,
+                 const std::string &virtualHost,
                  int                port,
                  bool               proxyEnabled,
                  bool               tlsEnabled,
@@ -33,6 +34,7 @@ Backend::Backend(const std::string &name,
 , d_datacenterTag(datacenterTag)
 , d_host(host)
 , d_ip(ip)
+, d_virtualHost(virtualHost)
 , d_port(port)
 , d_proxyProtocolEnabled(proxyEnabled)
 , d_tlsEnabled(tlsEnabled)
@@ -45,6 +47,7 @@ Backend::Backend()
 , d_datacenterTag("")
 , d_host("")
 , d_ip("")
+, d_virtualHost("")
 , d_port(0)
 , d_proxyProtocolEnabled(false)
 , d_tlsEnabled(false)
@@ -56,7 +59,7 @@ std::ostream &operator<<(std::ostream &os, const Backend &backend)
 {
     os << backend.name() << " (" << backend.datacenterTag()
        << "): " << backend.host() << " " << backend.ip() << ":"
-       << backend.port();
+       << backend.port() << " <" << backend.virtualHost() << ">";
     if (backend.proxyProtocolEnabled()) {
         os << " " << Constants::proxyProtocolV1Enabled();
     }
@@ -71,7 +74,7 @@ bool operator==(const Backend &lhs, const Backend &rhs)
     return (lhs.name() == rhs.name() &&
             lhs.datacenterTag() == rhs.datacenterTag() &&
             lhs.host() == rhs.host() && lhs.ip() == rhs.ip() &&
-            lhs.port() == rhs.port() &&
+            lhs.virtualHost() == rhs.virtualHost() && lhs.port() == rhs.port() &&
             lhs.proxyProtocolEnabled() == rhs.proxyProtocolEnabled() &&
             lhs.tlsEnabled() == rhs.tlsEnabled());
 }
