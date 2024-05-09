@@ -22,7 +22,7 @@ bool Method::decode(Method *method, const void *buffer, std::size_t bufferLen)
 {
     const uint8_t *buf = static_cast<const uint8_t *>(buffer);
 
-    if (bufferLen < sizeof(method->classType) + sizeof(method->classType)) {
+    if (bufferLen < sizeof(method->classType) + sizeof(method->methodType)) {
         return false;
     }
 
