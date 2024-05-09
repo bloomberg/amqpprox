@@ -83,6 +83,30 @@ TEST_F(PacketProcessorTest, HeaderPassedInOne)
     EXPECT_THAT(d_connector.state(), Eq(Connector::State::START_SENT));
 }
 
+TEST_F(PacketProcessorTest, MalformedStartOk)
+{
+    PacketProcessor processor(d_sessionState, d_connector);
+
+    // Header
+    {
+        Buffer buffer((const void *)Constants::protocolHeader(),
+                      Constants::protocolHeaderLength());
+        buffer.seek(Constants::protocolHeaderLength());
+
+        processor.process(FlowType::INGRESS, buffer);
+    }
+
+    {
+        const uint8_t data[] = {
+            0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xce};
+        size_t size = sizeof(data) / sizeof(*data);
+        Buffer buffer(data, size);
+        buffer.seek(size);
+
+        processor.process(FlowType::INGRESS, buffer);
+    }
+}
+
 TEST_F(PacketProcessorTest, IncompleteHeader)
 {
     // If we give the PacketProcessor less than the full header, we shouldn't
