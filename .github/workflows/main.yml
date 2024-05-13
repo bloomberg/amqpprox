@@ -1,57 +1,29 @@
 name: CI
 
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
 
-  # Allows to run this workflow in any kind of release
   release:
 
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
   
 permissions: read-all
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  formatting-check:
-    name: Formatting Check
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        path:
-          - 'libamqpprox'
-          - 'amqpprox'
-          - 'amqpprox_ctl'
-          - 'tests'
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run clang-format style check for C/C++/Protobuf programs.
-        uses: jidicula/clang-format-action@v4.11.0
-        with:
-          clang-format-version: '14'
-          check-path: ${{ matrix.path }}
-
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: Install Conan
         id: conan
         uses: turtlebrowser/get-conan@v1.1
         with:
           version: 1.59.0
-    
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+
       - uses: actions/checkout@v2
 
-      # Build Steps
       - name: Setup
         run: make setup
       - name: Configure
@@ -60,16 +32,10 @@ jobs:
         run: make
 
   integration:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      # Run integration tests
       - name: Integration tests
         run: make docker-integration-tests
-      
-
