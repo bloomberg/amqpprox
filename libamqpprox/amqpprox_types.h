@@ -16,6 +16,7 @@
 #ifndef BLOOMBERG_AMQPPROX_TYPES
 #define BLOOMBERG_AMQPPROX_TYPES
 
+#include <cstdint>
 #include <cstring>
 #include <string>
 #include <vector>
