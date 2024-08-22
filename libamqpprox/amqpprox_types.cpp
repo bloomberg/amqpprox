@@ -23,6 +23,8 @@
 
 #include <boost/endian/arithmetic.hpp>
 
+#include <cstdint>
+
 // Note this is not 'pure' AMQP 0-9-1  aiming for the same compatibility as the
 // server see https://www.rabbitmq.com/amqp-0-9-1-errata.html &
 // https://github.com/rabbitmq/rabbitmq-server/blob/master/deps/rabbit_common/src/rabbit_binary_parser.erl

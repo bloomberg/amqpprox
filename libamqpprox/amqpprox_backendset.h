@@ -18,6 +18,7 @@
 
 #include <amqpprox_backend.h>
 
+#include <cstdint>
 #include <vector>
 
 namespace Bloomberg {

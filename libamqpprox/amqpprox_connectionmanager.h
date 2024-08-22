@@ -18,6 +18,7 @@
 
 #include <amqpprox_backendset.h>
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 
