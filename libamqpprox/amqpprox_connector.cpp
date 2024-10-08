@@ -220,7 +220,11 @@ void Connector::receive(const Method &method, FlowType direction)
         LOG_TRACE << "Server Tune: " << d_receivedTune;
 
         sendResponse(d_tuneOk, false);
-        sendResponse(d_open, false);
+
+        methods::Open openCopy = d_open;
+        openCopy.setVirtualHost(d_sessionState_p->getBackendVirtualHost());
+        sendResponse(openCopy, false);
+
         d_state = State::OPEN_SENT;
     } break;
     case State::OPEN_SENT: {

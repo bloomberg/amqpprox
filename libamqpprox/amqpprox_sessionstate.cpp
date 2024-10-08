@@ -214,6 +214,7 @@ std::ostream &operator<<(std::ostream &os, const SessionState &state)
 
     os << std::setw(7) << state.id() << ": "
        << "vhost=" << state.getVirtualHost() << " "
+       << "vhost-back=" << state.getBackendVirtualHost() << " "
        << ", "
        << (state.getDisconnectType() ==
                    SessionState::DisconnectType::NOT_DISCONNECTED
