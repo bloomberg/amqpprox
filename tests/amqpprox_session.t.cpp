@@ -1455,7 +1455,9 @@ TEST_F(SessionTest,
     std::shared_ptr<methods::Close> closeMethodPtr =
         std::make_shared<methods::Close>();
     closeMethodPtr->setReply(Reply::Codes::access_refused,
-                             "Unauthorized test client");
+                             "Unauthorized test client",
+                             methods::StartOk::classType(),
+                             methods::StartOk::methodType());
     testSetupClientOpenWithProxyClose(4, closeMethodPtr);
 
     std::shared_ptr<MaybeSecureSocketAdaptor<>> clientSocket =
