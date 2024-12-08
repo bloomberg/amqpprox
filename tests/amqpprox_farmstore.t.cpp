@@ -80,8 +80,8 @@ TEST(FarmStore, GettingMissingFarm)
 {
     FarmStore farmStore;
 
-    EXPECT_THROW({ farmStore.getFarmByName("nosuchfarm"); },
-                 std::runtime_error);
+    EXPECT_THROW(
+        { farmStore.getFarmByName("nosuchfarm"); }, std::runtime_error);
 }
 
 TEST(FarmStore, AddTwice)
