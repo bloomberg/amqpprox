@@ -627,7 +627,9 @@ void Session::disconnectUnauthClient(const FieldTable &clientProperties,
                 d_connector.synthesizeCustomCloseError(
                     true,
                     Reply::Codes::access_refused,
-                    reason.substr(0, sendSize));
+                    reason.substr(0, sendSize),
+                    methods::StartOk::classType(),
+                    methods::StartOk::methodType());
                 sendSyntheticData();
             }
         }
