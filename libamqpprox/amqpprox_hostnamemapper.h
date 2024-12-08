@@ -26,7 +26,7 @@ namespace amqpprox {
  */
 class HostnameMapper {
   public:
-    virtual ~HostnameMapper(){};
+    virtual ~HostnameMapper() {};
 
     /**
      * \brief prime the cache of hostnames with a list of endpoints
