@@ -326,9 +326,12 @@ void Connector::synthesizeCloseError(bool sendToIngressSide)
 
 void Connector::synthesizeCustomCloseError(bool             sendToIngressSide,
                                            uint16_t         code,
-                                           std::string_view text)
+                                           std::string_view text,
+                                           uint16_t         classId,
+                                           uint16_t         methodId)
 {
-    synthesizeMessage(d_close, sendToIngressSide, code, text);
+    synthesizeMessage(
+        d_close, sendToIngressSide, code, text, classId, methodId);
 }
 
 Buffer Connector::outBuffer()
@@ -416,10 +419,12 @@ void Connector::sendResponse(const T &response, bool sendToIngressSide)
 void Connector::synthesizeMessage(methods::Close  &replyMethod,
                                   bool             sendToIngressSide,
                                   uint64_t         code,
-                                  std::string_view text)
+                                  std::string_view text,
+                                  uint16_t         classId,
+                                  uint16_t         methodId)
 {
     d_buffer = Buffer();  // forget inbound buffer
-    replyMethod.setReply(code, std::string(text));
+    replyMethod.setReply(code, std::string(text), classId, methodId);
     sendResponse(replyMethod, sendToIngressSide);
 }
 

@@ -52,8 +52,8 @@ struct PairHash {
 class DNSResolver {
     using TcpEndpoint = boost::asio::ip::tcp::endpoint;
     using CacheType   = std::unordered_map<std::pair<std::string, std::string>,
-                                         std::vector<TcpEndpoint>,
-                                         PairHash>;
+                                           std::vector<TcpEndpoint>,
+                                           PairHash>;
 
   public:
     using OverrideFunction =

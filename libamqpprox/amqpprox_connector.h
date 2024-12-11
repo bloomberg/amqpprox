@@ -105,7 +105,9 @@ class Connector {
     inline void synthesizeMessage(methods::Close  &replyMethod,
                                   bool             sendToIngressSide,
                                   uint64_t         code,
-                                  std::string_view text);
+                                  std::string_view text,
+                                  uint16_t         classId  = 0,
+                                  uint16_t         methodId = 0);
 
   public:
     Connector(SessionState    *sessionState,
@@ -167,10 +169,14 @@ class Connector {
      * for communicating with server
      * \param code custom error code
      * \param text custom error text
+     * \param classId custom class id
+     * \param methodId custom method id
      */
     void synthesizeCustomCloseError(bool             sendToIngressSide,
                                     uint16_t         code,
-                                    std::string_view text);
+                                    std::string_view text,
+                                    uint16_t         classId  = 0,
+                                    uint16_t         methodId = 0);
 
     /**
      * \brief Synthesize AMQP protocol header buffer, which will eventually be

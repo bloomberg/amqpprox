@@ -46,10 +46,24 @@ class Close {
 
     const uint16_t methodId() const { return d_methodId; }
 
-    inline void setReply(uint16_t code, const std::string &text)
+    inline void setReply(uint16_t           code,
+                         const std::string &text,
+                         uint16_t           classId  = 0,
+                         uint16_t           methodId = 0)
     {
         d_replyCode   = code;
         d_replyString = text;
+
+        // Close may be due to internal conditions or due to an exception
+        // during handling a specific method. When a close is due to an
+        // exception, the class and method id of the method which caused the
+        // exception is provided.
+        if (classId) {
+            d_classId = classId;
+        }
+        if (methodId) {
+            d_methodId = methodId;
+        }
     }
 
     /**

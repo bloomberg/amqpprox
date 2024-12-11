@@ -47,7 +47,7 @@ class SocketInterface {
     virtual size_t read_some(const boost::asio::mutable_buffers_1 &buffer,
                              boost::system::error_code            &error) = 0;
 
-    virtual ~SocketInterface(){};
+    virtual ~SocketInterface() {};
 };
 
 class MockSocket : public SocketInterface {
@@ -76,7 +76,7 @@ class MockSocket : public SocketInterface {
 
 class TimerInterface {
   public:
-    virtual ~TimerInterface(){};
+    virtual ~TimerInterface() {};
     virtual void cancel() = 0;
 
     virtual size_t

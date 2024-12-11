@@ -131,15 +131,9 @@ class MaybeSecureSocketAdaptor
         src.d_dataRateTimer->cancel();
     }
 
-    ~MaybeSecureSocketAdaptor()
-    {
-        d_dataRateTimer->cancel();
-    }
+    ~MaybeSecureSocketAdaptor() { d_dataRateTimer->cancel(); }
 
-    boost::asio::ip::tcp::socket &socket()
-    {
-        return d_socket->next_layer();
-    }
+    boost::asio::ip::tcp::socket &socket() { return d_socket->next_layer(); }
 
     void setSecure(bool secure)
     {
