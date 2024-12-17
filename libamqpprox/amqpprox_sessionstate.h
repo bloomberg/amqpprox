@@ -72,6 +72,7 @@ class SessionState {
     std::atomic<bool>               d_ingressSecured;
     std::atomic<bool>               d_limitedConnection;
     std::string                     d_virtualHost;
+    std::string                     d_backendVirtualHost;
     DisconnectType                  d_disconnectedStatus;
     uint64_t                        d_id;
     mutable std::mutex              d_lock;
@@ -209,6 +210,10 @@ class SessionState {
      */
     inline const std::string &getVirtualHost() const;
 
+    inline void setBackendVirtualHost(const std::string& virtualHost);
+
+    inline const std::string &getBackendVirtualHost() const;
+
     /**
      * \return the state(paused/unpaused) of the virtual host
      */
@@ -278,6 +283,18 @@ inline const std::string &SessionState::getVirtualHost() const
 {
     std::lock_guard<std::mutex> lg(d_lock);
     return d_virtualHost;
+}
+
+inline void SessionState::setBackendVirtualHost(const std::string& virtualHost)
+{
+    std::lock_guard<std::mutex> lg(d_lock);
+    d_backendVirtualHost = virtualHost;
+}
+
+inline const std::string &SessionState::getBackendVirtualHost() const
+{
+    std::lock_guard<std::mutex> lg(d_lock);
+    return d_backendVirtualHost.empty() ? d_virtualHost : d_backendVirtualHost;
 }
 
 inline bool SessionState::getPaused() const
