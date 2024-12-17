@@ -24,6 +24,7 @@
 #include <boost/endian/arithmetic.hpp>
 
 #include <cstdint>
+#include <vector>
 
 // Note this is not 'pure' AMQP 0-9-1  aiming for the same compatibility as the
 // server see https://www.rabbitmq.com/amqp-0-9-1-errata.html &
