@@ -5,4 +5,5 @@ gtest/1.10.0
 protobuf/3.21.9
 
 [generators]
-cmake
+CMakeDeps
+CMakeToolchain

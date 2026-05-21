@@ -17,13 +17,13 @@ setup:
 	(test -x ./buildfiles/$(BUILD_FLAVOUR)/bootstrap && ./buildfiles/$(BUILD_FLAVOUR)/bootstrap $(BUILDDIR) $(CUR_DIR)) || true
 
 init:
-	cd $(BUILDDIR) && cmake $(EXTRA_CMAKE_ARGS) $(CUR_DIR)
+	cd $(BUILDDIR) && cmake -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake $(EXTRA_CMAKE_ARGS) $(CUR_DIR)
 
 clean:
 	cd $(BUILDDIR) && make clean
 
 integration-tests:
-	python3.8 -mpytest -s tests/performance_tester/integration-tests.py
+	python3 -mpytest -s tests/performance_tester/integration-tests.py
 	./tests/acceptance/run.sh
 
 DOCKER_IMAGE ?= amqpprox

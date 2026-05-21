@@ -1,2 +1,1 @@
-set(AMQPPROX_TEST_LIBS "${CONAN_LIBS} ${CMAKE_THREAD_LIBS_INIT}")
-string(STRIP "${AMQPPROX_TEST_LIBS}" AMQPPROX_TEST_LIBS)
+set(AMQPPROX_TEST_LIBS GTest::gtest GTest::gtest_main Boost::log Boost::system Boost::thread OpenSSL::SSL OpenSSL::Crypto ${CMAKE_THREAD_LIBS_INIT})

@@ -24,4 +24,4 @@ export ROBOT_SOURCE_DIR=${ROBOT_SOURCE_DIR:=.}
 export LOG_CONSOLE=${LOG_CONSOLE:=yes}
 export PYTHONPATH=/source/tests/acceptance/libs/
 
-exec python3.8 -m robot.run --outputdir ./logs "$(dirname $0)/*.robot"
+exec python3 -m robot.run --outputdir ./logs "$(dirname $0)/*.robot"

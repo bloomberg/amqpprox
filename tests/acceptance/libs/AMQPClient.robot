@@ -20,7 +20,7 @@ Library         Process
 Start AMQPClient
     [Arguments]    ${name}
     ${ACCEPTANCE_PATH}=  Get Environment Variable   ACCEPTANCE_PATH
-    ${result}=  Start Process  python3.8
+    ${result}=  Start Process  python3
     ...                        ${ACCEPTANCE_PATH}/libs/amqp_client/${name}.py
     ...                        stdout=/tmp/logs/amqp_client_${name}.log
     ...                        stderr=/tmp/logs/amqp_client_${name}.log
