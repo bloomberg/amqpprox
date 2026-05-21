@@ -179,7 +179,8 @@ EventSourceSignal<ARGS...>::create()
 {
     std::shared_ptr<EventSourceSignal<ARGS...>> signal(
         new EventSourceSignal());
-    return std::move(signal);
+
+    return signal;
 }
 
 }
