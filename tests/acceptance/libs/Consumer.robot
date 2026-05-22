@@ -20,7 +20,7 @@ Library         Process
 Start RabbitMQ Consumer
     [Arguments]    ${name}
     ${ACCEPTANCE_PATH}=  Get Environment Variable   ACCEPTANCE_PATH
-    ${result}=  Start Process  python3.8
+    ${result}=  Start Process  python3
     ...                        ${ACCEPTANCE_PATH}/libs/rabbitclient/consumer.py
     ...                        stdout=/tmp/logs/consumer_${name}.log
     ...                        stderr=/tmp/logs/consumer_${name}.log

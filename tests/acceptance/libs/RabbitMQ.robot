@@ -50,10 +50,10 @@ Make admin user
     Log  "[RabbitMQ] Make admin user"
     ...  console=${LOG_CONSOLE}
     Run Process  ${BINARY_PATH}/rabbitmqctl  -q
-    ...          -n  ${nodename}
+    ...          -n  ${nodename}@localhost
     ...          add_user  admin  admin
     Run Process  ${BINARY_PATH}/rabbitmqctl  -q
-    ...          -n  ${nodename}
+    ...          -n  ${nodename}@localhost
     ...          set_user_tags  admin  administrator
 
 Start rabbitmq process and wait
@@ -69,12 +69,13 @@ Start rabbitmq process
     [Arguments]    ${pid_file}  ${nodename}  ${nodeport}  ${configfile}
     Log  "[RabbitMQ] Starting RabbitMQ ${nodename}"
     ...  console=${LOG_CONSOLE}
+    Create Directory  /tmp/logs
     Should Exist  ${configfile}.config
     ${result}=  Start Process  ${BINARY_PATH}/rabbitmq-server
-    ...            env:RABBITMQ_LOGS=/tmp/logs/${nodename}.log
+    ...            env:RABBITMQ_LOGS=/tmp/logs/${nodename}@localhost.log
     ...            env:RABBITMQ_LOG_BASE=/tmp/logs
     ...            env:RABBITMQ_PID_FILE=${pid_file}
-    ...            env:RABBITMQ_NODENAME=${nodename}
+    ...            env:RABBITMQ_NODENAME=${nodename}@localhost
     ...            env:RABBITMQ_NODE_PORT=${nodeport}
     ...            env:RABBITMQ_CONFIG_FILE=${configfile}
     [Return]  ${result}
@@ -88,18 +89,18 @@ Wait rabbitmq process
     Log  "[RabbitMQ] Waiting for ${nodename}"
     ...  console=${LOG_CONSOLE}
     ${result} =  Run Process  ${BINARY_PATH}/rabbitmqctl
-    ...                       -n  ${nodename}
+    ...                       -n  ${nodename}@localhost
     ...                       wait  ${pidfile}
 
 RabbitMQ has log
     [Arguments]    ${nodename}  ${content}
-    ${logContent}=    Get File    /tmp/logs/${nodename}.log
+    ${logContent}=    Get File    /tmp/logs/${nodename}@localhost.log
     Should Contain  ${logContent}  ${content}
 
 RabbitMQ print logs
     [Documentation]     Only for debug purposes
     [Arguments]    ${nodename}
-    ${content}=    Get File    /tmp/logs/${nodename}.log
+    ${content}=    Get File    /tmp/logs/${nodename}@localhost.log
     Log  "[RabbitMQ] ${nodename} logs ========"  console=yes
     Log  ${content}  console=yes
     Log  "[RabbitMQ] ${nodename} logs end ===="  console=yes

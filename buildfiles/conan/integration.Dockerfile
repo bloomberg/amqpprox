@@ -1,16 +1,20 @@
-FROM rabbitmq:3.7.28
+FROM rabbitmq:4.3.0
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install dependencies for integration tests
-RUN apt-get update && apt-get dist-upgrade -y --force-yes
-RUN apt-get install -y --force-yes python3.8 python3.8-distutils \
+RUN apt-get update && apt-get dist-upgrade -y && \
+    apt-get install -y python3 python3-pip python3-venv \
     curl llvm make cmake build-essential npm
-RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-RUN python3.8 get-pip.py
-RUN python3.8 -m pip install setuptools "conan<2.0" robotframework pika amqp pytest
+RUN python3 -m pip install --break-system-packages setuptools "conan>=2,<3" robotframework pika amqp pytest
 ENV HOME="/root" PATH="/root/.cargo/bin:${PATH}"
 RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+
+# Configure RabbitMQ for tests: enable file logging, disable prometheus
+# (prometheus plugin binds a fixed port, conflicts when running multiple nodes)
+RUN mkdir -p /etc/rabbitmq /tmp/logs && \
+    printf 'log.file.level = info\nprometheus.tcp.port = 0\n' > /etc/rabbitmq/rabbitmq.conf && \
+    /opt/rabbitmq/sbin/rabbitmq-plugins disable --offline rabbitmq_prometheus
 
 EXPOSE 15800
 EXPOSE 15801
@@ -26,3 +30,4 @@ WORKDIR /source
 RUN make setup && make init && make
 ENV ROBOT_SOURCE_DIR=/source/tests/acceptance ROBOT_BINARY_DIR=/opt/rabbitmq/sbin
 ENV AMQPPROX_BIN_DIR=/build/bin
+ENV NODE_OPTIONS=--dns-result-order=ipv4first
