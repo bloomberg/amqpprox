@@ -67,14 +67,13 @@ def run_perf_test_command(amqpprox_url, message_size, num_messages, max_threads,
     env = os.environ.copy()
     env["RUST_LOG"] = "info"
 
+    perf_tester_bin = os.environ.get("PERF_TESTER_BIN")
+    if not perf_tester_bin:
+        raise RuntimeError("PERF_TESTER_BIN environment variable must be set")
+
     return subprocess.run(
         [
-            env.get("CARGO_PATH", "cargo"),
-            "run",
-            "--release",
-            "--manifest-path",
-            "tests/performance_tester/Cargo.toml",
-            "--",
+            perf_tester_bin,
             "--address",
             amqpprox_url,
             "--listen-address",

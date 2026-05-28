@@ -28,6 +28,8 @@ RUN npm install
 WORKDIR /source
 
 RUN make setup && make init && make
+RUN cargo build --release --manifest-path tests/performance_tester/Cargo.toml
+ENV PERF_TESTER_BIN=/source/tests/performance_tester/target/release/amqpprox_perf_tester
 ENV ROBOT_SOURCE_DIR=/source/tests/acceptance ROBOT_BINARY_DIR=/opt/rabbitmq/sbin
 ENV AMQPPROX_BIN_DIR=/build/bin
 ENV NODE_OPTIONS=--dns-result-order=ipv4first
