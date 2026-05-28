@@ -1,3 +1,5 @@
+set(Protobuf_USE_STATIC_LIBS ON)
+
 find_package(protobuf REQUIRED CONFIG)
 
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS sasl.proto authrequest.proto authresponse.proto)
