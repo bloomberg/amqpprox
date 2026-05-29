@@ -202,8 +202,8 @@ TEST(Frame, Cant_Encode_Payload_Too_Large)
     f1.length  = Frame::getMaxFrameSize() - Frame::frameOverhead() + 1;
     f1.payload = nullptr;
 
-    void       *output;
-    std::size_t sz = 0;
+    void       *output = nullptr;
+    std::size_t sz     = 0;
     EXPECT_FALSE(Frame::encode(output, &sz, f1));
 }
 
