@@ -1,6 +1,9 @@
 set(Protobuf_USE_STATIC_LIBS ON)
 
-find_package(protobuf REQUIRED CONFIG)
+find_package(protobuf CONFIG QUIET)
+if(NOT protobuf_FOUND)
+    find_package(Protobuf REQUIRED)
+endif()
 
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS sasl.proto authrequest.proto authresponse.proto)
 add_library(authproto ${PROTO_SRCS} ${PROTO_HDRS})
