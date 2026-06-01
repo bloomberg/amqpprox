@@ -17,7 +17,6 @@
 
 #include <amqpprox_hostnamemapper.h>
 
-#include <iomanip>
 #include <iostream>
 
 #include <boost/lexical_cast.hpp>
@@ -212,32 +211,29 @@ std::ostream &operator<<(std::ostream &os, const SessionState &state)
                     &egressLatencyTotal,
                     &egressLatencyCount);
 
-    os << std::setw(7) << state.id() << ": "
-       << "vhost=" << state.getVirtualHost() << " "
-       << ", "
+    os << "id=" << state.id() << " vhost=" << state.getVirtualHost()
+       << " disconnected="
        << (state.getDisconnectType() ==
                    SessionState::DisconnectType::NOT_DISCONNECTED
-               ? ""
-               : "D")
-       << (state.getPaused() ? "P " : " ")
-       << (state.getAuthDeniedConnection() ? "DENY " : " ")
-       << state.hostname(state.getIngress().second) << ":"
-       << state.getIngress().second.port() << "->"
-       << state.hostname(state.getIngress().first) << " --> "
-       << state.hostname(state.getEgress().first) << ":"
-       << state.getEgress().first.port() << "->"
-       << state.hostname(state.getEgress().second) << ":"
-       << state.getEgress().second.port() << " IN: " << ingressBytes << "B "
-       << ingressFrames << " Frames in " << ingressPackets << " pkt. ";
+               ? "N"
+               : "Y")
+       << " paused=" << (state.getPaused() ? "Y" : "N")
+       << " authDenied=" << (state.getAuthDeniedConnection() ? "Y" : "N")
+       << " ingressRemote=" << state.hostname(state.getIngress().second) << ":"
+       << state.getIngress().second.port()
+       << " ingressLocal=" << state.hostname(state.getIngress().first)
+       << " egressLocal=" << state.hostname(state.getEgress().first) << ":"
+       << state.getEgress().first.port()
+       << " egressRemote=" << state.hostname(state.getEgress().second) << ":"
+       << state.getEgress().second.port() << " inBytes=" << ingressBytes
+       << " inFrames=" << ingressFrames << " inPackets=" << ingressPackets;
     if (ingressLatencyCount > 0) {
-        os << " Avg. Latency: " << ingressLatencyTotal / ingressLatencyCount
-           << "ms ";
+        os << " inAvgLatencyMs=" << ingressLatencyTotal / ingressLatencyCount;
     }
-    os << " OUT: " << egressBytes << "B " << egressFrames << " Frames in "
-       << egressPackets << " pkt. ";
+    os << " outBytes=" << egressBytes << " outFrames=" << egressFrames
+       << " outPackets=" << egressPackets;
     if (egressLatencyCount > 0) {
-        os << " Avg. Latency: " << egressLatencyTotal / egressLatencyCount
-           << "ms ";
+        os << " outAvgLatencyMs=" << egressLatencyTotal / egressLatencyCount;
     }
 
     return os;

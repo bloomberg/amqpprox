@@ -32,6 +32,9 @@ class AMQPClientConnection(object):
         LOGGER.info("creating connection")
         self.connection = Connection(host=host,
                                      heartbeat=4,
+                                     client_properties={
+                                         'connection_name': 'my-test-app',
+                                     },
                                      on_open=self.on_open,
                                      on_blocked=self.on_blocked,
                                      on_unblocked=self.on_unblocked,

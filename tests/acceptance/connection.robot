@@ -142,3 +142,9 @@ Connection closed by proxy for RabbitMQ Consumer
 
     RabbitMQ has log  nodename=shared1  content=accepting AMQP connection
     RabbitMQ has log  nodename=shared1  content=closing AMQP connection
+
+Starting connection log contains connection name and TLS status
+    Start AMQPClient  name=connection_close
+
+    Wait Until Keyword Succeeds  10s  1s
+    ...    AMQPProx has log  Starting connection for: connectionName="my-test-app" tlsEnabled=insecure
