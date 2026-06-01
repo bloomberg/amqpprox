@@ -36,7 +36,7 @@ Configure plugins
     ...                      --offline
     ...                      rabbitmq_shovel
     ...                      rabbitmq_shovel_management
-    [Return]    ${result}
+    RETURN    ${result}
 
 Setting definitions
     [Arguments]    ${port}  ${file}
@@ -78,7 +78,7 @@ Start rabbitmq process
     ...            env:RABBITMQ_NODENAME=${nodename}@localhost
     ...            env:RABBITMQ_NODE_PORT=${nodeport}
     ...            env:RABBITMQ_CONFIG_FILE=${configfile}
-    [Return]  ${result}
+    RETURN  ${result}
 
 RabbitMQ stop
     [Arguments]  ${handle}

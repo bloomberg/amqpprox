@@ -23,7 +23,7 @@ AMQPProx start
     ${AMQPPROX_BIN_DIR}=  Get Environment Variable   AMQPPROX_BIN_DIR
     ${result}=  Start Process  ${AMQPPROX_BIN_DIR}/amqpprox --cleanupIntervalMs 10 --controlSocket /tmp/amqpprox --logDirectory /tmp/logs/amqpprox
     ...                      shell=yes
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProx stop
     [Arguments]  ${handle}
