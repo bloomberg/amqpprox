@@ -24,38 +24,38 @@ AMQPProxCTL BACKEND add
     ...                                   ${datacenter}
     ...                                   ${host}
     ...                                   ${port}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL BACKEND delete
     [Arguments]    ${name}
     ${result}=  AMQPProxCTL send command  BACKEND  DELETE
     ...                                   ${name}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL BACKEND print
     ${result}=  AMQPProxCTL send command  BACKEND  PRINT
-    [Return]    ${result}
+    RETURN    ${result}
 
 
 AMQPProxCTL CONN
     ${result}=  AMQPProxCTL send command  CONN
-    [Return]    ${result}
+    RETURN    ${result}
 
 
 AMQPProxCTL DATACENTER set
     [Arguments]    ${name}
     ${result}=  AMQPProxCTL send command  DATACENTER  SET
     ...                                   ${name}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL DATACENTER print
     ${result}=  AMQPProxCTL send command  DATACENTER  PRINT
-    [Return]    ${result}
+    RETURN    ${result}
 
 
 AMQPProxCTL EXIT
     ${result}=  AMQPProxCTL send command  EXIT
-    [Return]    ${result}
+    RETURN    ${result}
 
 
 AMQPProxCTL FARM add_dns
@@ -64,7 +64,7 @@ AMQPProxCTL FARM add_dns
     ...                                   ${name}
     ...                                   ${dnsname}
     ...                                   ${port}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL FARM add_manual
     [Arguments]    ${name}  ${selector}  ${backend}
@@ -72,53 +72,53 @@ AMQPProxCTL FARM add_manual
     ...                                   ${name}
     ...                                   ${selector}
     ...                                   ${backend}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL FARM partition
     [Arguments]    ${name}  ${policy}
     ${result}=  AMQPProxCTL send command  FARM  POLICY
     ...                                   ${name}
     ...                                   ${policy}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL FARM delete
     [Arguments]    ${name}
     ${result}=  AMQPProxCTL send command  FARM  DELETE
     ...                                   ${name}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL FARM print
     ${result}=  AMQPProxCTL send command  FARM  PRINT
-    [Return]    ${result}
+    RETURN    ${result}
 
 
 AMQPProxCTL HELP
     ${result}=  AMQPProxCTL send command  HELP
-    [Return]    ${result}
+    RETURN    ${result}
 
 
 AMQPProxCTL LISTEN start
     [Arguments]    ${port}
     ${result}=  AMQPProxCTL send command  LISTEN  START
     ...                                   ${port}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL LISTEN stop
     ${result}=  AMQPProxCTL send command  LISTEN  STOP
-    [Return]    ${result}
+    RETURN    ${result}
 
 
 AMQPProxCTL LOG console
     [Arguments]    ${verbosity}
     ${result}=  AMQPProxCTL send command  LOG  CONSOLE
     ...                                   ${verbosity}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL LOG file
     [Arguments]    ${verbosity}
     ${result}=  AMQPProxCTL send command  LOG  FILE
     ...                                   ${verbosity}
-    [Return]    ${result}
+    RETURN    ${result}
 
 
 AMQPProxCTL MAP backend
@@ -126,53 +126,53 @@ AMQPProxCTL MAP backend
     ${result}=  AMQPProxCTL send command  MAP  BACKEND
     ...                                   ${vhost}
     ...                                   ${backend}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL MAP farm
     [Arguments]    ${vhost}  ${name}
     ${result}=  AMQPProxCTL send command  MAP  FARM
     ...                                   ${vhost}
     ...                                   ${name}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL MAP unmap
     [Arguments]    ${vhost}
     ${result}=  AMQPProxCTL send command  MAP  UNMAP
     ...                                   ${vhost}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL MAP default
     [Arguments]    ${farmName}
     ${result}=  AMQPProxCTL send command  MAP  DEFAULT
     ...                                   ${farmName}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL MAP remove_default
     ${result}=  AMQPProxCTL send command  MAP  REMOVE_DEFAULT
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL MAP print
     ${result}=  AMQPProxCTL send command  MAP  PRINT
-    [Return]    ${result}
+    RETURN    ${result}
 
 
 AMQPProxCTL SESSION disconnect_graceful
     [Arguments]    ${id}
     ${result}=  AMQPProxCTL send command  SESSION  ${id}
     ...                                   DISCONNECT_GRACEFUL
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL SESSION pause
     [Arguments]    ${id}
     ${result}=  AMQPProxCTL send command  SESSION  ${id}
     ...                                   PAUSE
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL SESSION force_disconnect
     [Arguments]    ${id}
     ${result}=  AMQPProxCTL send command  SESSION  ${id}
     ...                                   FORCE_DISCONNECT
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL STAT listen
     [Documentation]  format = (json|human)
@@ -182,41 +182,41 @@ AMQPProxCTL STAT listen
     ${result}=  AMQPProxCTL send command  STAT LISTEN
     ...                                   ${format}
     ...                                   ${filter}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL STAT stop send
     ${result}=  AMQPProxCTL send command STAT STOP SEND
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL STAT send
     [Arguments]    @{arguments}
     ${result}=  AMQPProxCTL send command STAT SEND
     ...                                  @{arguments}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL VHOST pause
     [Arguments]    ${vhost}
     ${result}=  AMQPProxCTL send command  VHOST  PAUSE
     ...                                   ${vhost}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL VHOST unpause
     [Arguments]    ${vhost}
     ${result}=  AMQPProxCTL send command  VHOST  UNPAUSE
     ...                                   ${vhost}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL VHOST backend_disconnect
     [Arguments]    ${vhost}
     ${result}=  AMQPProxCTL send command  VHOST  BACKEND_DISCONNECT
     ...                                   ${vhost}
-    [Return]    ${result}
+    RETURN    ${result}
 
 AMQPProxCTL VHOST force_disconnect
     [Arguments]    ${vhost}
     ${result}=  AMQPProxCTL send command  VHOST  FORCE_DISCONNECT
     ...                                   ${vhost}
-    [Return]    ${result}
+    RETURN    ${result}
 
 
 AMQPProxCTL send command
@@ -227,4 +227,4 @@ AMQPProxCTL send command
     ...                      /tmp/amqpprox
     ...                      @{arguments}
     ...                      shell=yes
-    [Return]    ${result}
+    RETURN    ${result}
