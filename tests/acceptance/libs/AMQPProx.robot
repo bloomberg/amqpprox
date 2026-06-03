@@ -29,6 +29,11 @@ AMQPProx stop
     [Arguments]  ${handle}
     ${result} =  Terminate Process  ${handle}
 
+AMQPProx has log
+    [Arguments]    ${content}
+    ${logContent}=    Run Process  cat /tmp/logs/amqpprox/*  shell=yes
+    Should Contain  ${logContent.stdout}  ${content}
+
 AMQPProx print logs
     [Documentation]     Only for debug purposes
     ${result}=  Run Process  tail -n 120 /tmp/logs/amqpprox/*  shell=yes

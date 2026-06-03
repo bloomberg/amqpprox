@@ -100,6 +100,17 @@ std::ostream &operator<<(std::ostream &os, const ConnectionSummary &cs)
     return cs.print(os);
 }
 
+std::string getConnectionName(const Connector &connector)
+{
+    FieldValue fv('S', std::string());
+    if (connector.getClientProperties().findFieldValue(&fv,
+                                                       "connection_name") &&
+        fv.type() == 'S') {
+        return fv.value<std::string>();
+    }
+    return {};
+}
+
 void logException(const std::string_view error,
                   const SessionState    &sessionState,
                   FlowType               direction)
@@ -368,9 +379,13 @@ void Session::attemptEndpointConnection(
 
             d_clientSocket->setSecure(currentBackend->tlsEnabled());
 
-            LOG_INFO << "Starting "
-                     << (currentBackend->tlsEnabled() ? "secured " : "")
-                     << "connection for: " << d_sessionState;
+            const auto connectionName = getConnectionName(d_connector);
+
+            LOG_INFO << "Starting connection for:"
+                     << " connectionName=\"" << connectionName << "\""
+                     << " tlsEnabled="
+                     << (currentBackend->tlsEnabled() ? "secured" : "insecure")
+                     << " " << d_sessionState;
 
             auto self(shared_from_this());
             auto handshake_cb =
