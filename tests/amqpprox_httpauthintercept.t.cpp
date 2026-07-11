@@ -16,6 +16,9 @@
 
 #include <amqpprox_httpauthintercept.h>
 
+#include <authrequest.pb.h>
+#include <sasl.pb.h>
+
 #include <gmock/gmock.h>
 
 #include <iostream>
@@ -47,4 +50,31 @@ TEST(HttpAuthIntercept, Print)
     EXPECT_EQ(oss.str(),
               "HTTP Auth service will be used to authn/authz client "
               "connections: http://localhost:8080/target\n");
+}
+
+TEST(HttpAuthIntercept, AuthRequestCarriesClientHostnameAndConnectionName)
+{
+    // The client's originating host and AMQP connection name are forwarded to
+    // the auth gate as new proto3 fields. Verify they survive a serialize /
+    // parse round-trip alongside the pre-existing fields.
+    authproto::AuthRequest request;
+    request.set_vhostname("my-vhost");
+    request.set_clienthostname("client-host.example.com");
+    request.set_connectionname("my-connection");
+    authproto::SASL *sasl = request.mutable_authdata();
+    sasl->set_authmechanism("PLAIN");
+    sasl->set_credentials(std::string("\0user\0pass", 10));
+
+    std::string serialized;
+    ASSERT_TRUE(request.SerializeToString(&serialized));
+
+    authproto::AuthRequest parsed;
+    ASSERT_TRUE(parsed.ParseFromString(serialized));
+
+    EXPECT_EQ(parsed.vhostname(), "my-vhost");
+    EXPECT_EQ(parsed.clienthostname(), "client-host.example.com");
+    EXPECT_EQ(parsed.connectionname(), "my-connection");
+    EXPECT_EQ(parsed.authdata().authmechanism(), "PLAIN");
+    EXPECT_EQ(parsed.authdata().credentials(),
+              std::string("\0user\0pass", 10));
 }

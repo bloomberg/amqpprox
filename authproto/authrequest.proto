@@ -23,4 +23,6 @@ package Bloomberg.amqpprox.authproto;
 message AuthRequest {
     string vhostName = 1;
     SASL authData = 2;
+    string clientHostname = 3;
+    string connectionName = 4;
 }
