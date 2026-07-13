@@ -568,6 +568,9 @@ void Session::establishConnection()
     // Initialize auth request data
     authproto::AuthRequest authRequestData;
     authRequestData.set_vhostname(d_sessionState.getVirtualHost());
+    authRequestData.set_clienthostname(
+        d_sessionState.hostname(d_sessionState.getIngress().second));
+    authRequestData.set_connectionname(getConnectionName(d_connector));
     authproto::SASL *saslPtr = authRequestData.mutable_authdata();
     saslPtr->set_authmechanism(sasl.first);
     saslPtr->set_credentials(sasl.second);
