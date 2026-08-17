@@ -62,7 +62,7 @@ bool ResourceMapper::getResourceMap(bool               *isFarm,
         *resourceName = val.second;
         return true;
     }
-    LOG_ERROR << "No mapping available for vhost: " << state.getVirtualHost();
+    LOG_ERROR << "No mapping available for vhost=" << state.getVirtualHost();
     return false;
 }
 
