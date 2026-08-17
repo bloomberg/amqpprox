@@ -15,6 +15,7 @@
 */
 #include <amqpprox_resourcemapper.h>
 
+#include <amqpprox_logging.h>
 #include <amqpprox_sessionstate.h>
 
 #include <map>
@@ -61,6 +62,7 @@ bool ResourceMapper::getResourceMap(bool               *isFarm,
         *resourceName = val.second;
         return true;
     }
+    LOG_ERROR << "No mapping available for vhost: " << state.getVirtualHost();
     return false;
 }
 
