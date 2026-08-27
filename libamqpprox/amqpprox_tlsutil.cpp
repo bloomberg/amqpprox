@@ -82,14 +82,34 @@ void TlsUtil::logTlsConnectionAlert(const SSL *s, int where, int ret)
 bool TlsUtil::logCertVerificationFailure(bool preverified,
                                          boost::asio::ssl::verify_context &ctx)
 {
-    if (!preverified) {
-        char  subject_name[256];
-        X509 *cert = X509_STORE_CTX_get_current_cert(ctx.native_handle());
-        X509_NAME_oneline(X509_get_subject_name(cert), subject_name, 255);
-
-        LOG_ERROR << "Certificate verification failed: [" << subject_name
-                  << "]: ";
+    if (preverified) {
+        return preverified;
     }
+
+    X509_STORE_CTX *storeCtx = ctx.native_handle();
+
+    if (!storeCtx) {
+        LOG_ERROR << "Certificate verification failed: no verification "
+                     "context available";
+        return preverified;
+    }
+
+    const int errorCode  = X509_STORE_CTX_get_error(storeCtx);
+    const int errorDepth = X509_STORE_CTX_get_error_depth(storeCtx);
+
+    X509      *cert    = X509_STORE_CTX_get_current_cert(storeCtx);
+    X509_NAME *subject = cert ? X509_get_subject_name(cert) : nullptr;
+
+    char subjectName[256] = "unavailable";
+
+    if (subject) {
+        X509_NAME_oneline(subject, subjectName, sizeof(subjectName));
+    }
+
+    LOG_ERROR << "Certificate verification failed: subjectName=" << subjectName
+              << " errorCode=" << errorCode
+              << " errorString=" << X509_verify_cert_error_string(errorCode)
+              << " depth=" << errorDepth;
 
     return preverified;
 }
