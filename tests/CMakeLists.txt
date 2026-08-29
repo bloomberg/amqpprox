@@ -41,6 +41,7 @@ add_executable(amqpprox_tests
     amqpprox_sessionstate.t.cpp
     amqpprox_statcollector.t.cpp
     amqpprox_statsnapshot.t.cpp
+    amqpprox_tlsutil.t.cpp
     amqpprox_types.t.cpp
     amqpprox_vhoststate.t.cpp
     )
