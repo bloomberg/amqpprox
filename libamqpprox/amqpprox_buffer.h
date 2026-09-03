@@ -18,6 +18,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <stdexcept>
 
 namespace Bloomberg {
 namespace amqpprox {
@@ -73,6 +74,17 @@ class Buffer {
     }
 
     template <typename T>
+    bool tryCopy(T *out)
+    {
+        if (sizeof(T) > available()) {
+            return false;
+        }
+
+        *out = copy<T>();
+        return true;
+    }
+
+    template <typename T>
     bool writeIn(const T &value)
     {
         if (sizeof(T) > available()) {
@@ -102,8 +114,11 @@ class Buffer {
 
     void skip(const std::size_t size)
     {
+        if (size > available()) {
+            throw std::runtime_error(
+                "Buffer::skip: attempt to move past end of buffer");
+        }
         d_offset += size;
-        assert(d_offset <= d_length);
     }
 
     void seek(std::size_t offset)

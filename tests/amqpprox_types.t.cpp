@@ -481,3 +481,25 @@ TEST(TypesAMQPExceptionals, ShouldConvertUTosForShortInt)
     EXPECT_TRUE(result);
     EXPECT_EQ(decodedField, expected);
 }
+
+TEST(TypesFieldValueDecode, ShouldRejectTruncatedScalarValues)
+{
+    std::vector<uint8_t> backingStore{'T'};
+    Buffer               buffer(backingStore.data(), backingStore.size());
+
+    FieldValue decodedField('V', false);
+    bool       result = Types::decodeFieldValue(&decodedField, buffer);
+
+    EXPECT_FALSE(result);
+}
+
+TEST(TypesFieldTableDecode, ShouldRejectFieldTableWithTruncatedScalarValue)
+{
+    std::vector<uint8_t> backingStore{0, 0, 0, 2, 0, 'T'};
+    Buffer               buffer(backingStore.data(), backingStore.size());
+
+    FieldTable table;
+    bool       result = Types::decodeFieldTable(&table, buffer);
+
+    EXPECT_FALSE(result);
+}
