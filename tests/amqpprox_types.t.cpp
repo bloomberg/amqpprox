@@ -23,6 +23,9 @@
 
 #include <gtest/gtest.h>
 
+#include <cstddef>
+#include <ostream>
+
 using Bloomberg::amqpprox::Buffer;
 using Bloomberg::amqpprox::FieldTable;
 using Bloomberg::amqpprox::FieldValue;
@@ -482,24 +485,99 @@ TEST(TypesAMQPExceptionals, ShouldConvertUTosForShortInt)
     EXPECT_EQ(decodedField, expected);
 }
 
-TEST(TypesFieldValueDecode, ShouldRejectTruncatedScalarValues)
+// TRUNCATED SCALAR FIELD VALUES
+//
+// A peer can declare a scalar type and then not supply its octets; decoding
+// must reject that rather than read past the end.
+
+struct ScalarFieldType {
+    char        d_type;
+    std::size_t d_valueOctets;
+};
+
+std::ostream &operator<<(std::ostream &os, const ScalarFieldType &scalarType)
 {
-    std::vector<uint8_t> backingStore{'T'};
-    Buffer               buffer(backingStore.data(), backingStore.size());
-
-    FieldValue decodedField('V', false);
-    bool       result = Types::decodeFieldValue(&decodedField, buffer);
-
-    EXPECT_FALSE(result);
+    return os << "type '" << scalarType.d_type << "' of "
+              << scalarType.d_valueOctets << " octets";
 }
 
-TEST(TypesFieldTableDecode, ShouldRejectFieldTableWithTruncatedScalarValue)
+class TypesTruncatedScalar : public ::testing::TestWithParam<ScalarFieldType> {
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    AllScalarFieldTypes,
+    TypesTruncatedScalar,
+    ::testing::Values(ScalarFieldType{'t', 1},    // boolean
+                      ScalarFieldType{'b', 1},    // short-short-int
+                      ScalarFieldType{'B', 1},    // short-short-uint
+                      ScalarFieldType{'s', 2},    // short-int
+                      ScalarFieldType{'u', 2},    // short-uint
+                      ScalarFieldType{'U', 2},    // decoded as short-int
+                      ScalarFieldType{'I', 4},    // long-int
+                      ScalarFieldType{'i', 4},    // long-uint
+                      ScalarFieldType{'l', 8},    // long-long-int
+                      ScalarFieldType{'L', 8},    // compat long-long-int
+                      ScalarFieldType{'T', 8},    // timestamp
+                      ScalarFieldType{'f', 4},    // float
+                      ScalarFieldType{'d', 8},    // double
+                      ScalarFieldType{'D', 5}));  // decimal-value
+
+TEST_P(TypesTruncatedScalar, ShouldRejectValueTruncatedAtAnyLength)
 {
-    std::vector<uint8_t> backingStore{0, 0, 0, 2, 0, 'T'};
-    Buffer               buffer(backingStore.data(), backingStore.size());
+    const ScalarFieldType scalarType = GetParam();
 
-    FieldTable table;
-    bool       result = Types::decodeFieldTable(&table, buffer);
+    for (std::size_t present = 0; present < scalarType.d_valueOctets;
+         ++present) {
+        std::vector<uint8_t> backingStore(1 + present, 0);
+        backingStore[0] = static_cast<uint8_t>(scalarType.d_type);
 
-    EXPECT_FALSE(result);
+        Buffer buffer(backingStore.data(), backingStore.size());
+
+        FieldValue decodedField('V', false);
+        EXPECT_FALSE(Types::decodeFieldValue(&decodedField, buffer))
+            << "accepted " << scalarType << " with only " << present
+            << " value octets present";
+    }
+}
+
+// Guards the test above from passing vacuously on an unrecognised type byte.
+TEST_P(TypesTruncatedScalar, ShouldAcceptValueWithAllOctetsPresent)
+{
+    const ScalarFieldType scalarType = GetParam();
+
+    std::vector<uint8_t> backingStore(1 + scalarType.d_valueOctets, 0);
+    backingStore[0] = static_cast<uint8_t>(scalarType.d_type);
+
+    Buffer buffer(backingStore.data(), backingStore.size());
+
+    FieldValue decodedField('V', false);
+    EXPECT_TRUE(Types::decodeFieldValue(&decodedField, buffer))
+        << "rejected a complete " << scalarType;
+    EXPECT_EQ(buffer.available(), 0);
+}
+
+// The reported shape: the table length matches the octets supplied, so the
+// table is well formed and only the value inside it is short.
+TEST_P(TypesTruncatedScalar, ShouldRejectValueTruncatedInsideFieldTable)
+{
+    const ScalarFieldType scalarType = GetParam();
+
+    for (std::size_t present = 0; present < scalarType.d_valueOctets;
+         ++present) {
+        // Empty field name, type byte, then a value cut short.
+        boost::endian::big_uint32_t tableLength = 2 + present;
+
+        std::vector<uint8_t> backingStore(sizeof(tableLength));
+        memcpy(backingStore.data(), &tableLength, sizeof(tableLength));
+        backingStore.push_back(0x00);
+        backingStore.push_back(static_cast<uint8_t>(scalarType.d_type));
+        backingStore.resize(backingStore.size() + present, 0);
+
+        Buffer buffer(backingStore.data(), backingStore.size());
+
+        FieldTable table;
+        EXPECT_FALSE(Types::decodeFieldTable(&table, buffer))
+            << "accepted " << scalarType << " with only " << present
+            << " value octets present inside a field table";
+    }
 }

@@ -64,9 +64,26 @@ class Buffer {
         return b;
     }
 
+    /**
+     * \brief Read a `T` from the current offset and advance past it
+     * \throws std::runtime_error if fewer than `sizeof(T)` bytes remain
+     *
+     * Defensive only: decoders should use `tryCopy`, which reports truncation
+     * by return value. This check exists so that a caller using neither
+     * `tryCopy` nor its own `available()` test still cannot read past the end.
+     *
+     * Safe if it does fire: every caller is a decoder running under
+     * `Session::handleData`, which catches this and disconnects that one
+     * session.
+     */
     template <typename T>
     T copy()
     {
+        if (sizeof(T) > available()) {
+            throw std::runtime_error(
+                "Buffer::copy: attempt to read past end of buffer");
+        }
+
         T val;
         memcpy(&val, ptr(), sizeof(T));
         skip(sizeof(T));
@@ -114,6 +131,11 @@ class Buffer {
 
     void skip(const std::size_t size)
     {
+        // Safe as the code stands: throws reach `Session::handleData`, which
+        // drops that one connection.
+        //
+        // Do not encode a field table outside `handleData` - a throw there
+        // unwinds into `Server::run` and closes every session on the proxy.
         if (size > available()) {
             throw std::runtime_error(
                 "Buffer::skip: attempt to move past end of buffer");
