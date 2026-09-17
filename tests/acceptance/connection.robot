@@ -148,3 +148,14 @@ Starting connection log contains connection name and TLS status
 
     Wait Until Keyword Succeeds  10s  1s
     ...    AMQPProx has log  Starting connection for: connectionName="my-test-app" tlsEnabled=insecure
+
+No mapping log contains vhost and ingress remote
+    Log  "Starting AMQPClient for an unmapped vhost"  console=yes
+    Start AMQPClient  name=connection  vhost=/unmapped-vhost
+
+    Wait Until Keyword Succeeds  10s  1s
+    ...    AMQPProx has log  No mapping available for vhost=/unmapped-vhost ingressRemote=127.0.0.1:
+
+    Wait Until Keyword Succeeds  10s  1s
+    ...    AMQPClient has log  name=connection
+    ...    content=No known broker mapping for vhost /unmapped-vhost

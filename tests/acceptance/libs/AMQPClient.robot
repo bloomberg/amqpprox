@@ -18,10 +18,12 @@ Library         Process
 
 *** Keywords ***
 Start AMQPClient
-    [Arguments]    ${name}
+    [Documentation]  vhost defaults to / when not supplied
+    [Arguments]    ${name}  ${vhost}=${EMPTY}
     ${ACCEPTANCE_PATH}=  Get Environment Variable   ACCEPTANCE_PATH
     ${result}=  Start Process  python3
     ...                        ${ACCEPTANCE_PATH}/libs/amqp_client/${name}.py
+    ...                        ${vhost}
     ...                        stdout=/tmp/logs/amqp_client_${name}.log
     ...                        stderr=/tmp/logs/amqp_client_${name}.log
 
