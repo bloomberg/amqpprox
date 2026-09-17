@@ -13,10 +13,12 @@
 # limitations under the License.
 
 """ An executable module which automatically establishes connection with
-    an amqpprox on localhost:5555.
+    an amqpprox on localhost:5555. The virtual host to connect to can be
+    passed as the first argument, and defaults to /.
 """
 
 import logging
+import sys
 from amqp import Connection
 
 LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName)'
@@ -28,9 +30,10 @@ class AMQPClientConnection(object):
     """ Class responsible for establishing AMQP connection and dumping
         everything received into the logger.
     """
-    def __init__(self, host):
-        LOGGER.info("creating connection")
+    def __init__(self, host, virtual_host):
+        LOGGER.info("creating connection for vhost {}".format(virtual_host))
         self.connection = Connection(host=host,
+                                     virtual_host=virtual_host,
                                      heartbeat=4,
                                      on_open=self.on_open,
                                      on_blocked=self.on_blocked,
@@ -41,11 +44,12 @@ class AMQPClientConnection(object):
         """Responsible for establishing a connection"""
 
         LOGGER.info("calling connect")
-        self.connection.connect()
-        LOGGER.info("connect called")
         try:
             # An exception is expected to raise when receiving close
-            # from server
+            # from server, either during the handshake, for example when
+            # the vhost has no mapping, or once connected
+            self.connection.connect()
+            LOGGER.info("connect called")
             while self.connection.connected:
                 LOGGER.info("{}".format(self.connection.blocking_read()))
         except Exception as error:
@@ -69,7 +73,8 @@ def main():
     """ Main entry point """
 
     logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
-    example = AMQPClientConnection('localhost:5555')
+    virtual_host = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else '/'
+    example = AMQPClientConnection('localhost:5555', virtual_host)
     try:
         example.run()
     except KeyboardInterrupt:

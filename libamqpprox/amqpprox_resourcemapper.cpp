@@ -62,7 +62,9 @@ bool ResourceMapper::getResourceMap(bool               *isFarm,
         *resourceName = val.second;
         return true;
     }
-    LOG_ERROR << "No mapping available for vhost=" << state.getVirtualHost();
+    LOG_ERROR << "No mapping available for vhost=" << state.getVirtualHost()
+              << " ingressRemote=" << state.hostname(state.getIngress().second)
+              << ":" << state.getIngress().second.port();
     return false;
 }
 
