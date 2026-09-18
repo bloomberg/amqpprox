@@ -17,6 +17,10 @@
 
 #include <gtest/gtest.h>
 
+#include <cstdint>
+#include <stdexcept>
+#include <string>
+
 using Bloomberg::amqpprox::Buffer;
 
 TEST(Buffer, Breathing)
@@ -35,6 +39,51 @@ TEST(Buffer, CopyByte)
     EXPECT_EQ(first, 'H');
     b.skip(3);
     EXPECT_EQ('O', b.copy<char>());
+    EXPECT_EQ(b.available(), 1);
+}
+
+TEST(Buffer, CopyThrowsRatherThanReadingPastEnd)
+{
+    constexpr static const char buf[] = "HELLO";
+    Buffer                      b(buf, 6);
+    b.skip(4);
+
+    ASSERT_EQ(b.available(), 2);
+
+    try {
+        b.copy<uint64_t>();
+        FAIL() << "copy did not throw";
+    }
+    catch (const std::runtime_error &e) {
+        // Must be copy's own bound - had `skip` rejected it, the read would
+        // already have happened.
+        EXPECT_NE(std::string(e.what()).find("Buffer::copy"),
+                  std::string::npos)
+            << "rejected by something other than copy's own bound: "
+            << e.what();
+    }
+}
+
+TEST(Buffer, SkipThrowsRatherThanMovingPastEnd)
+{
+    constexpr static const char buf[] = "HELLO";
+    Buffer                      b(buf, 6);
+
+    EXPECT_THROW(b.skip(7), std::runtime_error);
+}
+
+TEST(Buffer, TryCopyReportsShortBufferWithoutThrowing)
+{
+    constexpr static const char buf[] = "HELLO";
+    Buffer                      b(buf, 6);
+    b.skip(4);
+
+    uint64_t tooLarge = 0;
+    EXPECT_FALSE(b.tryCopy(&tooLarge));
+    EXPECT_EQ(b.available(), 2);  // a failed read must not consume anything
+
+    uint8_t fits = 0;
+    EXPECT_TRUE(b.tryCopy(&fits));
     EXPECT_EQ(b.available(), 1);
 }
 
