@@ -24,7 +24,9 @@
 #include <gtest/gtest.h>
 
 #include <cstddef>
+#include <memory>
 #include <ostream>
+#include <stdexcept>
 
 using Bloomberg::amqpprox::Buffer;
 using Bloomberg::amqpprox::FieldTable;
@@ -580,4 +582,151 @@ TEST_P(TypesTruncatedScalar, ShouldRejectValueTruncatedInsideFieldTable)
             << "accepted " << scalarType << " with only " << present
             << " value octets present inside a field table";
     }
+}
+
+// Field arrays reach decodeFieldValue by a different route to field tables, so
+// the table case above does not cover them.
+TEST_P(TypesTruncatedScalar, ShouldRejectValueTruncatedInsideFieldArray)
+{
+    const ScalarFieldType scalarType = GetParam();
+
+    for (std::size_t present = 0; present < scalarType.d_valueOctets;
+         ++present) {
+        // Type byte then a value cut short - arrays carry no field names.
+        boost::endian::big_uint32_t arrayLength = 1 + present;
+
+        std::vector<uint8_t> backingStore(sizeof(arrayLength));
+        memcpy(backingStore.data(), &arrayLength, sizeof(arrayLength));
+        backingStore.push_back(static_cast<uint8_t>(scalarType.d_type));
+        backingStore.resize(backingStore.size() + present, 0);
+
+        Buffer buffer(backingStore.data(), backingStore.size());
+
+        std::vector<FieldValue> values;
+        EXPECT_FALSE(Types::decodeFieldArray(&values, buffer))
+            << "accepted " << scalarType << " with only " << present
+            << " value octets present inside a field array";
+    }
+}
+
+// ENCODING INTO AN UNDERSIZED BUFFER
+//
+// encodeFieldTable and encodeFieldArray reserve the four-octet length prefix
+// with an unchecked `skip`. Before this change that silently pushed the offset
+// past the end, and because `available()` is unsigned it then underflowed, so
+// `writeIn`'s own bounds check passed and memcpy wrote off the end of the
+// output buffer. These cases are heap-sized exactly so a sanitizer build
+// catches any write past the end.
+
+TEST(TypesEncodingBounds, ShouldNotWritePastEndOfUndersizedFieldTableBuffer)
+{
+    FieldTable table;
+    table.pushField("k", FieldValue('t', true));
+
+    for (std::size_t outputOctets = 0;
+         outputOctets < sizeof(boost::endian::big_uint32_t);
+         ++outputOctets) {
+        // Sized exactly, and heap allocated rather than a vector, so that a
+        // zero-octet buffer is still a real allocation a sanitizer can put a
+        // redzone around instead of a null pointer.
+        std::unique_ptr<uint8_t[]> backingStore(new uint8_t[outputOctets]);
+        Buffer buffer(backingStore.get(), outputOctets);
+
+        bool encoded = true;
+        try {
+            encoded = Types::encodeFieldTable(buffer, table);
+        }
+        // Deliberately narrow: Session::handleData catches std::runtime_error,
+        // not std::exception, so anything outside that hierarchy escapes to
+        // Server::run and strands every session on the proxy. Letting such an
+        // exception propagate out of this test is the intended failure.
+        catch (const std::runtime_error &) {
+            encoded = false;
+        }
+
+        EXPECT_FALSE(encoded)
+            << "claimed to encode a field table into " << outputOctets
+            << " octets";
+    }
+}
+
+TEST(TypesEncodingBounds, ShouldNotWritePastEndOfUndersizedFieldArrayBuffer)
+{
+    std::vector<FieldValue> values;
+    values.push_back(FieldValue('t', true));
+
+    for (std::size_t outputOctets = 0;
+         outputOctets < sizeof(boost::endian::big_uint32_t);
+         ++outputOctets) {
+        std::unique_ptr<uint8_t[]> backingStore(new uint8_t[outputOctets]);
+        Buffer buffer(backingStore.get(), outputOctets);
+
+        bool encoded = true;
+        try {
+            encoded = Types::encodeFieldArray(buffer, values);
+        }
+        catch (const std::runtime_error &) {
+            encoded = false;
+        }
+
+        EXPECT_FALSE(encoded)
+            << "claimed to encode a field array into " << outputOctets
+            << " octets";
+    }
+}
+
+// NESTING DEPTH
+//
+// decodeFieldTable -> decodeFieldValue -> decodeFieldTable recurses once per
+// nesting level at a cost of only six octets of input per level, so a single
+// maximum-sized frame can demand tens of thousands of stack frames. Stack
+// exhaustion cannot be caught, so it cannot be contained by handleData the way
+// a truncated value can.
+
+namespace {
+
+// [length][empty field name][type 'F'] repeated, innermost an empty table.
+// Each level costs six octets; the whole encoding is 6 * depth + 4.
+std::vector<uint8_t> makeNestedFieldTable(std::size_t depth)
+{
+    std::vector<uint8_t> encoded;
+    encoded.reserve(6 * depth + sizeof(boost::endian::big_uint32_t));
+
+    for (std::size_t level = depth; level > 0; --level) {
+        boost::endian::big_uint32_t length = 6 * level;
+        const uint8_t              *lengthBytes =
+            reinterpret_cast<const uint8_t *>(&length);
+        encoded.insert(encoded.end(), lengthBytes, lengthBytes + sizeof(length));
+        encoded.push_back(0x00);  // zero-length field name
+        encoded.push_back('F');   // value is a nested field table
+    }
+
+    boost::endian::big_uint32_t innermost = 0;
+    const uint8_t              *innermostBytes =
+        reinterpret_cast<const uint8_t *>(&innermost);
+    encoded.insert(
+        encoded.end(), innermostBytes, innermostBytes + sizeof(innermost));
+
+    return encoded;
+}
+
+}
+
+TEST(TypesNesting, ShouldSurviveMaximallyNestedFieldTableInOneFrame)
+{
+    // Frame::maxFrameSize is 150000, so this is the deepest nesting a single
+    // frame can carry.
+    const std::size_t maxFrameOctets = 150000;
+    const std::size_t depth =
+        (maxFrameOctets - sizeof(boost::endian::big_uint32_t)) / 6;
+
+    std::vector<uint8_t> encoded = makeNestedFieldTable(depth);
+    ASSERT_LE(encoded.size(), maxFrameOctets);
+
+    Buffer     buffer(encoded.data(), encoded.size());
+    FieldTable table;
+
+    // Whether it accepts or rejects is not the point - it must not crash, and
+    // it must not crash unwinding either.
+    Types::decodeFieldTable(&table, buffer);
 }

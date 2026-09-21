@@ -140,3 +140,39 @@ ownership of a buffer either from the pool or the free store. The
 and is used as a slice of memory. The use of these Buffer is to avoid memory
 allocations and buffer copying on the main path passing buffers through the
 proxy.
+
+### Buffer Bounds and the Exception Contract
+
+`Buffer` bounds violations are enforced at runtime, not by `assert`. Release
+builds define `NDEBUG`, so an assertion here would provide no protection in a
+shipped binary; and because `available()` is `d_length - d_offset` computed in
+`std::size_t`, an offset that moves past the end does not fail loudly — it
+underflows to an enormous value, after which every downstream
+`x > buffer.available()` guard silently passes. `Buffer::copy` and `Buffer::skip`
+therefore throw rather than allow the offset to exceed the length.
+
+Two rules follow, and both matter when adding code:
+
+1. **Throw `std::runtime_error`, not some other exception type.**
+   [`Session::handleData`](../libamqpprox/amqpprox_session.cpp) catches
+   `CloseError` and `std::runtime_error` specifically, and responds by
+   disconnecting that one session. It does not catch `std::exception`. A bounds
+   violation that throws `std::out_of_range`, `std::logic_error` or
+   `std::bad_alloc` is *not* caught there — it unwinds into
+   [`Server::run`](../libamqpprox/amqpprox_server.cpp), which closes the
+   listening sockets and returns, stranding every live session on the proxy.
+   The blast radius of the exception type is the difference between one dropped
+   connection and a total outage.
+
+2. **Decoders should prefer `tryCopy` to `copy`.** `Buffer::tryCopy<T>` reports
+   truncation by return value and consumes nothing on failure, which lets a
+   decoder reject a malformed frame as a normal `false` return. `Buffer::copy`'s
+   throw is a backstop for a caller that checks neither `tryCopy` nor
+   `available()` itself, not the intended error path.
+
+Note that not every `Buffer` write path runs inside `handleData`'s try block.
+`Session::handleSessionError`, the posted authentication callback, the
+connection rate-limit timer and the TLS handshake callback all reach
+`sendSyntheticData` from their own ASIO handlers. Any new bounds check on a
+write path used by those callers needs its own handling, or it becomes a
+proxy-wide failure rather than a session-level one.
