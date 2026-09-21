@@ -129,7 +129,9 @@ bool Types::encodeByteVector(Buffer                     &buffer,
     return true;
 }
 
-bool Types::decodeFieldValue(FieldValue *outValue, Buffer &buffer)
+bool Types::decodeFieldValue(FieldValue *outValue,
+                             Buffer     &buffer,
+                             std::size_t depth)
 {
     assert(outValue != nullptr);
 
@@ -245,7 +247,7 @@ bool Types::decodeFieldValue(FieldValue *outValue, Buffer &buffer)
     case 'A':  // field-array
     {
         std::vector<FieldValue> val;
-        if (!decodeFieldArray(&val, buffer)) {
+        if (!decodeFieldArray(&val, buffer, depth + 1)) {
             return false;
         }
         FieldValue value(type, val);
@@ -262,7 +264,7 @@ bool Types::decodeFieldValue(FieldValue *outValue, Buffer &buffer)
     case 'F':  // field-table
     {
         auto sp = std::make_shared<FieldTable>();
-        if (!decodeFieldTable(sp.get(), buffer)) {
+        if (!decodeFieldTable(sp.get(), buffer, depth + 1)) {
             return false;
         }
         FieldValue value(type, sp);
@@ -420,9 +422,15 @@ bool Types::encodeFieldValue(Buffer &buffer, const FieldValue &fv)
     return true;
 }
 
-bool Types::decodeFieldArray(std::vector<FieldValue> *vector, Buffer &buffer)
+bool Types::decodeFieldArray(std::vector<FieldValue> *vector,
+                             Buffer                  &buffer,
+                             std::size_t              depth)
 {
     assert(vector != nullptr);
+
+    if (depth > Constants::maxFieldTableNestingDepth()) {
+        return false;
+    }
 
     big_uint32_t arrayLength;
     if (!buffer.tryCopy(&arrayLength)) {
@@ -435,7 +443,7 @@ bool Types::decodeFieldArray(std::vector<FieldValue> *vector, Buffer &buffer)
     auto arrayBuffer = buffer.consume(arrayLength);
     while (arrayBuffer.available() > 0) {
         FieldValue value('V', false);
-        if (!decodeFieldValue(&value, arrayBuffer)) {
+        if (!decodeFieldValue(&value, arrayBuffer, depth)) {
             return false;
         }
 
@@ -466,8 +474,14 @@ bool Types::encodeFieldArray(Buffer                        &buffer,
     return true;
 }
 
-bool Types::decodeFieldTable(FieldTable *table, Buffer &buffer)
+bool Types::decodeFieldTable(FieldTable *table,
+                             Buffer     &buffer,
+                             std::size_t depth)
 {
+    if (depth > Constants::maxFieldTableNestingDepth()) {
+        return false;
+    }
+
     big_uint32_t fieldTableLength;
     if (!buffer.tryCopy(&fieldTableLength)) {
         return false;
@@ -484,7 +498,7 @@ bool Types::decodeFieldTable(FieldTable *table, Buffer &buffer)
         }
 
         FieldValue value('V', false);
-        if (!decodeFieldValue(&value, tBuffer)) {
+        if (!decodeFieldValue(&value, tBuffer, depth)) {
             return false;
         }
 

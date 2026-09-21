@@ -99,6 +99,22 @@ class Constants {
     }
 
     static constexpr std::size_t shortStringLimit() { return 255; }
+
+    /**
+     * \brief Deepest field table or field array nesting the decoder will
+     * accept
+     *
+     * A nested field table costs only six octets per level, so one
+     * maximum-sized frame can otherwise drive tens of thousands of levels of
+     * recursion through `Types::decodeFieldTable` and exhaust the stack. That
+     * is not containable: `Session::handleData` can catch an exception and
+     * drop the one session, but it cannot catch stack exhaustion.
+     *
+     * Real client properties nest one or two levels - a `capabilities` table
+     * inside the client-properties table - so this is far above anything
+     * legitimate traffic produces.
+     */
+    static constexpr std::size_t maxFieldTableNestingDepth() { return 32; }
 };
 
 }

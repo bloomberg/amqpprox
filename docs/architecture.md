@@ -170,6 +170,23 @@ Two rules follow, and both matter when adding code:
    throw is a backstop for a caller that checks neither `tryCopy` nor
    `available()` itself, not the intended error path.
 
+### Field Table Nesting Depth
+
+Field tables and field arrays nest, and the decoder walks them recursively:
+`decodeFieldTable` -> `decodeFieldValue` -> `decodeFieldTable`. A nested table
+costs six octets of input per level - a length prefix, an empty field name and
+a type octet - so a single maximum-sized frame can demand roughly 25,000 levels
+of recursion and exhaust the stack.
+
+That failure is not containable. The exception contract above works because
+`Session::handleData` can catch and drop one session, but stack exhaustion
+raises no exception. So the decoder bounds nesting itself, at
+`Constants::maxFieldTableNestingDepth`, and rejects anything deeper as a normal
+`false` return. Real client properties nest one or two levels, so the limit is
+far above legitimate traffic. The `depth` parameter on `decodeFieldValue`,
+`decodeFieldArray` and `decodeFieldTable` carries the count; callers outside the
+decoder should leave it at its default.
+
 Note that not every `Buffer` write path runs inside `handleData`'s try block.
 `Session::handleSessionError`, the posted authentication callback, the
 connection rate-limit timer and the TLS handshake callback all reach

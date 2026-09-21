@@ -16,6 +16,7 @@
 #include <amqpprox_types.h>
 
 #include <amqpprox_buffer.h>
+#include <amqpprox_constants.h>
 #include <amqpprox_fieldtable.h>
 #include <amqpprox_fieldvalue.h>
 
@@ -29,6 +30,7 @@
 #include <stdexcept>
 
 using Bloomberg::amqpprox::Buffer;
+using Bloomberg::amqpprox::Constants;
 using Bloomberg::amqpprox::FieldTable;
 using Bloomberg::amqpprox::FieldValue;
 using Bloomberg::amqpprox::Types;
@@ -630,7 +632,7 @@ TEST(TypesEncodingBounds, ShouldNotWritePastEndOfUndersizedFieldTableBuffer)
         // zero-octet buffer is still a real allocation a sanitizer can put a
         // redzone around instead of a null pointer.
         std::unique_ptr<uint8_t[]> backingStore(new uint8_t[outputOctets]);
-        Buffer buffer(backingStore.get(), outputOctets);
+        Buffer                     buffer(backingStore.get(), outputOctets);
 
         bool encoded = true;
         try {
@@ -644,9 +646,8 @@ TEST(TypesEncodingBounds, ShouldNotWritePastEndOfUndersizedFieldTableBuffer)
             encoded = false;
         }
 
-        EXPECT_FALSE(encoded)
-            << "claimed to encode a field table into " << outputOctets
-            << " octets";
+        EXPECT_FALSE(encoded) << "claimed to encode a field table into "
+                              << outputOctets << " octets";
     }
 }
 
@@ -659,7 +660,7 @@ TEST(TypesEncodingBounds, ShouldNotWritePastEndOfUndersizedFieldArrayBuffer)
          outputOctets < sizeof(boost::endian::big_uint32_t);
          ++outputOctets) {
         std::unique_ptr<uint8_t[]> backingStore(new uint8_t[outputOctets]);
-        Buffer buffer(backingStore.get(), outputOctets);
+        Buffer                     buffer(backingStore.get(), outputOctets);
 
         bool encoded = true;
         try {
@@ -669,9 +670,8 @@ TEST(TypesEncodingBounds, ShouldNotWritePastEndOfUndersizedFieldArrayBuffer)
             encoded = false;
         }
 
-        EXPECT_FALSE(encoded)
-            << "claimed to encode a field array into " << outputOctets
-            << " octets";
+        EXPECT_FALSE(encoded) << "claimed to encode a field array into "
+                              << outputOctets << " octets";
     }
 }
 
@@ -696,7 +696,8 @@ std::vector<uint8_t> makeNestedFieldTable(std::size_t depth)
         boost::endian::big_uint32_t length = 6 * level;
         const uint8_t              *lengthBytes =
             reinterpret_cast<const uint8_t *>(&length);
-        encoded.insert(encoded.end(), lengthBytes, lengthBytes + sizeof(length));
+        encoded.insert(
+            encoded.end(), lengthBytes, lengthBytes + sizeof(length));
         encoded.push_back(0x00);  // zero-length field name
         encoded.push_back('F');   // value is a nested field table
     }
@@ -715,7 +716,9 @@ std::vector<uint8_t> makeNestedFieldTable(std::size_t depth)
 TEST(TypesNesting, ShouldSurviveMaximallyNestedFieldTableInOneFrame)
 {
     // Frame::maxFrameSize is 150000, so this is the deepest nesting a single
-    // frame can carry.
+    // frame can carry. Without a depth limit this segfaults on an ordinary
+    // 8MB stack - verified without sanitizers, so it is not an instrumentation
+    // artifact.
     const std::size_t maxFrameOctets = 150000;
     const std::size_t depth =
         (maxFrameOctets - sizeof(boost::endian::big_uint32_t)) / 6;
@@ -726,7 +729,35 @@ TEST(TypesNesting, ShouldSurviveMaximallyNestedFieldTableInOneFrame)
     Buffer     buffer(encoded.data(), encoded.size());
     FieldTable table;
 
-    // Whether it accepts or rejects is not the point - it must not crash, and
-    // it must not crash unwinding either.
-    Types::decodeFieldTable(&table, buffer);
+    EXPECT_FALSE(Types::decodeFieldTable(&table, buffer))
+        << "accepted " << depth << " levels of nesting";
+}
+
+TEST(TypesNesting, ShouldAcceptNestingUpToTheDepthLimit)
+{
+    // Guards the limit from being tightened to the point where it would start
+    // rejecting real client properties, which nest a capabilities table one
+    // level inside the client-properties table.
+    const std::size_t depth = Constants::maxFieldTableNestingDepth();
+
+    std::vector<uint8_t> encoded = makeNestedFieldTable(depth);
+
+    Buffer     buffer(encoded.data(), encoded.size());
+    FieldTable table;
+
+    EXPECT_TRUE(Types::decodeFieldTable(&table, buffer))
+        << "rejected " << depth << " levels, which is within the limit";
+}
+
+TEST(TypesNesting, ShouldRejectNestingPastTheDepthLimit)
+{
+    const std::size_t depth = Constants::maxFieldTableNestingDepth() + 1;
+
+    std::vector<uint8_t> encoded = makeNestedFieldTable(depth);
+
+    Buffer     buffer(encoded.data(), encoded.size());
+    FieldTable table;
+
+    EXPECT_FALSE(Types::decodeFieldTable(&table, buffer))
+        << "accepted " << depth << " levels, which is past the limit";
 }
