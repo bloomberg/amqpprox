@@ -113,6 +113,15 @@ class Constants {
      * Real client properties nest one or two levels - a `capabilities` table
      * inside the client-properties table - so this is far above anything
      * legitimate traffic produces.
+     *
+     * Precisely: the outermost container decodes at depth zero and a container
+     * is rejected when its depth exceeds this value, so the limit admits this
+     * many *nested* containers inside an outermost one. Do not "correct" the
+     * comparison to `>=` on the assumption it is off by one.
+     *
+     * This bounds recursion depth only. It does not bound how many fields a
+     * table may hold, so a maximum-sized frame can still decode into a large
+     * number of shallow fields; see docs/architecture.md.
      */
     static constexpr std::size_t maxFieldTableNestingDepth() { return 32; }
 };

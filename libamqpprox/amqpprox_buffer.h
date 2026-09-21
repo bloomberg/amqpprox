@@ -131,11 +131,16 @@ class Buffer {
 
     void skip(const std::size_t size)
     {
-        // Safe as the code stands: throws reach `Session::handleData`, which
-        // drops that one connection.
+        // Throws rather than corrupting the offset. An assert would be no
+        // protection here: release builds define NDEBUG, and `available()` is
+        // unsigned, so an offset past the end underflows to a huge value and
+        // every later bounds check silently passes.
         //
-        // Do not encode a field table outside `handleData` - a throw there
-        // unwinds into `Server::run` and closes every session on the proxy.
+        // A function that documents a bool failure return must therefore check
+        // `available()` itself rather than letting this fire - see
+        // `Types::encodeFieldTable`. Throwing out of such a function would
+        // surprise its callers, and the ones reached from ASIO handlers
+        // outside `Session::handleData`'s try block have no handler at all.
         if (size > available()) {
             throw std::runtime_error(
                 "Buffer::skip: attempt to move past end of buffer");

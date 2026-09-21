@@ -143,13 +143,19 @@ proxy.
 
 ### Buffer Bounds and the Exception Contract
 
-`Buffer` bounds violations are enforced at runtime, not by `assert`. Release
-builds define `NDEBUG`, so an assertion here would provide no protection in a
-shipped binary; and because `available()` is `d_length - d_offset` computed in
-`std::size_t`, an offset that moves past the end does not fail loudly — it
-underflows to an enormous value, after which every downstream
-`x > buffer.available()` guard silently passes. `Buffer::copy` and `Buffer::skip`
+`Buffer::copy` and `Buffer::skip` enforce their bounds at runtime rather than
+with `assert`. Release builds define `NDEBUG`, so an assertion there would
+provide no protection in a shipped binary; and because `available()` is
+`d_length - d_offset` computed in `std::size_t`, an offset that moves past the
+end does not fail loudly — it underflows to an enormous value, after which
+every downstream `x > buffer.available()` guard silently passes. Those two
 therefore throw rather than allow the offset to exceed the length.
+
+`Buffer::seek` is the exception: it still only asserts, so it can put the
+offset past the end in a release build and produce exactly that underflow. Its
+callers pass values they already know to be in range — `Session::readBuffer`
+passes a watermark — so this is a latent sharp edge rather than a live bug, but
+it is worth knowing about before adding a new `seek` call site.
 
 Two rules follow, and both matter when adding code:
 
@@ -183,9 +189,17 @@ That failure is not containable. The exception contract above works because
 raises no exception. So the decoder bounds nesting itself, at
 `Constants::maxFieldTableNestingDepth`, and rejects anything deeper as a normal
 `false` return. Real client properties nest one or two levels, so the limit is
-far above legitimate traffic. The `depth` parameter on `decodeFieldValue`,
-`decodeFieldArray` and `decodeFieldTable` carries the count; callers outside the
-decoder should leave it at its default.
+far above legitimate traffic. The count is carried by private
+`decodeField*Impl` overloads rather than by the public entry points, so no
+caller can supply a depth of its own.
+
+This bounds recursion **depth only**, and that is the whole of what it fixes.
+It does not bound the *width* of a table: the cheapest possible field is two
+octets - an empty name and a `'V'` no-value type - so a maximum-sized frame
+still decodes into tens of thousands of `std::pair<std::string, FieldValue>`
+entries, which is a substantial heap amplification from a small pre-auth input.
+Bounding that would need a separate field-count limit and is not attempted
+here.
 
 Note that not every `Buffer` write path runs inside `handleData`'s try block.
 `Session::handleSessionError`, the posted authentication callback, the
