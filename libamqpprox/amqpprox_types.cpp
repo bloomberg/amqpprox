@@ -43,11 +43,11 @@ template <typename T>
 bool decodeString(std::string *string, Buffer &buffer)
 {
     assert(string != nullptr);
-    if (buffer.available() < sizeof(T)) {
+
+    T stringLength;
+    if (!buffer.tryCopy(&stringLength)) {
         return false;
     }
-
-    auto stringLength = buffer.copy<T>();
 
     if (stringLength > buffer.available()) {
         return false;
@@ -131,53 +131,97 @@ bool Types::encodeByteVector(Buffer                     &buffer,
 
 bool Types::decodeFieldValue(FieldValue *outValue, Buffer &buffer)
 {
+    return decodeFieldValueImpl(outValue, buffer, 0);
+}
+
+bool Types::decodeFieldArray(std::vector<FieldValue> *vector, Buffer &buffer)
+{
+    return decodeFieldArrayImpl(vector, buffer, 0);
+}
+
+bool Types::decodeFieldTable(FieldTable *table, Buffer &buffer)
+{
+    return decodeFieldTableImpl(table, buffer, 0);
+}
+
+bool Types::decodeFieldValueImpl(FieldValue *outValue,
+                                 Buffer     &buffer,
+                                 std::size_t depth)
+{
     assert(outValue != nullptr);
 
-    char type = buffer.copy<char>();
+    char type;
+    if (!buffer.tryCopy(&type)) {
+        return false;
+    }
     switch (type) {
     case 't':  // boolean
     {
-        FieldValue value(type, (buffer.copy<char>() != 0));
-        *outValue = value;
+        char raw;
+        if (!buffer.tryCopy(&raw)) {
+            return false;
+        }
+        *outValue = FieldValue(type, (raw != 0));
     } break;
     case 'b':  // short-short-int
     {
-        FieldValue value(type, (int64_t)buffer.copy<big_int8_t>());
-        *outValue = value;
+        big_int8_t raw;
+        if (!buffer.tryCopy(&raw)) {
+            return false;
+        }
+        *outValue = FieldValue(type, (int64_t)raw);
     } break;
     case 'B':  // short-short-uint
     {
-        FieldValue value(type, (uint64_t)buffer.copy<big_uint8_t>());
-        *outValue = value;
+        big_uint8_t raw;
+        if (!buffer.tryCopy(&raw)) {
+            return false;
+        }
+        *outValue = FieldValue(type, (uint64_t)raw);
     } break;
     case 'U':
         LOG_DEBUG << "Converting unsupported field type 'U' to 's'";
         // fall through
     case 's':  // short-int
     {
-        FieldValue value('s', (int64_t)buffer.copy<big_int16_t>());
-        *outValue = value;
+        big_int16_t raw;
+        if (!buffer.tryCopy(&raw)) {
+            return false;
+        }
+        *outValue = FieldValue('s', (int64_t)raw);
     } break;
     case 'u':  // short-uint
     {
-        FieldValue value(type, (uint64_t)buffer.copy<big_uint16_t>());
-        *outValue = value;
+        big_uint16_t raw;
+        if (!buffer.tryCopy(&raw)) {
+            return false;
+        }
+        *outValue = FieldValue(type, (uint64_t)raw);
     } break;
     case 'I':  // long-int
     {
-        FieldValue value(type, (int64_t)buffer.copy<big_int32_t>());
-        *outValue = value;
+        big_int32_t raw;
+        if (!buffer.tryCopy(&raw)) {
+            return false;
+        }
+        *outValue = FieldValue(type, (int64_t)raw);
     } break;
     case 'i':  // long-uint
     {
-        FieldValue value(type, (uint64_t)buffer.copy<big_uint32_t>());
-        *outValue = value;
+        big_uint32_t raw;
+        if (!buffer.tryCopy(&raw)) {
+            return false;
+        }
+        *outValue = FieldValue(type, (uint64_t)raw);
     } break;
     case 'l':  // long-long-int
     case 'L':  // compatibility long-long-int
     {
-        FieldValue value(type, (int64_t)buffer.copy<big_int64_t>());
-        *outValue = value;
+        big_int64_t raw;
+        if (!buffer.tryCopy(&raw)) {
+            return false;
+        }
+        *outValue = FieldValue(type, (int64_t)raw);
     } break;
     case 'f':  // float
     {
@@ -218,7 +262,7 @@ bool Types::decodeFieldValue(FieldValue *outValue, Buffer &buffer)
     case 'A':  // field-array
     {
         std::vector<FieldValue> val;
-        if (!decodeFieldArray(&val, buffer)) {
+        if (!decodeFieldArrayImpl(&val, buffer, depth + 1)) {
             return false;
         }
         FieldValue value(type, val);
@@ -226,13 +270,16 @@ bool Types::decodeFieldValue(FieldValue *outValue, Buffer &buffer)
     } break;
     case 'T':  // timestamp
     {
-        FieldValue value(type, (uint64_t)buffer.copy<big_uint64_t>());
-        *outValue = value;
+        big_uint64_t raw;
+        if (!buffer.tryCopy(&raw)) {
+            return false;
+        }
+        *outValue = FieldValue(type, (uint64_t)raw);
     } break;
     case 'F':  // field-table
     {
         auto sp = std::make_shared<FieldTable>();
-        if (!decodeFieldTable(sp.get(), buffer)) {
+        if (!decodeFieldTableImpl(sp.get(), buffer, depth + 1)) {
             return false;
         }
         FieldValue value(type, sp);
@@ -245,11 +292,10 @@ bool Types::decodeFieldValue(FieldValue *outValue, Buffer &buffer)
     case 'x':  // byte array
     {
         std::vector<uint8_t> val;
-        if (buffer.available() < sizeof(uint32_t)) {
+        big_uint32_t         length;
+        if (!buffer.tryCopy(&length)) {
             return false;
         }
-
-        uint32_t length = buffer.copy<big_uint32_t>();
 
         if (!decodeByteVector(&val, buffer, length)) {
             return false;
@@ -391,15 +437,20 @@ bool Types::encodeFieldValue(Buffer &buffer, const FieldValue &fv)
     return true;
 }
 
-bool Types::decodeFieldArray(std::vector<FieldValue> *vector, Buffer &buffer)
+bool Types::decodeFieldArrayImpl(std::vector<FieldValue> *vector,
+                                 Buffer                  &buffer,
+                                 std::size_t              depth)
 {
     assert(vector != nullptr);
 
-    if (sizeof(big_uint32_t) > buffer.available()) {
+    if (depth > Constants::maxFieldTableNestingDepth()) {
         return false;
     }
 
-    auto arrayLength = buffer.copy<big_uint32_t>();
+    big_uint32_t arrayLength;
+    if (!buffer.tryCopy(&arrayLength)) {
+        return false;
+    }
     if (arrayLength > buffer.available()) {
         return false;
     }
@@ -407,7 +458,7 @@ bool Types::decodeFieldArray(std::vector<FieldValue> *vector, Buffer &buffer)
     auto arrayBuffer = buffer.consume(arrayLength);
     while (arrayBuffer.available() > 0) {
         FieldValue value('V', false);
-        if (!decodeFieldValue(&value, arrayBuffer)) {
+        if (!decodeFieldValueImpl(&value, arrayBuffer, depth)) {
             return false;
         }
 
@@ -421,6 +472,13 @@ bool Types::encodeFieldArray(Buffer                        &buffer,
                              const std::vector<FieldValue> &vector)
 {
     Buffer writeBuffer = buffer.remaining();
+
+    // Reserve the length prefix. Checked rather than relying on `skip` to
+    // throw, so that running out of output space stays an ordinary `false`
+    // return as this function's contract promises.
+    if (writeBuffer.available() < sizeof(big_uint32_t)) {
+        return false;
+    }
     writeBuffer.skip(sizeof(big_uint32_t));
     std::size_t originalOffset = writeBuffer.offset();
 
@@ -433,18 +491,25 @@ bool Types::encodeFieldArray(Buffer                        &buffer,
     std::size_t endOffset = writeBuffer.offset();
     std::size_t length    = endOffset - originalOffset;
     writeBuffer.seek(0);
+    // Return deliberately unchecked: the reservation check at the top of this
+    // function guarantees the four octets are there.
     writeBuffer.writeIn<big_uint32_t>(length);
     buffer.skip(endOffset);
     return true;
 }
 
-bool Types::decodeFieldTable(FieldTable *table, Buffer &buffer)
+bool Types::decodeFieldTableImpl(FieldTable *table,
+                                 Buffer     &buffer,
+                                 std::size_t depth)
 {
-    if (sizeof(big_uint32_t) > buffer.available()) {
+    if (depth > Constants::maxFieldTableNestingDepth()) {
         return false;
     }
 
-    auto fieldTableLength = buffer.copy<big_uint32_t>();
+    big_uint32_t fieldTableLength;
+    if (!buffer.tryCopy(&fieldTableLength)) {
+        return false;
+    }
     if (fieldTableLength > buffer.available()) {
         return false;
     }
@@ -457,7 +522,7 @@ bool Types::decodeFieldTable(FieldTable *table, Buffer &buffer)
         }
 
         FieldValue value('V', false);
-        if (!decodeFieldValue(&value, tBuffer)) {
+        if (!decodeFieldValueImpl(&value, tBuffer, depth)) {
             return false;
         }
 
@@ -469,6 +534,12 @@ bool Types::decodeFieldTable(FieldTable *table, Buffer &buffer)
 bool Types::encodeFieldTable(Buffer &buffer, const FieldTable &table)
 {
     Buffer writeBuffer = buffer.remaining();
+
+    // See encodeFieldArray: the length prefix reservation is checked so that a
+    // full output buffer returns false instead of throwing out of a bool API.
+    if (writeBuffer.available() < sizeof(big_uint32_t)) {
+        return false;
+    }
     writeBuffer.skip(sizeof(big_uint32_t));
     std::size_t originalOffset = writeBuffer.offset();
 
@@ -485,6 +556,8 @@ bool Types::encodeFieldTable(Buffer &buffer, const FieldTable &table)
     std::size_t endOffset = writeBuffer.offset();
     std::size_t length    = endOffset - originalOffset;
     writeBuffer.seek(0);
+    // Return deliberately unchecked: the reservation check at the top of this
+    // function guarantees the four octets are there.
     writeBuffer.writeIn<big_uint32_t>(length);
     buffer.skip(endOffset);
     return true;

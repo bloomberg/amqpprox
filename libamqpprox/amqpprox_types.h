@@ -16,6 +16,7 @@
 #ifndef BLOOMBERG_AMQPPROX_TYPES
 #define BLOOMBERG_AMQPPROX_TYPES
 
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -153,6 +154,30 @@ class Types {
      * \return true in case of success, otherwise false
      */
     static bool encodeFieldTable(Buffer &buffer, const FieldTable &table);
+
+  private:
+    /**
+     * \brief Depth-bounded implementations behind the three decode entry
+     * points above
+     *
+     * Field tables and arrays nest, and decoding them recurses. These carry
+     * the nesting depth so it can be bounded at
+     * `Constants::maxFieldTableNestingDepth`; see the field table nesting
+     * section of docs/architecture.md for why that matters.
+     *
+     * Deliberately not public. They increment `depth` before recursing, so a
+     * caller passing a large value would wrap it to zero and restore the
+     * unbounded recursion the limit exists to prevent.
+     */
+    static bool
+    decodeFieldValueImpl(FieldValue *value, Buffer &buffer, std::size_t depth);
+
+    static bool decodeFieldArrayImpl(std::vector<FieldValue> *vector,
+                                     Buffer                  &buffer,
+                                     std::size_t              depth);
+
+    static bool
+    decodeFieldTableImpl(FieldTable *table, Buffer &buffer, std::size_t depth);
 };
 
 }

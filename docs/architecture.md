@@ -140,3 +140,70 @@ ownership of a buffer either from the pool or the free store. The
 and is used as a slice of memory. The use of these Buffer is to avoid memory
 allocations and buffer copying on the main path passing buffers through the
 proxy.
+
+### Buffer Bounds and the Exception Contract
+
+`Buffer::copy` and `Buffer::skip` enforce their bounds at runtime rather than
+with `assert`. Release builds define `NDEBUG`, so an assertion there would
+provide no protection in a shipped binary; and because `available()` is
+`d_length - d_offset` computed in `std::size_t`, an offset that moves past the
+end does not fail loudly — it underflows to an enormous value, after which
+every downstream `x > buffer.available()` guard silently passes. Those two
+therefore throw rather than allow the offset to exceed the length.
+
+`Buffer::seek` is the exception: it still only asserts, so it can put the
+offset past the end in a release build and produce exactly that underflow. Its
+callers pass values they already know to be in range — `Session::readBuffer`
+passes a watermark — so this is a latent sharp edge rather than a live bug, but
+it is worth knowing about before adding a new `seek` call site.
+
+Two rules follow, and both matter when adding code:
+
+1. **Throw `std::runtime_error`, not some other exception type.**
+   [`Session::handleData`](../libamqpprox/amqpprox_session.cpp) catches
+   `CloseError` and `std::runtime_error` specifically, and responds by
+   disconnecting that one session. It does not catch `std::exception`. A bounds
+   violation that throws `std::out_of_range`, `std::logic_error` or
+   `std::bad_alloc` is *not* caught there — it unwinds into
+   [`Server::run`](../libamqpprox/amqpprox_server.cpp), which closes the
+   listening sockets and returns, stranding every live session on the proxy.
+   The blast radius of the exception type is the difference between one dropped
+   connection and a total outage.
+
+2. **Decoders should prefer `tryCopy` to `copy`.** `Buffer::tryCopy<T>` reports
+   truncation by return value and consumes nothing on failure, which lets a
+   decoder reject a malformed frame as a normal `false` return. `Buffer::copy`'s
+   throw is a backstop for a caller that checks neither `tryCopy` nor
+   `available()` itself, not the intended error path.
+
+### Field Table Nesting Depth
+
+Field tables and field arrays nest, and the decoder walks them recursively:
+`decodeFieldTable` -> `decodeFieldValue` -> `decodeFieldTable`. A nested table
+costs six octets of input per level - a length prefix, an empty field name and
+a type octet - so a single maximum-sized frame can demand roughly 25,000 levels
+of recursion and exhaust the stack.
+
+That failure is not containable. The exception contract above works because
+`Session::handleData` can catch and drop one session, but stack exhaustion
+raises no exception. So the decoder bounds nesting itself, at
+`Constants::maxFieldTableNestingDepth`, and rejects anything deeper as a normal
+`false` return. Real client properties nest one or two levels, so the limit is
+far above legitimate traffic. The count is carried by private
+`decodeField*Impl` overloads rather than by the public entry points, so no
+caller can supply a depth of its own.
+
+This bounds recursion **depth only**, and that is the whole of what it fixes.
+It does not bound the *width* of a table: the cheapest possible field is two
+octets - an empty name and a `'V'` no-value type - so a maximum-sized frame
+still decodes into tens of thousands of `std::pair<std::string, FieldValue>`
+entries, which is a substantial heap amplification from a small pre-auth input.
+Bounding that would need a separate field-count limit and is not attempted
+here.
+
+Note that not every `Buffer` write path runs inside `handleData`'s try block.
+`Session::handleSessionError`, the posted authentication callback, the
+connection rate-limit timer and the TLS handshake callback all reach
+`sendSyntheticData` from their own ASIO handlers. Any new bounds check on a
+write path used by those callers needs its own handling, or it becomes a
+proxy-wide failure rather than a session-level one.
