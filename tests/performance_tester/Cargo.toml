@@ -24,7 +24,7 @@ rustls-pemfile = "0.2.1"
 tokio-rustls = "0.23.1"
 amiquip = { version = "0.4", default-features = false }
 
-rand = "*"
+rand = "0.8"
 
 # Begin required for lapin
 lapin = "2.1.1"
