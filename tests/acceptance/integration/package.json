@@ -12,6 +12,6 @@
   "dependencies": {
     "amqp-connection-manager": "^2.0.0",
     "amqplib": "^0.10.0",
-    "cross-spawn": "^5.1.0"
+    "cross-spawn": "^7.0.6"
   }
 }

@@ -1,0 +1,43 @@
+# Keeps the hash/digest-pinned dependencies in this repository up to date.
+# See https://docs.github.com/code-security/dependabot/dependabot-version-updates
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  - package-ecosystem: "docker"
+    directory: "/buildfiles/conan"
+    schedule:
+      interval: "monthly"
+    groups:
+      docker:
+        patterns: ["*"]
+
+  - package-ecosystem: "pip"
+    directory: "/buildfiles/conan"
+    schedule:
+      interval: "monthly"
+    groups:
+      pip:
+        patterns: ["*"]
+
+  - package-ecosystem: "cargo"
+    directory: "/tests/performance_tester"
+    schedule:
+      interval: "monthly"
+    groups:
+      cargo:
+        patterns: ["*"]
+
+  - package-ecosystem: "npm"
+    directory: "/tests/acceptance/integration"
+    schedule:
+      interval: "monthly"
+    groups:
+      npm:
+        patterns: ["*"]

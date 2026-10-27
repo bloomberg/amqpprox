@@ -1,0 +1,6 @@
+-r requirements.in
+setuptools
+robotframework
+pika
+amqp
+pytest
