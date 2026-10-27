@@ -8,28 +8,28 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "1.17.0", features = ["full"] }
-tokio-util = { version = "0.6", features = ["codec"] }
+tokio-util = { version = "0.7", features = ["codec"] }
 
 # The latest amq-protocol is 7.0.0 but somewhere along the way the interface
 # became incompatible with tokio-codec as we're using it
-amq-protocol = { version = "4.2.2", features = ["rustls"], default_features=false }
+amq-protocol = { version = "7.2.3", features = ["rustls"], default_features=false }
 anyhow = "1.0"
-thiserror = "1.0"
-clap = { version = "3.0.7", features = ["derive"] }
-env_logger = "0.8"
+thiserror = "2.0"
+clap = { version = "4.6.7", features = ["derive"] }
+env_logger = "0.11"
 log = "0.4"
 bytes = "1.0"
 futures = "0.3"
-rustls-pemfile = "0.2.1"
-tokio-rustls = "0.23.1"
+rustls-pemfile = "2.2.0"
+tokio-rustls = "0.26.6"
 amiquip = { version = "0.4", default-features = false }
 
-rand = "0.8"
+rand = "0.9"
 
 # Begin required for lapin
-lapin = "2.1.1"
-tokio-executor-trait = "2.1.0"
-tokio-reactor-trait = "1.1.0"
+lapin = "4.12.3"
+tokio-executor-trait = "3.1.0"
+tokio-reactor-trait = "4.1.1"
 executor-trait = "*"
 
 # End required for lapin
