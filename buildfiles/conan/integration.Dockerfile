@@ -1,10 +1,10 @@
 # Build the Rust performance tester in its own stage so the final image does
 # not need a toolchain installed via `curl | sh`.
-FROM rust:1.94-slim-bookworm@sha256:cf9dd0ec73e75f827fe59123fff9dc65af1a1c8363c3c31ee8d7f8ad0b6a5fb2 AS perf_tester_build
+FROM rust:1.99-slim-bookworm@sha256:86234e857a413004348b471d11a4ebe1aa92d2eae2b6b143cac68fd1ac3c48be AS perf_tester_build
 COPY tests/performance_tester /perf_tester
 RUN cargo build --release --locked --manifest-path /perf_tester/Cargo.toml
 
-FROM rabbitmq:4.3.0@sha256:46bf0bdf0d2008acae9c5475558001e961297bd0868214c9216bef107d7d2b87
+FROM rabbitmq:4.3.6@sha256:3e5cc23235b0eb850f604e8ace10d9a9b6d05be3e36730e53522ee9ead707a9e
 
 ENV DEBIAN_FRONTEND=noninteractive
 
