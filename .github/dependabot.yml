@@ -1,4 +1,6 @@
 # Keeps the hash/digest-pinned dependencies in this repository up to date.
+# Minor and patch updates are grouped per ecosystem; major updates are raised
+# as individual PRs so one breaking upgrade does not block the rest.
 # See https://docs.github.com/code-security/dependabot/dependabot-version-updates
 version: 2
 updates:
@@ -9,6 +11,7 @@ updates:
     groups:
       github-actions:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "docker"
     directory: "/buildfiles/conan"
@@ -17,6 +20,7 @@ updates:
     groups:
       docker:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "pip"
     directory: "/buildfiles/conan"
@@ -25,6 +29,7 @@ updates:
     groups:
       pip:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "cargo"
     directory: "/tests/performance_tester"
@@ -33,6 +38,7 @@ updates:
     groups:
       cargo:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "npm"
     directory: "/tests/acceptance/integration"
@@ -41,3 +47,4 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
