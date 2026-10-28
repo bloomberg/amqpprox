@@ -23,7 +23,9 @@ To keep the supply chain reproducible (and to satisfy the OpenSSF Scorecard
 - The Rust performance tester is built in a separate `rust` stage of
   `integration.Dockerfile` using `cargo build --locked`.
 
-Dependabot (`.github/dependabot.yml`) raises monthly PRs to bump these pins.
+Dependabot (`.github/dependabot.yml`) raises monthly PRs to bump these pins:
+one grouped PR per ecosystem for minor/patch updates, and a separate PR for
+each major update, which may need code changes.
 To change a Python dependency by hand, edit the matching `.in` file and
 regenerate the lock file with hashes:
 
