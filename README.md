@@ -268,3 +268,7 @@ team at opensource@bloomberg.net, detailing the suspected issue and any methods 
 
 Please do NOT open an issue in the GitHub repository, as we'd prefer to keep vulnerability reports private until
 we've had an opportunity to review and address them.
+
+The code is scanned with CodeQL on every pull request: Python, JavaScript and GitHub Actions via GitHub's
+default setup, and C++ and Rust via `.github/workflows/codeql.yml` (results in the job summary and a SARIF
+artifact).
