@@ -1,0 +1,67 @@
+name: CodeQL (C++ and Rust)
+
+# CodeQL default setup (configured in the repository settings) covers actions,
+# JavaScript and Python, but cannot analyse C++: it tries to autobuild, which
+# fails because the build needs Conan bootstrapping (`make setup`) first.
+#
+# This workflow analyses C++ and Rust with build-mode none instead. While
+# default setup is enabled, GitHub rejects code scanning uploads from
+# workflows, so results are not uploaded to the Security tab; they are written
+# to the job summary and attached as a SARIF artifact. If default setup is
+# later disabled, set `upload: always` and add the remaining languages here.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # build-mode none extracts sources without compiling them, avoiding
+        # the Conan dependency build (boost etc.) on every run.
+        language: [ c-cpp, rust ]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+
+      - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          category: "/language:${{ matrix.language }}"
+          upload: never
+          output: sarif-results
+
+      - name: Summarise findings
+        env:
+          LANGUAGE: ${{ matrix.language }}
+        run: |
+          {
+            echo "## CodeQL findings (${LANGUAGE})"
+            jq -r '[.runs[].results[]] | "\(length) result(s)"' sarif-results/*.sarif
+            echo
+            jq -r '.runs[].results[] |
+              "- `\(.ruleId)` \(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine // "?") — \(.message.text | split("\n")[0])"' \
+              sarif-results/*.sarif | head -n 100
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: codeql-${{ matrix.language }}-sarif
+          path: sarif-results
+          retention-days: 30
