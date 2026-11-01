@@ -12,7 +12,7 @@ tokio-util = { version = "0.6", features = ["codec"] }
 
 # The latest amq-protocol is 7.0.0 but somewhere along the way the interface
 # became incompatible with tokio-codec as we're using it
-amq-protocol = { version = "4.2.2", features = ["rustls"], default_features=false }
+amq-protocol = { version = "7.2.3", features = ["rustls"], default_features=false }
 anyhow = "1.0"
 thiserror = "1.0"
 clap = { version = "3.0.7", features = ["derive"] }
