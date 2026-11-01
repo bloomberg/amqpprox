@@ -4,7 +4,7 @@ FROM rust:1.99-slim-bookworm@sha256:86234e857a413004348b471d11a4ebe1aa92d2eae2b6
 COPY tests/performance_tester /perf_tester
 RUN cargo build --release --locked --manifest-path /perf_tester/Cargo.toml
 
-FROM rabbitmq:4.3.6@sha256:3e5cc23235b0eb850f604e8ace10d9a9b6d05be3e36730e53522ee9ead707a9e
+FROM rabbitmq:4.4.0@sha256:485319d42170eab53d8a030e1cc49d95e41f5d325479fa504736db8091981eb7
 
 ENV DEBIAN_FRONTEND=noninteractive
 
