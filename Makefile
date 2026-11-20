@@ -14,7 +14,7 @@ setup: BUILD_FLAVOUR ?= conan
 setup:
 	mkdir -p $(BUILDDIR)
 	/bin/echo -n "$(BUILD_FLAVOUR)" > $(BUILDDIR)/flavour
-	(test -x ./buildfiles/$(BUILD_FLAVOUR)/bootstrap && ./buildfiles/$(BUILD_FLAVOUR)/bootstrap $(BUILDDIR) $(CUR_DIR)) || true
+	if test -x ./buildfiles/$(BUILD_FLAVOUR)/bootstrap; then ./buildfiles/$(BUILD_FLAVOUR)/bootstrap $(BUILDDIR) $(CUR_DIR); fi
 
 init:
 	cd $(BUILDDIR) && cmake -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake $(EXTRA_CMAKE_ARGS) $(CUR_DIR)
