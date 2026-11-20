@@ -1,7 +1,7 @@
 [requires]
 boost/1.76.0
 openssl/[>1.1.1k <4]
-gtest/1.10.0
+gtest/1.18.0
 protobuf/3.21.9
 
 [generators]
