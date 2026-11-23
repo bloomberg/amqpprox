@@ -26,6 +26,8 @@ updates:
     directory: "/buildfiles/conan"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
     groups:
       pip:
         patterns: ["*"]
@@ -35,6 +37,8 @@ updates:
     directory: "/tests/performance_tester"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
     groups:
       cargo:
         patterns: ["*"]
@@ -44,6 +48,8 @@ updates:
     directory: "/tests/acceptance/integration"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
     groups:
       npm:
         patterns: ["*"]
