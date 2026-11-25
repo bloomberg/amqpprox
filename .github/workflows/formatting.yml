@@ -21,6 +21,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: clang-format style check
+        shell: bash
         run: |
-          git clang-format-14 --diff -q origin/main | tee format_diff.txt
+          git clang-format-20 --diff -q origin/main | tee format_diff.txt
           if [ -s format_diff.txt ]; then exit 1; fi
